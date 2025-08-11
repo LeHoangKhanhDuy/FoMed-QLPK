@@ -352,7 +352,7 @@ export const Navbar = () => {
               to="/user/add-product"
               className="bg-primary-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
             >
-              <Upload className="size-5" /> Tải lên
+              <Upload className="size-5" /> Tải lêndddd
             </Link>
 
             {/* <button
