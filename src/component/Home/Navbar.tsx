@@ -1,28 +1,24 @@
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import {
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  PopoverGroup,
-} from "@headlessui/react";
-import {
-  AlignJustify,
-  BadgePercent,
+  BadgeInfo,
   CircleUserRound,
-  CreditCardIcon,
+  ClipboardClock,
   Heart,
   LogOut,
-  LucideLightbulb,
   MousePointerSquareDashed,
   PhoneIcon,
   Settings,
-  ShoppingBagIcon,
-  Star,
-  Upload,
   User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import MedFacilityDropdownMenu from "./MedFacilityDropdown";
+import MedServiceDropdownMenu from "./MedServiceDropdown";
+import HelpMedDropdownMenu from "./HelpMedDropdown";
+import phone from "../../assets/images/phone-call.png";
+import fb from "../../assets/images/gmaillogo.png";
+import mail from "../../assets/images/facebookLogo.png";
+import zalo from "../../assets/images/logoZalo.png";
 
 export const Navbar = () => {
   const [visible, setVisible] = useState(true);
@@ -57,15 +53,28 @@ export const Navbar = () => {
         <div className=" flex flex-col lg:flex-row justify-between items-center px-4 md:px-2 xl:px-0 py-4 text-sm text-slate-700 max-w-7xl mx-auto gap-y-4 w-full overflow-visible">
           <div className="flex items-center justify-between gap-x-0 md:gap-x-6 w-full lg:w-auto">
             <Link to="/" className="flex-shrink-0">
-              <img
-                src="/assets/FoCode Logo.png"
-                alt="Logo"
-                className="h-10 w-auto max-[320px]:max-w-[80px]"
-              />
+              <h1 className="font-bold text-2xl text-sky-500">FoMed</h1>
             </Link>
 
+            {/* HỖ TRỢ ĐẶT KHÁM */}
+            <div className="hidden lg:flex items-center space-x-2 pr-6 border-r">
+              <img
+                src={phone}
+                alt="support"
+                className="w-6 h-6"
+              />
+              <div className="flex flex-col leading-tight">
+                <span className="text-center text-[14px] text-sky-900 font-semibold">
+                  Hotline
+                </span>
+                <span className="text-[20px] font-bold text-[#FFA726]">
+                  1800 1234
+                </span>
+              </div>
+            </div>
+            
             {/* MẠNG XÃ HỘI */}
-            <div className="hidden lg:flex items-center px-6 space-x-6">
+            <div className="hidden lg:flex items-center px-2 space-x-6">
               <a
                 target="_blank"
                 rel="noopener noreferrer"
@@ -73,7 +82,7 @@ export const Navbar = () => {
                 className="flex items-center space-x-2 cursor-pointer"
               >
                 <img
-                  src="/assets/facebookLogo.png"
+                  src={fb}
                   alt="logoFacebook"
                   className="w-5 h-5"
                 />
@@ -88,7 +97,7 @@ export const Navbar = () => {
                 className="flex items-center space-x-2 cursor-pointer"
               >
                 <img
-                  src="/assets/gmaillogo.png"
+                  src={mail}
                   alt="logoGmail"
                   className="w-5 h-5"
                 />
@@ -97,48 +106,20 @@ export const Navbar = () => {
                 </span>
               </a>
               <a
-                href="https://page.fotech.pro/"
-                target="blank"
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=dev@fotech.pro&su=Hỗ trợ khách hàng&body=Chào%20FoCode%2C%0ATôi%20muốn%20hỏi%20về..."
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center space-x-2 cursor-pointer"
               >
                 <img
-                  src="/assets/web.png"
-                  alt="logoFoTech"
-                  className="w-5 h-5 rounded-full"
+                  src={zalo}
+                  alt="logoGmail"
+                  className="w-5 h-5"
                 />
                 <span className="text-black font-bold hover:text-[var(--hover)]">
-                  Website
+                  Zalo
                 </span>
               </a>
-            </div>
-
-            {/* SEARCHBAR MOBILE */}
-            {/* <div className="block lg:hidden max-[321px]:hidden">
-              <Searchbar />
-            </div> */}
-
-            {/* MOBILE MENU MOBILE */}
-            <div className="block lg:hidden relative">
-              <Menu>
-                <button
-                  //onClick={() => setMobileMenuOpen(true)}
-                  className="lg:hidden p-2 ml-auto rounded-md focus:outline-none hover:bg-gray-100"
-                  aria-label="Mở menu"
-                >
-                  <AlignJustify />
-                </button>
-
-                {/* Backdrop mờ khi mở menu */}
-                {/* {isMobileMenuOpen && (
-                  <div
-                    className="fixed inset-0 z-40 backdrop-brightness-50 bg-opacity-50 transition-opacity duration-300"
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-hidden="true"
-                  />
-                )} */}
-
-                {/* Slide menu */}
-              </Menu>
             </div>
           </div>
 
@@ -152,25 +133,6 @@ export const Navbar = () => {
           {/* RIGHT SECTION */}
           <div className="flex flex-col sm:flex-row gap-2 items-center lg:flex-row lg:gap-x-4">
             <div className="flex items-center gap-x-3">
-              {/* GIỎ HÀNG DESKTOP */}
-              <button
-                // onClick={() => {
-                //   if (cartCount === 0) {
-                //     navigate("/cart-empty");
-                //   } else {
-                //     navigate("/shopping-cart");
-                //   }
-                // }}
-                className="relative hidden lg:flex items-center gap-2 px-4 ml-2 py-2.5 bg-gray-200/50 rounded-full text-sm font-bold text-black hover:text-[var(--hover)] transition duration-200 cursor-pointer"
-              >
-                <ShoppingBagIcon className="size-5" />
-
-                {/* {cartCount > 0 && (
-                  <span className="absolute -top-1 left-10 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                    {cartCount}
-                  </span>
-                )} */}
-              </button>
               {/* Avatar và menu người dùng */}
               <Menu as="div" className="relative hidden md:hidden lg:flex">
                 <div>
@@ -271,13 +233,13 @@ export const Navbar = () => {
               </Menu>
             </div>
 
-            <nav className="items-center gap-x-6 rounded-[var(--rounded)] hidden lg:block border hover:bg-primary group transition-all">
+            <nav className="items-center gap-x-6 rounded-full hidden lg:block border border-sky-500 hover:border-transparent hover:bg-[var(--hover)] group transition-all">
               <button
                 //onClick={() => setLoginOpen(true)}
-                className="text-sm rounded-[var(--rounded)] text-gray-700 px-4 py-2.5 cursor-pointer flex items-center gap-2 transition duration-100 group-hover:text-white"
+                className="text-sm rounded-[var(--rounded)] text-sky-500 px-4 py-2.5 cursor-pointer flex items-center gap-2 transition duration-100 group-hover:text-white"
               >
                 <User className="size-4 cursor-pointer" />
-                Tài khoản
+                Đăng nhập
               </button>
             </nav>
             {/* <AuthModal
@@ -293,40 +255,18 @@ export const Navbar = () => {
         <div className="flex flex-col lg:flex-row items-center justify-between px-4 md:px-2 xl:px-0 py-4 gap-4 max-w-7xl mx-auto">
           <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold">
             {/* MENU DROPDOWN */}
-            <PopoverGroup className="flex gap-x-6">
-              {/* <CateDropdownMenu /> */}
-            </PopoverGroup>
-            <Link
-              to="/top-code"
-              className="hover:text-[var(--hover)] flex justify-center items-center gap-1"
-            >
-              <Star className="w-4 h-4" /> Code nổi bật
-            </Link>
+            <MedFacilityDropdownMenu />
+            <MedServiceDropdownMenu />
+            <HelpMedDropdownMenu />
             <Link
               to="/new-code"
               className="hover:text-[var(--hover)] flex justify-center items-center gap-1"
             >
-              <LucideLightbulb className="w-4 h-4" />
-              Code mới
+              <BadgeInfo className="w-4 h-4" />
+              Về FoMed
             </Link>
             <Link
               to="/free-code"
-              className="hover:text-[var(--hover)] flex justify-center items-center gap-1"
-            >
-              <BadgePercent className="w-4 h-4" />
-              Code miễn phí
-            </Link>
-            {/* <HelpDropdownMenu /> */}
-            {/* <Link
-              to="/"
-              onClick={comingSoonFeature}
-              className="hover:text-[var(--hover)] flex justify-center items-center gap-1"
-            >
-              <NewspaperIcon className="w-4 h-4" />
-              Tin tức
-            </Link> */}
-            <Link
-              to="/contact"
               className="hover:text-[var(--hover)] flex justify-center items-center gap-1"
             >
               <PhoneIcon className="w-4 h-4" />
@@ -335,24 +275,10 @@ export const Navbar = () => {
           </div>
           <div className="flex flex-wrap justify-center gap-2">
             <Link
-              to="/user/deposit"
-              className="bg-warning-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
-            >
-              <CreditCardIcon className="size-5" /> Nạp tiền
-            </Link>
-
-            {/* <button
-                onClick={() => setLoginOpen(true)}
-                className="bg-warning-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
-              >
-                <CreditCardIcon className="size-5" /> Nạp tiền
-              </button> */}
-
-            <Link
               to="/user/add-product"
               className="bg-primary-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
             >
-              <Upload className="size-5" /> Tải lêndddd
+              <ClipboardClock className="size-5" /> Đặt lịch
             </Link>
 
             {/* <button
