@@ -18,7 +18,7 @@ body {
   --popover-foreground: oklch(0.145 0 0);
   --primary: #2579f2;
   --primary-foreground: oklch(0.985 0 0);
-  --hover: #176ceb;
+  --hover: #0ea5e9;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -131,7 +131,7 @@ body {
 }
 
 .bg-primary-linear {
-  background: linear-gradient(180deg, #ffffff3d, #fff0), #1972f5;
+  background: linear-gradient(180deg, #ffffff3d, #fff0), #0ea5e9;
 }
 
 .bg-primary-linear-login {
