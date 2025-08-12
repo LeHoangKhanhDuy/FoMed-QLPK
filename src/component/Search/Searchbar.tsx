@@ -92,7 +92,7 @@ const Searchbar = () => {
     <div className="relative max-w-5xl mx-auto w-full">
       <form
         onSubmit={handleSubmit}
-        className="w-full bg-white rounded-lg shadow-sm ring-1 ring-slate-200 flex items-center px-4 py-4 relative z-20"
+        className="w-full bg-white rounded-lg shadow-sm ring-1 ring-slate-200 flex items-center px-4 py-4 relative"
       >
         <Search className="text-gray-500 w-6 h-6 mr-2" />
         {/* Fake placeholder */}

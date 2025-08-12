@@ -16,6 +16,7 @@ import bvTD from "../../assets/images/bvTuDu.png";
 import bvVM from "../../assets/images/bvVinMec.png";
 import bvDHYD from "../../assets/images/bvDHYD.webp";
 import bvMat from "../../assets/images/bvMat.webp";
+import vnvc from "../../assets/images/vnvc.png";
 
 type Service = {
   label: string;
@@ -72,6 +73,10 @@ const logos: Logo[] = [
     src: bvMat,
     alt: "Bệnh Viện Mắt",
   },
+  {
+    src: vnvc,
+    alt: "Trung tâm tiêm chủng VNVC",
+  },
 ];
 
 export default function HeroHeader() {
@@ -96,12 +101,12 @@ export default function HeroHeader() {
         </div>
 
         {/* Hospitals strip */}
-        <div className="relative w-full overflow-hidden mt-14 z-20">
+        <div className="relative w-full overflow-hidden mt-14">
           <div className="relative mx-auto max-w-7xl overflow-hidden">
             {/* Fade edges (đổi màu mép theo nền của bạn: white/sky-100/...) */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 z-10"
+              className="pointer-events-none absolute inset-0"
             />
 
             {/* Track chạy vô hạn */}
