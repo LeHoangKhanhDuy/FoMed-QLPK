@@ -6,7 +6,7 @@ const helpItems = [
   { to: "/", label: "Đặt lịch khám bệnh" },
   { to: "/", label: "Đặt lịch xét nghiệm" },
   { to: "/", label: "Đặt lịch tiêm chủng" },
-  { to: "/", label: "Mua thuốc theo toa" },
+  { to: "/", label: "Kê thuốc theo toa" },
 ];
 
 const MedServiceDropdownMenu = () => {

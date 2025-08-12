@@ -36,7 +36,7 @@ const HelpMedDropdownMenu = () => {
     >
       <PopoverButton className="group flex items-center gap-x-1 text-sm hover:text-[var(--hover)] text-black cursor-pointer">
         <MessageCircleQuestionMark className="w-5 h-5" />
-       Hướng dẫn
+       Hướng dẫn sử dụng
         <ChevronDownIcon
           className="size-5 flex-none transform transition-transform duration-300 group-hover:rotate-180"
           aria-hidden="true"
