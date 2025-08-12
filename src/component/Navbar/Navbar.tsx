@@ -45,12 +45,12 @@ export const Navbar = () => {
 
   return (
     <header
-      className={`bg-white lg:sticky lg:top-0 lg:left-0 lg:w-full lg:z-10 transition-transform duration-300 ${
+      className={`bg-white lg:sticky lg:top-0 lg:left-0 lg:w-full isolate lg:z-[80] transition-transform duration-300 ${
         visible ? "lg:translate-y-0" : "lg:-translate-y-full"
       }`}
     >
       {/* TẦNG TRÊN NAVBAR */}
-      <nav className="relative z-50">
+      <nav className="relative z-auto">
         <div className=" flex flex-col lg:flex-row justify-between items-center px-4 md:px-2 xl:px-0 py-4 text-sm text-slate-700 max-w-7xl mx-auto gap-y-4 w-full overflow-visible">
           <div className="flex items-center justify-between gap-x-0 md:gap-x-6 w-full lg:w-auto">
             <Link to="/" className="flex-shrink-0">
