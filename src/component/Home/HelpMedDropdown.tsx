@@ -1,5 +1,5 @@
 import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-import { ChevronDownIcon, Hospital } from "lucide-react";
+import { ChevronDownIcon, MessageCircleQuestionMark } from "lucide-react";
 import { useState, useRef } from "react";
 
 const helpItems = [
@@ -35,7 +35,7 @@ const HelpMedDropdownMenu = () => {
       onMouseLeave={handleMouseLeave}
     >
       <PopoverButton className="group flex items-center gap-x-1 text-sm hover:text-[var(--hover)] text-black cursor-pointer">
-        <Hospital className="w-4 h-4" />
+        <MessageCircleQuestionMark className="w-5 h-5" />
        Hướng dẫn
         <ChevronDownIcon
           className="size-5 flex-none transform transition-transform duration-300 group-hover:rotate-180"

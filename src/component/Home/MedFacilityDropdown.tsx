@@ -34,7 +34,7 @@ const MedFacilityDropdownMenu = () => {
       onMouseLeave={handleMouseLeave}
     >
       <PopoverButton className="group flex items-center gap-x-1 text-sm hover:text-[var(--hover)] text-black cursor-pointer">
-        <Hospital className="w-4 h-4" />
+        <Hospital className="w-5 h-5" />
         Cơ sở y tế
         <ChevronDownIcon
           className="size-5 flex-none transform transition-transform duration-300 group-hover:rotate-180"
