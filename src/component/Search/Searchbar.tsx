@@ -92,12 +92,12 @@ const Searchbar = () => {
     <div className="relative max-w-5xl mx-auto w-full">
       <form
         onSubmit={handleSubmit}
-        className="w-full bg-white rounded-lg shadow-sm ring-1 ring-slate-200 flex items-center px-4 py-3 relative z-20"
+        className="w-full bg-white rounded-lg shadow-sm ring-1 ring-slate-200 flex items-center px-4 py-4 relative z-20"
       >
-        <Search className="text-gray-400 w-5 h-5 mr-2" />
+        <Search className="text-gray-500 w-6 h-6 mr-2" />
         {/* Fake placeholder */}
         {inputValue === "" && (
-          <div className="absolute left-12 text-sm text-gray-600 pointer-events-none select-none">
+          <div className="absolute left-12 text-xl text-gray-600 pointer-events-none select-none">
             {displayText}
           </div>
         )}
@@ -108,7 +108,7 @@ const Searchbar = () => {
         <input
           id="search-input"
           type="text"
-          className="flex-grow outline-none text-sm text-gray-800 bg-transparent"
+          className="flex-grow outline-none text-xl text-gray-800 bg-transparent"
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(true)}

@@ -8,6 +8,25 @@ body {
   font-optical-sizing: auto;
 }
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Tối ưu hiệu năng & animation */
+.marquee-track {
+  will-change: transform;
+}
+
+.animate-marquee {
+  animation: marquee 24s linear infinite;
+}
+
 :root {
   --rounded: 0.75rem;
   --background: oklch(1 0 0);

@@ -16,7 +16,6 @@ import mail from "../../assets/images/gmaillogo.png";
 import fb from "../../assets/images/facebookLogo.png";
 import zalo from "../../assets/images/logoZalo.png";
 import logo from "../../assets/images/FoCode Logo.png";
-import Searchbar from "../Search/Searchbar";
 import MedFacilityDropdownMobile from "./MedFacilityDropdownMobile";
 import MedServiceDropdownMobile from "./MedServiceDropdownMobile";
 import HelpMedDropdownMobile from "./HelpMedDropdownMobile";
@@ -61,7 +60,7 @@ export const Navbar = () => {
                   alt="Logo"
                   className="h-5 w-auto max-[320px]:max-w-[80px]"
                 />
-                <p className="font-bold text-2xl text-blue-500">Med</p>
+                <p className="font-bold text-2xl text-sky-500">Med</p>
               </div>
             </Link>
 
@@ -103,9 +102,9 @@ export const Navbar = () => {
             </div>
 
             {/* SEARCHBAR MOBILE */}
-            <div className="block lg:hidden max-[321px]:hidden">
+            {/* <div className="block lg:hidden max-[321px]:hidden">
               <Searchbar />
-            </div>
+            </div> */}
 
             {/* MOBILE MENU - FE ONLY */}
             <div className="block lg:hidden relative">
@@ -150,7 +149,7 @@ export const Navbar = () => {
                         loading="lazy"
                       />
                     </Link>
-                    <p className="font-bold text-2xl text-blue-500">Med</p>
+                    <p className="font-bold text-2xl text-sky-500">Med</p>
                   </div>
 
                   {/* Nút đóng */}
@@ -235,11 +234,11 @@ export const Navbar = () => {
           </div>
 
           {/* DESKTOP */}
-          <div className="hidden lg:flex items-center space-x-6 flex-1 justify-center relative z-50">
+          {/* <div className="hidden lg:flex items-center space-x-6 flex-1 justify-center relative z-50">
             <div className="relative w-full max-w-lg">
               <Searchbar />
             </div>
-          </div>
+          </div> */}
 
           {/* RIGHT SECTION */}
           <div className="flex flex-col sm:flex-row gap-2 items-center lg:flex-row lg:gap-x-4">
@@ -344,7 +343,7 @@ export const Navbar = () => {
               </Menu>
             </div> */}
 
-            <nav className="items-center gap-x-6 rounded-full hidden lg:block border border-sky-500 hover:border-transparent hover:bg-[var(--hover)] group transition-all">
+            <nav className="items-center gap-x-6 rounded-[var(--rounded)] hidden lg:block border border-sky-500 hover:border-transparent hover:bg-[var(--hover)] group transition-all">
               <button
                 //onClick={() => setLoginOpen(true)}
                 className="text-sm rounded-[var(--rounded)] text-sky-500 px-4 py-2.5 cursor-pointer flex items-center gap-2 transition duration-100 group-hover:text-white"
@@ -401,9 +400,9 @@ export const Navbar = () => {
 
             <Link
               to="/"
-              className="bg-success-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
+              className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
             >
-              <Phone className="size-5" /> Hotline
+              <Phone className="size-5" /> Hotline: 1900 1234
             </Link>
           </div>
         </div>

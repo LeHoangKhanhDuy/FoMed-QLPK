@@ -44,7 +44,7 @@ const MedFacilityDropdownMenu = () => {
 
       <PopoverPanel
         static
-        className={`absolute top-4 left-0 z-10 mt-3 w-34 max-w-md rounded-md bg-white shadow-lg ring-1 ring-gray-100 transition-opacity duration-200 ${
+        className={`absolute top-4 left-0 z-10 mt-3 w-32 max-w-md rounded-md bg-white shadow-lg ring-1 ring-gray-100 transition-opacity duration-200 ${
           isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
