@@ -89,10 +89,16 @@ const Searchbar = () => {
   };
 
   return (
-    <div className="relative max-w-5xl mx-auto w-full">
+    <div
+      className={`relative max-w-5xl mx-auto w-full ${
+        showSuggestions ? "z-[110]" : "z-10"
+      }`}
+    >
       <form
         onSubmit={handleSubmit}
-        className="w-full bg-white rounded-lg shadow-sm ring-1 ring-slate-200 flex items-center px-4 py-4 relative"
+        className={`w-full bg-white rounded-lg shadow-sm ring-1 ring-slate-200 flex items-center px-4 py-4 relative ${
+          showSuggestions ? "z-[105]" : "z-10"
+        }`}
       >
         <Search className="text-gray-500 w-6 h-6 mr-2" />
         {/* Fake placeholder */}

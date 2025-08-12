@@ -96,7 +96,7 @@ export default function HeroHeader() {
         </h1>
 
         {/* Search */}
-        <div className="mt-6 max-w-3xl mx-auto">
+        <div className="mt-6 max-w-3xl mx-auto z-20">
           <Searchbar />
         </div>
 
