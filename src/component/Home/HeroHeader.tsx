@@ -102,22 +102,19 @@ export default function HeroHeader() {
 
         {/* Hospitals strip */}
         <div className="relative w-full overflow-hidden mt-14">
-          <div className="relative mx-auto max-w-7xl overflow-hidden">
-            {/* Fade edges (đổi màu mép theo nền của bạn: white/sky-100/...) */}
+          {/* Fade hai mép bằng CSS mask – không ảnh hưởng hiệu năng */}
+          <div className="mx-auto max-w-7xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
             <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0"
-            />
-
-            {/* Track chạy vô hạn */}
-            <div className="marquee-track flex w-max animate-marquee">
-              {[...logos, ...logos].map((logo, i) => (
+              className="marquee-rail flex w-max gap-8 transform-gpu animate-[marqueeX_30s_linear_infinite]">
+              {[...logos, ...logos, ...logos].map((logo, i) => (
                 <img
                   key={i}
                   src={logo.src}
                   alt={logo.alt}
-                  className="h-16 mx-8 object-contain select-none"
-                  loading="lazy"
+                  className="h-16 mx-2 object-contain select-none pointer-events-none"
+                  loading="eager"
+                  decoding="async"
+                  draggable={false}
                 />
               ))}
             </div>
