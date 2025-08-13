@@ -8,7 +8,7 @@ body {
   font-optical-sizing: auto;
 }
 
-@keyframes marquee {
+@keyframes marqueeX {
   0% {
     transform: translateX(0);
   }
@@ -18,13 +18,18 @@ body {
   }
 }
 
-/* Tối ưu hiệu năng & animation */
-.marquee-track {
+/* Tối ưu mobile/iOS */
+.marquee-rail {
   will-change: transform;
+  transform: translateZ(0);
+  /* GPU */
+  backface-visibility: hidden;
 }
 
-.animate-marquee {
-  animation: marquee 24s linear infinite;
+@media (prefers-reduced-motion: reduce) {
+  .marquee-rail {
+    animation: none !important;
+  }
 }
 
 :root {

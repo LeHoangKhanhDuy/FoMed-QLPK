@@ -185,7 +185,7 @@ const Searchbar = () => {
             ))
           ) : (
             <li className="text-sm text-gray-500 px-4 py-2">
-              Không tìm thấy dịch vụ
+              Không tìm thấy kết quả
             </li>
           )}
           <li

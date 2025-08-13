@@ -36,12 +36,12 @@ const MedFacilityDropdownMobile = () => {
             leaveFrom="opacity-100 translate-y-0"
             leaveTo="opacity-0 -translate-y-2"
           >
-            <DisclosurePanel className="mt-2 space-y-2 ">
+            <DisclosurePanel className="mt-2 space-y-2">
               {helpItems.map((item, index) => (
                 <Link
                   key={index}
                   to={item.to}
-                  className="flex items-center gap-x-3 rounded-lg py-2 pr-3 pl-6 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                  className="flex items-center gap-x-3 rounded-lg py-2 pr-3 pl-7 text-sm font-semibold text-gray-900 hover:bg-gray-50"
                 >
                   <span className="flex ml-7 text-md font-bold">
                     {item.label}

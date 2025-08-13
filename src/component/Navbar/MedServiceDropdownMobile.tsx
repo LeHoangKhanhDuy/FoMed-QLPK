@@ -43,7 +43,7 @@ const MedServiceDropdownMobile = () => {
                 <Link
                   key={index}
                   to={item.to}
-                  className="flex items-center gap-x-3 rounded-lg py-2 pr-3 pl-6 text-md font-semibold text-gray-900 hover:bg-gray-50"
+                  className="flex items-center gap-x-3 rounded-lg py-2 pr-3 pl-7 text-md font-semibold text-gray-900 hover:bg-gray-50"
                 >
                   <span className="flex ml-7 text-md font-bold">
                     {item.label}
