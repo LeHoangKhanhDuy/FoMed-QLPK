@@ -17,6 +17,7 @@ import bvVM from "../../assets/images/bvVinMec.png";
 import bvDHYD from "../../assets/images/bvDHYD.webp";
 import bvMat from "../../assets/images/bvMat.webp";
 import vnvc from "../../assets/images/vnvc.png";
+import { Calendar, Pill, SearchIcon } from "lucide-react";
 
 type Service = {
   label: string;
@@ -81,9 +82,9 @@ const logos: Logo[] = [
 
 export default function HeroHeader() {
   return (
-    <section className="relative overflow-hidden min-h-screen">
+    <section className="relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-sky-100 via-white to-white" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-sky-200 via-white to-white" />
       <div className="pointer-events-none absolute -z-10 inset-0 opacity-40">
         <div className="absolute w-72 h-72 bg-white/50 blur-3xl rounded-full -top-10 left-10" />
         <div className="absolute w-80 h-80 bg-sky-200/40 blur-3xl rounded-full top-20 right-10" />
@@ -91,21 +92,68 @@ export default function HeroHeader() {
 
       <div className="max-w-7xl mx-auto px-4 xl:px-0 py-8 md:py-14">
         {/* Title */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-extrabold text-slate-800 text-center leading-tight">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-extrabold text-sky-500 text-center leading-tight">
           FoMed kết nối Người dân với các Dịch vụ y tế tiên tiến
         </h1>
 
         {/* Search */}
         <div className="mt-6 max-w-3xl mx-auto z-20">
           <Searchbar />
+          {/* Quick actions dưới Search */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            {/* Đặt lịch hẹn */}
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg bg-white/95 px-3.5 py-2
+                 shadow-sm ring-1 ring-slate-200 hover:ring-sky-300 focus:outline-none
+                 transition cursor-pointer"
+              aria-label="Đặt lịch hẹn"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-sky-100">
+                <Calendar className="h-4 w-4 text-sky-600" />
+              </span>
+              <span className="text-sm font-semibold text-gray-900">
+                Đặt lịch khám
+              </span>
+            </button>
+
+            {/* Khám phá 40+ gói xét nghiệm */}
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg bg-white/95 px-3.5 py-2
+                 shadow-sm ring-1 ring-slate-200 hover:ring-sky-300 focus:outline-none
+                 transition cursor-pointer"
+              aria-label="Khám phá gói xét nghiệm"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-100">
+                <SearchIcon className="h-4 w-4 text-emerald-600" />
+              </span>
+              <span className="text-sm font-semibold text-gray-900">
+                Tra cứu kết quả
+              </span>
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg bg-white/95 px-3.5 py-2
+                 shadow-sm ring-1 ring-slate-200 hover:ring-sky-300 focus:outline-none
+                 transition cursor-pointer"
+              aria-label="Khám phá gói xét nghiệm"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-pink-100">
+                <Pill className="h-4 w-4 text-pink-600" />
+              </span>
+              <span className="text-sm font-semibold text-gray-900">
+                Xem đơn thuốc
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Hospitals strip */}
         <div className="relative w-full overflow-hidden mt-14">
           {/* Fade hai mép bằng CSS mask – không ảnh hưởng hiệu năng */}
           <div className="mx-auto max-w-7xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-            <div
-              className="marquee-rail flex w-max gap-8 transform-gpu animate-[marqueeX_30s_linear_infinite]">
+            <div className="marquee-rail flex w-max gap-8 transform-gpu animate-[marqueeX_30s_linear_infinite]">
               {[...logos, ...logos, ...logos].map((logo, i) => (
                 <img
                   key={i}
@@ -128,7 +176,7 @@ export default function HeroHeader() {
             {services.map((s, i) => (
               <button
                 key={i}
-                className="w-full bg-white rounded-2xl p-4 md:p-5 shadow-md ring-1 ring-slate-100
+                className="w-full bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100
                    hover:ring-sky-400 hover:shadow-lg transition-all duration-300 cursor-pointer text-left"
                 aria-label={s.label}
               >
