@@ -1,4 +1,5 @@
 import Footer from "../../component/Footer/Footer";
+import FavoriteClinic from "../../component/Home/FavoriteClinic";
 import HeroHeader from "../../component/Home/HeroHeader";
 import { Navbar } from "../../component/Navbar/Navbar";
 import MainLayout from "../../layouts/MainLayout";
@@ -9,6 +10,7 @@ export const HomePage = () => {
       <MainLayout>
         <Navbar />
         <HeroHeader />
+        <FavoriteClinic/>
         <Footer/>
       </MainLayout>
     </div>

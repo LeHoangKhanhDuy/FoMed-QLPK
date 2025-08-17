@@ -2,8 +2,8 @@ import {
   AlignJustify,
   BadgeInfo,
   ClipboardClock,
-  Phone,
   PhoneIcon,
+  ScanHeart,
   User,
   X,
 } from "lucide-react";
@@ -51,7 +51,7 @@ export const Navbar = () => {
     >
       {/* TẦNG TRÊN NAVBAR */}
       <nav className="relative z-auto">
-        <div className=" flex flex-col lg:flex-row justify-between items-center px-4 md:px-2 xl:px-0 py-2 md:py-2 xl:py-4 text-sm text-slate-700 max-w-7xl mx-auto gap-y-4 w-full overflow-visible">
+        <div className=" flex flex-col lg:flex-row justify-between items-center px-4 md:px-2 xl:px-0 py-2 md:py-2 xl:py-2 text-sm text-slate-700 max-w-7xl mx-auto gap-y-4 w-full overflow-visible">
           <div className="flex items-center justify-between gap-x-0 md:gap-x-6 w-full lg:w-auto">
             <Link to="/" className="flex-shrink-0">
               <div className="flex items-center">
@@ -183,8 +183,8 @@ export const Navbar = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 pr-3.5 pl-3 text-base/7 font-semibold text-gray-900"
                   >
-                    <PhoneIcon className="w-8 h-8 rounded-md bg-orange-400 p-1.5 text-white" />
-                    Hotline: 1900 1234
+                    <ScanHeart className="w-8 h-8 rounded-md bg-orange-400 p-1.5 text-white" />
+                    Tra cứu kết quả
                   </Link>
                 </div>
                 <hr className="mt-2 mb-2" />
@@ -271,7 +271,7 @@ export const Navbar = () => {
               to="/"
               className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
             >
-              <Phone className="size-5" /> Hotline: 1900 1234
+              <ScanHeart className="size-5" /> Tra cứu kết quả
             </Link>
           </div>
         </div>
