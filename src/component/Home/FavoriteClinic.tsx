@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import ClinicCard from "../Clinnic/ClinicCard";
+import ClinicCard from "../Card/ClinicCard";
 import bv1 from "../../assets/images/bv115.webp";
 import bv2 from "../../assets/images/bvChoRay.webp";
 import bv3 from "../../assets/images/bvDHYD.webp";
@@ -120,20 +120,17 @@ export default function FavoriteClinic() {
   useEffect(() => {
     const timer = setInterval(() => {
       scrollByOne("right");
-    }, 2000);
+    }, 3000);
     return () => clearInterval(timer);
   }, []);
 
   return (
     <div className="w-full bg-white ">
       <section className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
-        <header className="flex items-end justify-between gap-3 mb-6">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-sky-500 uppercase">
+        <header className="flex items-center justify-center gap-3 mb-6">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-black uppercase">
             Cơ sở y tế hàng đầu
           </h2>
-          <a className="text-sky-400 hover:text-sky-500 cursor-pointer text-sm md:text-base">
-            Xem tất cả
-          </a>
         </header>
 
         <div className="relative ">
@@ -156,11 +153,13 @@ export default function FavoriteClinic() {
           {/* Carousel giữ khoảng cách giữa các card */}
           <div
             ref={scrollerRef}
-            className="flex overflow-x-auto gap-4 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2">
+            className="flex overflow-x-auto gap-4 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2"
+          >
             {CLINICS.map((c) => (
               <div
                 key={c.id}
-                className="snap-start shrink-0 basis-[calc((100%-16px))] lg:basis-[calc((100%-48px)/4)]">
+                className="snap-start shrink-0 basis-[calc((100%-16px))] lg:basis-[calc((100%-48px)/4)]"
+              >
                 <ClinicCard
                   name={c.name}
                   district={c.district}
@@ -172,6 +171,11 @@ export default function FavoriteClinic() {
               </div>
             ))}
           </div>
+        </div>
+        <div className="mt-4 flex justify-center">
+          <button className="rounded-[var(--rounded)] text-sky-400 hover:text-sky-500 text-md px-2 py-1 cursor-pointer">
+            Xem thêm
+          </button>
         </div>
       </section>
     </div>

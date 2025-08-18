@@ -172,16 +172,16 @@ export default function HeroHeader() {
         {/* Services */}
         <div className="mt-8 md:mt-20">
           {/* ≥ md: grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4  ">
             {services.map((s, i) => (
               <button
                 key={i}
-                className="w-full bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100
+                className="w-full bg-white rounded-xl p-2 md:p-3 shadow-sm ring-1 ring-slate-100
                    hover:ring-sky-400 hover:shadow-lg transition-all duration-300 cursor-pointer text-left"
                 aria-label={s.label}
               >
                 <div className="flex items-center gap-3 md:gap-4">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-sky-50 flex items-center justify-center ring-1 ring-sky-100">
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-sky-100 flex items-center justify-center ring-1 ring-sky-100">
                     <img
                       src={s.icon}
                       alt={s.label}

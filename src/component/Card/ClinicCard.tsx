@@ -54,7 +54,7 @@ const ClinicCard: React.FC<ClinicCardProps> = ({
   return (
     <section
       className={[
-        "w-full bg-white rounded-2xl shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300",
+        "w-full bg-white rounded-xl shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300",
         "border border-gray-100 flex flex-col cursor-pointer",
         className,
       ].join(" ")}
@@ -87,9 +87,9 @@ const ClinicCard: React.FC<ClinicCardProps> = ({
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 text-gray-600">
+        <div className="flex items-center gap-2 text-gray-500">
           <MapPin size={18} />
-          <span className="text-sm leading-5 line-clamp-2">{district}</span>
+          <span className="text-sm font-semibold leading-5 line-clamp-2">{district}</span>
         </div>
 
         <Stars value={rating} />
