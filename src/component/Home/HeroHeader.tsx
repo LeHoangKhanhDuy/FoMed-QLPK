@@ -17,7 +17,7 @@ import bvVM from "../../assets/images/bvVinMec.png";
 import bvDHYD from "../../assets/images/bvDHYD.webp";
 import bvMat from "../../assets/images/bvMat.webp";
 import vnvc from "../../assets/images/vnvc.png";
-import { Calendar, Pill, SearchIcon } from "lucide-react";
+import { BriefcaseMedical, Calendar, HeartPlus } from "lucide-react";
 
 type Service = {
   label: string;
@@ -29,12 +29,12 @@ type Logo = { src: string; alt: string };
 const services: Service[] = [
   { label: "Đặt lịch khám bệnh", icon: prescription },
   { label: "Đặt lịch xét nghiệm", icon: medical },
-  { label: "Kê toa thuốc", icon: medicin },
   { label: "Đặt lịch tiêm chủng", icon: injection },
-  { label: "Bệnh viên", icon: hospital },
-  { label: "Phòng khám tư nhân", icon: clinic },
-  { label: "Bác sĩ chuyên khoa", icon: doctor },
-  { label: "Khám sức khỏe", icon: health },
+  { label: "Xem đơn thuốc", icon: medicin },
+  { label: "Khám Tai - Mũi - Họng", icon: hospital },
+  { label: "Khám sức khỏe tổng quát", icon: clinic },
+  { label: "Tầm soát ung thư", icon: doctor },
+  { label: "Khám sức khỏe sinh sản", icon: health },
 ];
 
 const logos: Logo[] = [
@@ -93,7 +93,7 @@ export default function HeroHeader() {
       <div className="max-w-7xl mx-auto px-4 xl:px-0 py-8 md:py-14">
         {/* Title */}
         <h1 className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-extrabold text-sky-500 text-center leading-tight">
-          FoMed kết nối Người dân với các Dịch vụ y tế tiên tiến
+          FoMed – Sức khỏe hôm nay, niềm tin ngày mai
         </h1>
 
         {/* Search */}
@@ -113,7 +113,7 @@ export default function HeroHeader() {
                 <Calendar className="h-4 w-4 text-sky-600" />
               </span>
               <span className="text-sm font-semibold text-gray-900">
-                Đặt lịch khám
+                Khám phá dịch vụ
               </span>
             </button>
 
@@ -126,10 +126,10 @@ export default function HeroHeader() {
               aria-label="Khám phá gói xét nghiệm"
             >
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-100">
-                <SearchIcon className="h-4 w-4 text-emerald-600" />
+                <BriefcaseMedical className="h-4 w-4 text-emerald-600" />
               </span>
               <span className="text-sm font-semibold text-gray-900">
-                Tra cứu kết quả
+                Bác sĩ hàng đầu
               </span>
             </button>
             <button
@@ -140,10 +140,10 @@ export default function HeroHeader() {
               aria-label="Khám phá gói xét nghiệm"
             >
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-pink-100">
-                <Pill className="h-4 w-4 text-pink-600" />
+                <HeartPlus className="h-4 w-4 text-pink-600" />
               </span>
               <span className="text-sm font-semibold text-gray-900">
-                Xem đơn thuốc
+                Hỏi đáp sức khỏe
               </span>
             </button>
           </div>
@@ -151,7 +151,6 @@ export default function HeroHeader() {
 
         {/* Hospitals strip */}
         <div className="relative w-full overflow-hidden mt-14">
-          {/* Fade hai mép bằng CSS mask – không ảnh hưởng hiệu năng */}
           <div className="mx-auto max-w-7xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
             <div className="marquee-rail flex w-max gap-8 transform-gpu animate-[marqueeX_30s_linear_infinite]">
               {[...logos, ...logos, ...logos].map((logo, i) => (
