@@ -1,93 +1,73 @@
 import { useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import ClinicCard from "../Card/ClinicCard";
-import bv1 from "../../assets/images/bv115.webp";
-import bv2 from "../../assets/images/bvChoRay.webp";
-import bv3 from "../../assets/images/bvDHYD.webp";
-import bv4 from "../../assets/images/bvMat.webp";
-import bv5 from "../../assets/images/bvNhiDong1.webp";
-import bv6 from "../../assets/images/bvQuanY175.webp";
-import bv7 from "../../assets/images/bvTamAnh.png";
-import bv8 from "../../assets/images/bvTuDu.png";
-import bv9 from "../../assets/images/bvVinMec.png";
+import DoctorCard from "../Card/DoctorCard";
+import bs1 from "../../assets/images/bacsi1.jpg";
 
 // Demo data
 const CLINICS = [
   {
     id: 1,
-    name: "Trung Tâm Nội Soi Tiêu Hoá Doctor Check",
-    district: "Quận 10, TP.HCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
+    experience: "30 năm kinh nghiệm",
+    specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
-    logo: bv1,
+    visitCount: 100,
+    logo: bs1,
     verified: true,
   },
   {
     id: 2,
-    name: "Bệnh viện Ung bướu Hưng Việt",
-    district: "Hai Bà Trưng, Hà Nội",
+    name: "TS.BS NGUYỄN KIM CHUNG",
+    experience: "30 năm kinh nghiệm",
+    specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
-    logo: bv2,
+    visitCount: 100,
+    logo: bs1,
     verified: true,
   },
   {
     id: 3,
-    name: "Phòng khám MedFit",
-    district: "Quận 10, TP.HCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
+    experience: "30 năm kinh nghiệm",
+    specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
-    logo: bv3,
-    verified: false,
+    visitCount: 100,
+    logo: bs1,
+    verified: true,
   },
   {
     id: 4,
-    name: "Bệnh viện Đại học Y Dược TP.HCM",
-    district: "Quận 5, TP.HCM",
-    rating: 4.7,
-    logo: bv4,
+    name: "TS.BS NGUYỄN KIM CHUNG",
+    experience: "30 năm kinh nghiệm",
+    specialty: "Ngoại Thần Kinh - Cột Sống",
+    rating: 5,
+    visitCount: 100,
+    logo: bs1,
     verified: true,
   },
   {
     id: 5,
-    name: "Bệnh viện Đa khoa Quốc tế City",
-    district: "Bình Tân, TP.HCM",
-    rating: 4.8,
-    logo: bv5,
+    name: "TS.BS NGUYỄN KIM CHUNG",
+    experience: "30 năm kinh nghiệm",
+    specialty: "Ngoại Thần Kinh - Cột Sống",
+    rating: 5,
+    visitCount: 100,
+    logo: bs1,
     verified: true,
   },
   {
     id: 6,
-    name: "Bệnh viện Quân Y 175",
-    district: "Bình Thạnh, TP.HCM",
-    rating: 4.8,
-    logo: bv6,
-    verified: false,
-  },
-  {
-    id: 7,
-    name: "Bệnh viện Tâm Anh",
-    district: "Quận 9, TP.HCM",
-    rating: 4.8,
-    logo: bv7,
+    name: "TS.BS NGUYỄN KIM CHUNG",
+    experience: "30 năm kinh nghiệm",
+    specialty: "Ngoại Thần Kinh - Cột Sống",
+    rating: 5,
+    visitCount: 100,
+    logo: bs1,
     verified: true,
-  },
-  {
-    id: 8,
-    name: "Bệnh viện Từ Dũ",
-    district: "Quận 1, TP.HCM",
-    rating: 4.8,
-    logo: bv8,
-    verified: false,
-  },
-  {
-    id: 9,
-    name: "Bệnh viện Vinmec",
-    district: "Bình Thạnh, TP.HCM",
-    rating: 4.8,
-    logo: bv9,
-    verified: false,
   },
 ];
 
-export default function FavoriteClinic() {
+export default function DoctorClinic() {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scrollByOne = (dir: "left" | "right") => {
@@ -129,7 +109,7 @@ export default function FavoriteClinic() {
       <section className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
         <header className="flex items-center justify-center gap-3 mb-6">
           <h2 className="text-2xl md:text-3xl font-extrabold text-black uppercase">
-            Cơ sở y tế hàng đầu
+            Bác sĩ hàng đầu
           </h2>
         </header>
 
@@ -160,10 +140,12 @@ export default function FavoriteClinic() {
                 key={c.id}
                 className="snap-start shrink-0 basis-[calc((100%-16px))] lg:basis-[calc((100%-48px)/4)]"
               >
-                <ClinicCard
+                <DoctorCard
                   name={c.name}
-                  district={c.district}
+                  experience={c.experience}
+                  specialty={c.specialty}
                   rating={c.rating}
+                  visitCount={c.visitCount}
                   logo={c.logo}
                   verified={c.verified}
                   onBook={() => console.log("Đặt khám:", c.name)}

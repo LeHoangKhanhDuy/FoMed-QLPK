@@ -35,7 +35,7 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
       </div>
       <div className="p-4 flex flex-col gap-4">
         <div>
-          <h3 className="text-lg font-semibold leading-6">
+          <h3 className="text-xl font-semibold leading-6">
             <span className="block min-h-[48px]">
               <span className="line-clamp-2">
                 <span className="inline">{services}</span>
@@ -44,7 +44,7 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
           </h3>
         </div>
 
-        <div className="text-sm text-gray-500 font-semibold ">
+        <div className="text-md text-gray-500 font-semibold ">
           <span className="block min-h-[40px]">
             <span className="line-clamp-2">
               <span className="inline">

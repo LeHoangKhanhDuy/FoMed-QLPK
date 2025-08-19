@@ -9,14 +9,14 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import MedFacilityDropdownMenu from "./MedFacilityDropdown";
+import SpecialtyDropdownMenu from "./SpecialtyDropdown";
 import MedServiceDropdownMenu from "./MedServiceDropdown";
 import HelpMedDropdownMenu from "./HelpMedDropdown";
 import mail from "../../assets/images/gmaillogo.png";
 import fb from "../../assets/images/facebookLogo.png";
 import zalo from "../../assets/images/logoZalo.png";
 import logo from "../../assets/images/FoCode Logo.png";
-import MedFacilityDropdownMobile from "./MedFacilityDropdownMobile";
+import SpecialtyDropdownMobile from "./SpecialtyDropdownMobile";
 import MedServiceDropdownMobile from "./MedServiceDropdownMobile";
 import HelpMedDropdownMobile from "./HelpMedDropdownMobile";
 
@@ -160,7 +160,7 @@ export const Navbar = () => {
                 {/* CATEGORY (FE tĩnh) */}
                 <div className="mb-3">
                   <div className="flex flex-col gap-2 text-sm font-semibold">
-                    <MedFacilityDropdownMobile />
+                    <SpecialtyDropdownMobile />
                     <MedServiceDropdownMobile />
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export const Navbar = () => {
       <nav className="hidden lg:block border-t">
         <div className="flex flex-col lg:flex-row items-center justify-between px-4 md:px-2 xl:px-0 py-4 gap-4 max-w-7xl mx-auto">
           <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold">
-            <MedFacilityDropdownMenu />
+            <SpecialtyDropdownMenu />
             <MedServiceDropdownMenu />
             <HelpMedDropdownMenu />
             <Link

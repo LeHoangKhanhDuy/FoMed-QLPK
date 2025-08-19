@@ -1,50 +1,28 @@
-import { MapPin, Star } from "lucide-react";
+import { Hospital, Stethoscope} from "lucide-react";
 import React from "react";
 import check from "../../assets/images/checklist.png";
+import star from "../../assets/images/star.png";
+import visit from "../../assets/images/user.png";
 
 export interface ClinicCardProps {
   name: string;
-  district: string;
-  rating: number; // 0 - 5 (có thể số thập phân)
-  logo: string; // url ảnh
+  specialty: string;
+  experience: string;
+  rating: number;
+  visitCount: number;
+  logo: string;
   verified?: boolean;
-  actionLabel?: string; // nút CTA
+  actionLabel?: string;
   className?: string;
-  onBook?: () => void; // click nút đặt khám
-}
-
-function Stars({ value }: { value: number }) {
-  const full = Math.floor(value);
-  const half = value % 1 >= 0.5;
-  const total = 5;
-  return (
-    <div
-      className="flex items-center gap-1"
-      aria-label={`Đánh giá ${value.toFixed(1)} / 5`}
-    >
-      {Array.from({ length: total }).map((_, i) => (
-        <Star
-          key={i}
-          size={18}
-          className={[
-            "shrink-0 text-yellow-500",
-            i < full
-              ? "fill-current"
-              : half && i === full
-              ? "fill-current opacity-60"
-              : "opacity-30",
-          ].join(" ")}
-        />
-      ))}
-      <span className="ml-1 text-sm text-yellow-500">{value.toFixed(1)}</span>
-    </div>
-  );
+  onBook?: () => void;
 }
 
 const ClinicCard: React.FC<ClinicCardProps> = ({
   name,
-  district,
+  specialty,
+  experience,
   rating,
+  visitCount,
   logo,
   verified,
   onBook,
@@ -60,11 +38,11 @@ const ClinicCard: React.FC<ClinicCardProps> = ({
       ].join(" ")}
     >
       <div className="p-4 flex flex-col gap-4">
-        <div className="h-38 rounded-xl overflow-hidden flex items-center justify-center">
+        <div className="overflow-hidden flex items-center justify-center">
           <img
             src={logo}
             alt={name}
-            className="max-h-30 max-w-[100%] object-contain"
+            className="max-h-30 max-w-[100%] rounded-full object-contain"
           />
         </div>
 
@@ -72,7 +50,7 @@ const ClinicCard: React.FC<ClinicCardProps> = ({
           <h3 className="text-base font-semibold leading-6">
             <span className="block min-h-[48px]">
               <span className="line-clamp-2">
-                <span className="inline">
+                <span className="inline uppercase">
                   {name}
                   {verified && (
                     <img
@@ -86,13 +64,28 @@ const ClinicCard: React.FC<ClinicCardProps> = ({
             </span>
           </h3>
         </div>
-
         <div className="flex items-center gap-2 text-gray-500">
-          <MapPin size={18} />
-          <span className="text-sm font-semibold leading-5 line-clamp-2">{district}</span>
+          <Hospital size={20} className="text-blue-500" />
+          <span className="text-sm font-semibold">{experience}</span>
+        </div>
+        <div className="flex items-center gap-2 text-gray-500">
+          <Stethoscope size={20} className="text-blue-500" />
+          <span className="text-sm font-semibold leading-5 line-clamp-2">
+            {specialty}
+          </span>
         </div>
 
-        <Stars value={rating} />
+        <div className="flex justify-between items-center mt-2 font-bold text-md">
+          <div className="flex items-center gap-2 text-yellow-400">
+            <img src={star} alt="logo star" className="w-5 h-5" />
+            <span>{rating}</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-sky-500">
+            <img src={visit} alt="logo visit" className="w-5 h-5" />
+            <span>{visitCount}</span>
+          </div>
+        </div>
       </div>
 
       <div className="p-4 pt-0 mt-auto">
