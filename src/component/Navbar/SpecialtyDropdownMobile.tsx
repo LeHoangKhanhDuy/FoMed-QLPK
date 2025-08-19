@@ -9,11 +9,17 @@ import { ChevronDownIcon, Hospital } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const helpItems = [
-  { to: "/", label: "Bệnh viện" },
-  { to: "/", label: "Phòng khám" },
-  { to: "/", label: "Xét nghiệm" },
-  { to: "/", label: "Tiêm chủng" },
+  { to: "/", label: "Khoa Khám bệnh" },
+  { to: "/", label: "Khoa Phụ sản" },
+  { to: "/", label: "Khoa Nhi" },
+  { to: "/", label: "Khoa Ngoại tổng hợp" },
+  { to: "/", label: "Khoa Nội tổng hợp" },
+  { to: "/", label: "Khoa Chấn thương chỉnh hình" },
+  { to: "/", label: "Khoa Tai - Mũi - Họng" },
+  { to: "/", label: "Khoa Xét nghiệm" },
+  { to: "/", label: "Khoa Mắt" },
 ];
+
 const MedFacilityDropdownMobile = () => {
   return (
     <div>
@@ -21,7 +27,7 @@ const MedFacilityDropdownMobile = () => {
         <Disclosure as="div" className="-mx-3">
           <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pr-3.5 pl-3 text-base/7 font-semibold text-gray-900 hover:bg-gray-50">
             <Hospital className="w-8 h-8 mr-3 rounded-md bg-blue-400 p-1.5 text-white" />
-            Cơ sở y tế
+            Chuyên khoa
             <ChevronDownIcon
               aria-hidden="true"
               className="size-5 flex-none ml-auto group-data-[open]:rotate-180 transition-transform duration-300"

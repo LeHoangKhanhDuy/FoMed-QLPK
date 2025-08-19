@@ -1,5 +1,5 @@
 import Footer from "../../component/Footer/Footer";
-import FavoriteClinic from "../../component/Home/FavoriteClinic";
+import DoctorClinic from "../../component/Home/DoctorClinic";
 import HeroHeader from "../../component/Home/HeroHeader";
 import ServiceClinic from "../../component/Home/ServiceClinic";
 import { Navbar } from "../../component/Navbar/Navbar";
@@ -11,9 +11,9 @@ export const HomePage = () => {
       <MainLayout>
         <Navbar />
         <HeroHeader />
-        <FavoriteClinic/>
-        <ServiceClinic/>
-        <Footer/>
+        <ServiceClinic />
+        <DoctorClinic />
+        <Footer />
       </MainLayout>
     </div>
   );

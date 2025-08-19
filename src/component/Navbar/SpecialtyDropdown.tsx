@@ -3,10 +3,15 @@ import { ChevronDownIcon, Hospital } from "lucide-react";
 import { useState, useRef } from "react";
 
 const helpItems = [
-  { to: "/", label: "Bệnh viện" },
-  { to: "/", label: "Phòng khám" },
-  { to: "/", label: "Xét nghiệm" },
-  { to: "/", label: "Tiêm chủng" },
+  { to: "/", label: "Khoa Khám bệnh" },
+  { to: "/", label: "Khoa Phụ sản" },
+  { to: "/", label: "Khoa Nhi" },
+  { to: "/", label: "Khoa Ngoại tổng hợp" },
+  { to: "/", label: "Khoa Nội tổng hợp" },
+  { to: "/", label: "Khoa Chấn thương chỉnh hình" },
+  { to: "/", label: "Khoa Tai - Mũi - Họng" },
+  { to: "/", label: "Khoa Xét nghiệm" },
+  { to: "/", label: "Khoa Mắt" },
 ];
 
 const MedFacilityDropdownMenu = () => {
@@ -35,7 +40,7 @@ const MedFacilityDropdownMenu = () => {
     >
       <PopoverButton className="group flex items-center gap-x-1 text-sm hover:text-[var(--hover)] text-black cursor-pointer">
         <Hospital className="w-5 h-5" />
-        Cơ sở y tế
+        Chuyên khoa
         <ChevronDownIcon
           className="size-5 flex-none transform transition-transform duration-300 group-hover:rotate-180"
           aria-hidden="true"
@@ -44,7 +49,7 @@ const MedFacilityDropdownMenu = () => {
 
       <PopoverPanel
         static
-        className={`absolute top-4 left-0 z-10 mt-3 w-32 max-w-md rounded-md bg-white shadow-lg ring-1 ring-gray-100 transition-opacity duration-200 ${
+        className={`absolute top-4 left-0 z-10 mt-3 w-60 max-w-md rounded-md bg-white shadow-lg ring-1 ring-gray-100 transition-opacity duration-200 ${
           isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
@@ -54,7 +59,7 @@ const MedFacilityDropdownMenu = () => {
               target="_blank"
               key={index}
               href={item.to}
-              className="group flex w-full items-center gap-2 font-semibold px-4 py-2 hover:bg-gray-100 hover:text-[var(--hover)] transition-colors duration-300"
+              className="group flex w-full items-center gap-2 font-semibold px-4 py-3 hover:bg-gray-100 hover:text-[var(--hover)] transition-colors duration-300"
             >
               {item.label}
             </a>

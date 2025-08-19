@@ -7,7 +7,7 @@ import khamtq from "../../assets/images/khamtongquat.jpg";
 const CLINICS = [
   {
     id: 1,
-    name: "Bệnh viện Đại học Y Dược TPHCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám mắt tổng quát",
     price: "300.000 đ",
     logo: khamtq,
@@ -15,7 +15,7 @@ const CLINICS = [
   },
   {
     id: 2,
-    name: "Bệnh viện Ung bướu Hưng Việt",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám sức khỏe tổng quát",
     price: "300.000  đ",
     logo: khamtq,
@@ -23,7 +23,7 @@ const CLINICS = [
   },
   {
     id: 3,
-    name: "Bệnh viện Đại học Y Dược TPHCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám mắt tổng quát",
     price: "300.000 đ",
     logo: khamtq,
@@ -31,7 +31,7 @@ const CLINICS = [
   },
   {
     id: 4,
-    name: "Bệnh viện Ung bướu Hưng Việt",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám sức khỏe tổng quát",
     price: "300.000  đ",
     logo: khamtq,
@@ -39,7 +39,7 @@ const CLINICS = [
   },
   {
     id: 5,
-    name: "Bệnh viện Đại học Y Dược TPHCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám mắt tổng quát",
     price: "300.000 đ",
     logo: khamtq,
@@ -47,7 +47,7 @@ const CLINICS = [
   },
   {
     id: 6,
-    name: "Bệnh viện Ung bướu Hưng Việt",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám sức khỏe tổng quát",
     price: "300.000  đ",
     logo: khamtq,
@@ -55,7 +55,7 @@ const CLINICS = [
   },
   {
     id: 7,
-    name: "Bệnh viện Đại học Y Dược TPHCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám mắt tổng quát",
     price: "300.000 đ",
     logo: khamtq,
@@ -63,7 +63,7 @@ const CLINICS = [
   },
   {
     id: 8,
-    name: "Bệnh viện Ung bướu Hưng Việt",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám sức khỏe tổng quát",
     price: "300.000  đ",
     logo: khamtq,
@@ -71,7 +71,7 @@ const CLINICS = [
   },
   {
     id: 9,
-    name: "Bệnh viện Đại học Y Dược TPHCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám mắt tổng quát",
     price: "300.000 đ",
     logo: khamtq,
@@ -79,7 +79,7 @@ const CLINICS = [
   },
   {
     id: 10,
-    name: "Bệnh viện Ung bướu Hưng Việt",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "GGói khám sức khoẻ tổng quát tại nhà",
     price: "300.000  đ",
     logo: khamtq,
@@ -87,7 +87,7 @@ const CLINICS = [
   },
   {
     id: 11,
-    name: "Bệnh viện Đại học Y Dược TPHCM",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám mắt tổng quát",
     price: "300.000 đ",
     logo: khamtq,
@@ -95,7 +95,7 @@ const CLINICS = [
   },
   {
     id: 12,
-    name: "Bệnh viện Ung bướu Hưng Việt",
+    name: "TS.BS NGUYỄN KIM CHUNG",
     services: "Gói khám sức khoẻ tổng quát tại nhà",
     price: "300.000  đ",
     logo: khamtq,
@@ -184,7 +184,7 @@ export default function ServiceClinic() {
                 : "text-sky-500 bg-white ring-1 ring-sky-200 hover:bg-sky-50",
             ].join(" ")}
           >
-            Gói khám bệnh
+            Khám bệnh
           </button>
 
           <button
