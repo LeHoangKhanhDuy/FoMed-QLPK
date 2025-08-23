@@ -48,7 +48,7 @@ export const Navbar = () => {
   return (
     <>
       <header
-        className={`bg-white lg:sticky lg:top-0 lg:left-0 lg:w-full transition-transform duration-300 ${
+        className={`bg-white shadow-xs lg:sticky lg:top-0 lg:left-0 lg:w-full transition-transform duration-300 ${
           visible ? "lg:translate-y-0" : "lg:-translate-y-full"
         } ${isMobileMenuOpen ? "z-[9999]" : "lg:z-[80]"}`}
       >
