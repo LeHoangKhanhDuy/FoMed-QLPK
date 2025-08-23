@@ -14,7 +14,6 @@ import bv175 from "../../assets/images/bvQuanY175.webp";
 import bvTA from "../../assets/images/bvTamAnh.png";
 import bvTD from "../../assets/images/bvTuDu.png";
 import bvVM from "../../assets/images/bvVinMec.png";
-import bvDHYD from "../../assets/images/bvDHYD.webp";
 import bvMat from "../../assets/images/bvMat.webp";
 import vnvc from "../../assets/images/vnvc.png";
 import { BriefcaseMedical, Calendar, HeartPlus } from "lucide-react";
@@ -67,10 +66,6 @@ const logos: Logo[] = [
     alt: "Bệnh viện Quốc tế VinMec",
   },
   {
-    src: bvDHYD,
-    alt: "Bệnh viện Đại học Y Dược",
-  },
-  {
     src: bvMat,
     alt: "Bệnh Viện Mắt",
   },
@@ -84,7 +79,7 @@ export default function HeroHeader() {
   return (
     <section className="relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-sky-200 via-white to-white" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-sky-200" />
       <div className="pointer-events-none absolute -z-10 inset-0 opacity-40">
         <div className="absolute w-72 h-72 bg-white/50 blur-3xl rounded-full -top-10 left-10" />
         <div className="absolute w-80 h-80 bg-sky-200/40 blur-3xl rounded-full top-20 right-10" />

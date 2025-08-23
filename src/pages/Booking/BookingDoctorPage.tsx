@@ -18,7 +18,7 @@ export const BookingDoctorPage = () => {
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 200000,
       oldPrice: 220000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
     {
@@ -26,7 +26,7 @@ export const BookingDoctorPage = () => {
       name: "TS.BS Trần Thị B",
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 200000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
     {
@@ -34,7 +34,7 @@ export const BookingDoctorPage = () => {
       name: "TS.BS Lê Văn C",
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 350000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
     {
@@ -42,7 +42,7 @@ export const BookingDoctorPage = () => {
       name: "TS.BS Lê Văn C",
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 350000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
     {
@@ -50,7 +50,7 @@ export const BookingDoctorPage = () => {
       name: "TS.BS Lê Văn C",
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 350000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
     {
@@ -58,7 +58,7 @@ export const BookingDoctorPage = () => {
       name: "TS.BS Lê Văn C",
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 350000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
     {
@@ -66,7 +66,7 @@ export const BookingDoctorPage = () => {
       name: "TS.BS Lê Văn C",
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 350000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
     {
@@ -74,7 +74,7 @@ export const BookingDoctorPage = () => {
       name: "TS.BS Lê Văn C",
       note: "Lịch khám: Thứ 2, 3, 4, 5, 6, 7, CN",
       price: 350000,
-      experience: "30 năm kinh nghiệm",
+      experience: "30 năm",
       verified: true,
     },
   ];

@@ -201,41 +201,61 @@ export default function SignUpForm({
                     <ul className="mt-2 text-sm space-y-1">
                       <li className="flex items-center gap-2 text-gray-700">
                         {passwordValidation.minLength ? (
-                          <span className="text-green-500"><Check className="w-5 h-5"/></span>
+                          <span className="text-green-500">
+                            <Check className="w-5 h-5" />
+                          </span>
                         ) : (
-                          <span className="text-red-500"><X className="w-5 h-5"/></span>
+                          <span className="text-red-500">
+                            <X className="w-5 h-5" />
+                          </span>
                         )}
                         Tối thiểu 8 ký tự
                       </li>
                       <li className="flex items-center gap-2 text-gray-700">
                         {passwordValidation.lower ? (
-                          <span className="text-green-500"><Check className="w-5 h-5"/></span>
+                          <span className="text-green-500">
+                            <Check className="w-5 h-5" />
+                          </span>
                         ) : (
-                          <span className="text-red-500"><X className="w-5 h-5"/></span>
+                          <span className="text-red-500">
+                            <X className="w-5 h-5" />
+                          </span>
                         )}
                         Chữ thường
                       </li>
                       <li className="flex items-center gap-2 text-gray-700">
                         {passwordValidation.upper ? (
-                          <span className="text-green-500"><Check className="w-5 h-5"/></span>
+                          <span className="text-green-500">
+                            <Check className="w-5 h-5" />
+                          </span>
                         ) : (
-                          <span className="text-red-500"><X className="w-5 h-5"/></span>
+                          <span className="text-red-500">
+                            <X className="w-5 h-5" />
+                          </span>
                         )}
                         Chữ in hoa
                       </li>
                       <li className="flex items-center gap-2 text-gray-700">
                         {passwordValidation.number ? (
-                          <span className="text-green-500"><Check className="w-5 h-5"/></span>
+                          <span className="text-green-500">
+                            <Check className="w-5 h-5" />
+                          </span>
                         ) : (
-                          <span className="text-red-500"><X className="w-5 h-5"/></span>
+                          <span className="text-red-500">
+                            <X className="w-5 h-5" />
+                          </span>
                         )}
                         Chứa số
                       </li>
                       <li className="flex items-center gap-2 text-gray-700">
                         {passwordValidation.special ? (
-                          <span className="text-green-500"><Check className="w-5 h-5"/></span>
+                          <span className="text-green-500">
+                            <Check className="w-5 h-5" />
+                          </span>
                         ) : (
-                          <span className="text-red-500"><X className="w-5 h-5"/></span>
+                          <span className="text-red-500">
+                            <X className="w-5 h-5" />
+                          </span>
                         )}
                         Ký tự đặc biệt (~!@#$%^&*)
                       </li>
@@ -304,7 +324,7 @@ export default function SignUpForm({
                       <a
                         target="_blank"
                         href="/help/dieu-khoan-dich-vu"
-                        className="text-[var(--primary)] font-semibold hover:underline cursor-pointer"
+                        className="text-sky-500 font-semibold hover:underline cursor-pointer"
                       >
                         Điều khoản dịch vụ
                       </a>{" "}
@@ -312,7 +332,7 @@ export default function SignUpForm({
                       <a
                         target="_blank"
                         href="/help/chinh-sach-bao-mat"
-                        className="text-[var(--primary)] font-semibold hover:underline cursor-pointer"
+                        className="text-sky-500 font-semibold hover:underline cursor-pointer"
                       >
                         Chính sách bảo mật
                       </a>{" "}
@@ -344,7 +364,7 @@ export default function SignUpForm({
                 Bạn đã có tài khoản
                 <span
                   onClick={onSwitchMode}
-                  className="text-blue-600 font-semibold hover:underline ml-1 cursor-pointer"
+                  className="text-sky-500 font-semibold hover:underline ml-1 cursor-pointer"
                 >
                   Đăng nhập
                 </span>

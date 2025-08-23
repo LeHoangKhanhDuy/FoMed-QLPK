@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import check from "../../assets/images/checklist.png";
 import { useMemo, useState, useEffect } from "react";
 import { ServiceInfoCard } from "./ServiceInfoCard";
+import hospital from "../../assets/images/hospital.png";
+import schedule from "../../assets/images/schedule.png";
+import { Home } from "lucide-react";
 
 type ServiceInfo = {
   name: string;
@@ -77,13 +80,17 @@ export default function ServiceBookingDoctor({
     <div className="max-w-7xl mx-auto px-3 sm:px-4 xl:px-0 py-4 sm:py-6 min-h-[70vh] lg:min-h-[60vh]">
       {/* breadcrumb */}
       <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-600 font-bold mb-6">
-        <span className="hover:underline cursor-pointer">Trang chủ</span>
+        <Link to="/" className="hover:underline cursor-pointer">
+          <Home size={18}/>
+        </Link>
         <span>›</span>
         <span className="hover:underline cursor-pointer">
           {service.facilityName}
         </span>
         <span>›</span>
-        <span className="text-sky-400">Chọn bác sĩ</span>
+        <Link to="/booking-doctor" className="text-sky-400">
+          Chọn bác sĩ
+        </Link>
       </nav>
 
       <div className="grid md:grid-cols-3 gap-4 sm:gap-5 items-start">
@@ -113,12 +120,12 @@ export default function ServiceBookingDoctor({
           <div className="md:hidden space-y-3">
             {currentDoctors.map((d, idx) => (
               <div key={d.id} className="bg-white border-b p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-xs text-slate-500">
+                <div className="flex items-center justify-between gap-3  mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="text-md text-slate-500">
                       #{startIndex + idx + 1}
                     </div>
-                    <p className="flex items-center gap-2 mt-0.5 font-semibold text-slate-900">
+                    <p className="flex items-center gap-2 mt-0.5 text-lg font-semibold text-slate-900">
                       {d.name}
                       {d.verified && (
                         <img
@@ -129,16 +136,18 @@ export default function ServiceBookingDoctor({
                       )}
                     </p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-extrabold leading-5">
-                      {d.experience}
-                    </div>
-
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={hospital} alt="" className="w-5 h-5" />
+                  <div className="text-sm leading-5">
+                    Kinh nghiệm: {d.experience}
                   </div>
                 </div>
-                {d.note && (
-                  <p className="mt-2 text-xs text-slate-600">{d.note}</p>
-                )}
+                <div className="flex items-center gap-2">
+                  <img src={schedule} alt="" className="w-5 h-5" />
+                  {d.note && <p className="text-sm leading-5">{d.note}</p>}
+                </div>
+
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <button
                     onClick={() => onDetail?.(d.id)}
@@ -197,9 +206,7 @@ export default function ServiceBookingDoctor({
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold">
-                        {d.experience}
-                      </div>
+                      <div className="font-semibold">{d.experience}</div>
                     </td>
                     <td className="py-3 text-center">
                       <div className="flex flex-col md:flex-row gap-2 justify-center">

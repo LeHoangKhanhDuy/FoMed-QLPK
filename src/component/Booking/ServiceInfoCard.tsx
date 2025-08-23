@@ -25,15 +25,13 @@ export const ServiceInfoCard = ({ service }: Props) => {
             {/* Tên dịch vụ */}
             <div>
               <p className="text-xs sm:text-sm text-slate-500">Tên dịch vụ</p>
-              <p className="font-semibold">{service.name}</p>
+              <p className="text-lg font-semibold">{service.name}</p>
             </div>
 
             {/* Chuyên khoa */}
             <div>
               <p className="text-xs sm:text-sm text-slate-500">Chuyên khoa</p>
-              <p className="font-semibold">
-                {service.specialty}
-              </p>
+              <p className="text-lg font-semibold">{service.specialty}</p>
             </div>
 
             {/* Giá dịch vụ */}
@@ -42,7 +40,7 @@ export const ServiceInfoCard = ({ service }: Props) => {
               <div className="flex items-center gap-2">
                 {service.discountPrice ? (
                   <>
-                    <p className="text-red-500 font-bold">
+                    <p className="text-red-500 font-bold text-lg">
                       {service.discountPrice.toLocaleString("vi-VN")} đ
                     </p>
                     <p className="text-slate-400 line-through text-sm">
