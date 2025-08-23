@@ -9,9 +9,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <>
       {children}
-      {/* <Toaster position="top-right" reverseOrder={false} />
-      <Footer />
-      <ScrollToTop /> */}
     </>
   );
 };

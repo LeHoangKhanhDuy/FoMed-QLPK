@@ -1,0 +1,64 @@
+type ServiceInfo = {
+  name: string;
+  price: number; // Giá gốc
+  discountPrice?: number; // Giá sau giảm (nếu có)
+  specialty: string;
+  verified?: boolean;
+};
+
+interface Props {
+  service: ServiceInfo;
+}
+
+export const ServiceInfoCard = ({ service }: Props) => {
+  return (
+    <section className="md:col-span-1 md:self-start">
+      <div className="sticky top-20 md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <header className="px-4 py-3 bg-sky-400 border-b border-slate-200">
+            <h2 className="font-semibold text-center text-white text-base sm:text-lg">
+              Thông tin dịch vụ
+            </h2>
+          </header>
+
+          <div className="p-4 space-y-4 text-sm sm:text-base">
+            {/* Tên dịch vụ */}
+            <div>
+              <p className="text-xs sm:text-sm text-slate-500">Tên dịch vụ</p>
+              <p className="font-semibold">{service.name}</p>
+            </div>
+
+            {/* Chuyên khoa */}
+            <div>
+              <p className="text-xs sm:text-sm text-slate-500">Chuyên khoa</p>
+              <p className="font-semibold">
+                {service.specialty}
+              </p>
+            </div>
+
+            {/* Giá dịch vụ */}
+            <div>
+              <p className="text-xs sm:text-sm text-slate-500">Giá dịch vụ</p>
+              <div className="flex items-center gap-2">
+                {service.discountPrice ? (
+                  <>
+                    <p className="text-red-500 font-bold">
+                      {service.discountPrice.toLocaleString("vi-VN")} đ
+                    </p>
+                    <p className="text-slate-400 line-through text-sm">
+                      {service.price.toLocaleString("vi-VN")} đ
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-slate-700 font-semibold">
+                    {service.price.toLocaleString("vi-VN")} đ
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
