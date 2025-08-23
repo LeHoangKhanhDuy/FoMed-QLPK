@@ -17,6 +17,7 @@ import bvVM from "../../assets/images/bvVinMec.png";
 import bvMat from "../../assets/images/bvMat.webp";
 import vnvc from "../../assets/images/vnvc.png";
 import { BriefcaseMedical, Calendar, HeartPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type Service = {
   label: string;
@@ -76,6 +77,7 @@ const logos: Logo[] = [
 ];
 
 export default function HeroHeader() {
+  const navigate = useNavigate();
   return (
     <section className="relative overflow-hidden">
       {/* Background */}
@@ -132,6 +134,7 @@ export default function HeroHeader() {
               className="inline-flex items-center gap-2 rounded-lg bg-white/95 px-3.5 py-2
                  shadow-sm ring-1 ring-slate-200 hover:ring-sky-300 focus:outline-none
                  transition cursor-pointer"
+              onClick={() => navigate("/booking-doctor")}
               aria-label="Khám phá gói xét nghiệm"
             >
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-pink-100">
@@ -172,6 +175,7 @@ export default function HeroHeader() {
                 key={i}
                 className="w-full bg-white rounded-xl p-2 md:p-3 shadow-sm ring-1 ring-slate-100
                    hover:ring-sky-400 hover:shadow-lg transition-all duration-300 cursor-pointer text-left"
+                onClick={() => navigate("/booking-doctor")}
                 aria-label={s.label}
               >
                 <div className="flex items-center gap-3 md:gap-4">

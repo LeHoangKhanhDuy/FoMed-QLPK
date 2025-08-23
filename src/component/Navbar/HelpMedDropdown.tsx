@@ -55,7 +55,7 @@ const HelpMedDropdownMenu = () => {
               target="_blank"
               key={index}
               href={item.to}
-              className="group flex w-full items-center gap-2 font-semibold px-4 py-2 hover:bg-gray-100 hover:text-[var(--hover)] transition-colors duration-300"
+              className="group flex w-full items-center gap-2 font-semibold px-4 py-3 hover:bg-gray-100 hover:text-[var(--hover)] transition-colors duration-300"
             >
               {item.label}
             </a>

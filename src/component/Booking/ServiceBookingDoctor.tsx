@@ -81,7 +81,7 @@ export default function ServiceBookingDoctor({
       {/* breadcrumb */}
       <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-600 font-bold mb-6">
         <Link to="/" className="hover:underline cursor-pointer">
-          <Home size={18}/>
+          <Home size={18} />
         </Link>
         <span>›</span>
         <span className="hover:underline cursor-pointer">
@@ -156,7 +156,7 @@ export default function ServiceBookingDoctor({
                     Chi tiết
                   </button>
                   <Link
-                    to="/booking-date"
+                    to="/booking-doctor/booking-date"
                     onClick={() => onBook?.(d.id)}
                     className="px-3 py-2 rounded-lg bg-primary-linear text-center text-white text-sm hover:bg-sky-700 shadow-sm cursor-pointer"
                   >
@@ -217,7 +217,7 @@ export default function ServiceBookingDoctor({
                           Chi tiết
                         </button>
                         <Link
-                          to="/booking-date"
+                          to="/booking-doctor/booking-date"
                           onClick={() => onBook?.(d.id)}
                           className="px-3 py-2 rounded-lg bg-primary-linear text-white hover:bg-sky-700 shadow-sm text-sm cursor-pointer"
                         >
