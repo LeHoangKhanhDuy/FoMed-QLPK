@@ -246,7 +246,6 @@ export default function ServiceClinic() {
                   services={c.services}
                   price={c.price}
                   logo={c.logo}
-                  verified={c.verified}
                 />
               </div>
             ))}
