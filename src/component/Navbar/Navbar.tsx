@@ -173,7 +173,7 @@ export const Navbar = () => {
                   {/* Hành động tài khoản (FE tĩnh) */}
                   <div className="flex flex-col gap-2">
                     <Link
-                      to="/user/deposit"
+                      to="/booking-package"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 pr-3.5 pl-3 text-base/7 font-semibold text-gray-900"
                     >
@@ -270,7 +270,7 @@ export const Navbar = () => {
             </div>
             <div className="flex flex-wrap justify-center gap-2">
               <Link
-                to="/"
+                to="/booking-package"
                 className="bg-primary-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
               >
                 <ClipboardClock className="size-5" /> Đặt lịch
