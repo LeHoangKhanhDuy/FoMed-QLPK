@@ -90,6 +90,9 @@ export default function BookingPackages({
         <h2 className="text-3xl md:text-5xl font-bold text-sky-400 text-center">
           Đặt gói khám bệnh
         </h2>
+        <p className="text-lg text-center text-slate-600 mt-4">
+          Các gói khám bệnh hiện có tại FoMed
+        </p>
 
         {/* Grid 4 cột trên desktop */}
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
