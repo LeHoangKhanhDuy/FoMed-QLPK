@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { ServiceInfoCard } from "./ServiceInfoCard";
+import { Link } from "react-router-dom";
 
 export type ServiceInfo = {
   name: string;
@@ -30,15 +31,7 @@ interface Props {
 }
 
 // Thứ Hai -> Chủ nhật
-const WEEKDAYS = [
-  "T2",
-  "T3",
-  "T4",
-  "T5",
-  "T6",
-  "T7",
-  "CN",
-] as const;
+const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const;
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -226,13 +219,17 @@ export default function BookingDate({
     <div className="max-w-7xl mx-auto px-3 sm:px-4 xl:px-0 py-4 sm:py-6 min-h-[70vh] lg:min-h-[60vh]">
       {/* breadcrumb */}
       <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-600 font-bold mb-6">
-        <span className="hover:underline cursor-pointer">Trang chủ</span>
+        <Link to="/" className="hover:underline cursor-pointer">
+          <Home size={18} />
+        </Link>
         <span>›</span>
         <span className="hover:underline cursor-pointer">
           {service.facilityName}
         </span>
         <span>›</span>
-        <span className="text-slate-700">Chọn bác sĩ</span>
+        <Link to="/booking-doctor" className="text-slate-700">
+          Chọn bác sĩ
+        </Link>
         <span>›</span>
         <span className="text-sky-400">Chọn ngày khám</span>
       </nav>
@@ -254,10 +251,10 @@ export default function BookingDate({
           <header className="relative px-4 py-3 bg-sky-400 text-white">
             <button
               type="button"
-              onClick={() => window.history.back()} 
+              onClick={() => window.history.back()}
               className="absolute left-2 top-1/2 -translate-y-1/2 p-2 cursor-pointer"
             >
-              <ChevronLeft/>
+              <ChevronLeft />
             </button>
             <h2 className="font-semibold text-center text-base sm:text-lg">
               Chọn ngày khám

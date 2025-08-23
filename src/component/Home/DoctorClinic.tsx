@@ -105,7 +105,7 @@ export default function DoctorClinic() {
   }, []);
 
   return (
-    <div className="w-full bg-white ">
+    <div className="w-full">
       <section className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
         <header className="flex items-center justify-center gap-3 mb-6">
           <h2 className="text-2xl md:text-3xl font-extrabold text-black uppercase">

@@ -1,14 +1,4 @@
-// import visa from "@/assets/visa-mastercard-logo.webp";
-// import momo from "@/assets/MoMo_Logo.webp";
-// import banking from "@/assets/internetBanking.png";
-// import vnpay from "@/assets/vnpay.webp";
-// import vcb from "@/assets/VCBLogo.webp";
-// import tcb from "@/assets/Techcombank_logo.webp";
-// import agb from "@/assets/Argibank_logo.webp";
-// import mb from "@/assets/Logo_MB_new.webp";
-// import acb from "@/assets/Asia_Commercial_Bank_logo.webp";
-// import vpb from "@/assets/VPBank_logo.webp";
-// import bidv from "@/assets/Logo_BIDV.webp";
+
 import logo from "../../assets/images/FoCode Logo.png";
 import mail from "../../assets/images/gmaillogo.png";
 import fb from "../../assets/images/facebookLogo.png";
@@ -91,7 +81,7 @@ const aboutus = [
 
 const Footer = () => {
   return (
-    <footer className="bg-white text-black py-10">
+    <footer className="bg-gray-50 text-black py-10">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-8 px-4 md:px-2 xl:px-0">
         {/* LOGO & MẠNG XÃ HỘI */}
         <div>

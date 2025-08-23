@@ -151,7 +151,7 @@ export default function LoginForm({
                   <div className="text-sm">
                     <a
                       href="/forgot-password"
-                      className="text-blue-600 hover:underline font-semibold"
+                      className="text-sky-500 hover:underline font-semibold"
                     >
                       Quên mật khẩu?
                     </a>
@@ -176,7 +176,7 @@ export default function LoginForm({
                 Bạn không có tài khoản?
                 <span
                   onClick={onSwitchMode}
-                  className="text-blue-600 font-semibold hover:underline ml-1 cursor-pointer"
+                  className="text-sky-500 font-semibold hover:underline ml-1 cursor-pointer"
                 >
                   Đăng ký
                 </span>
