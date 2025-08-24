@@ -5,6 +5,7 @@ import { SignupPage } from "./pages/Auth/SingupPage";
 import { BookingDatePage } from "./pages/Booking/BookingDatePage";
 import { BookingDoctorPage } from "./pages/Booking/BookingDoctorPage";
 import { BookingPackagePage } from "./pages/Booking/BookingPackagePage";
+import { PatientPortalPage } from "./pages/Patient/PatientPortalPage";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path="/booking-doctor" element={<BookingDoctorPage />} />
       <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
       <Route path="/booking-package" element={<BookingPackagePage />} />
+      <Route path="/patient-portal-login" element={<PatientPortalPage />} />
     </Routes>
   );
 }
