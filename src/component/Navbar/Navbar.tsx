@@ -182,7 +182,7 @@ export const Navbar = () => {
                     </Link>
 
                     <Link
-                      to="/user/add-product"
+                      to="/patient-portal-login"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 pr-3.5 pl-3 text-base/7 font-semibold text-gray-900"
                     >
@@ -276,7 +276,7 @@ export const Navbar = () => {
                 <ClipboardClock className="size-5" /> Đặt lịch
               </Link>
               <Link
-                to="/"
+                to="/patient-portal-login"
                 className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
               >
                 <ScanHeart className="size-5" /> Tra cứu kết quả
