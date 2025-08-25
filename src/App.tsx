@@ -7,6 +7,7 @@ import { BookingDoctorPage } from "./pages/Booking/BookingDoctorPage";
 import { BookingPackagePage } from "./pages/Booking/BookingPackagePage";
 import { PatientPortalPage } from "./pages/Patient/PatientPortalPage";
 import UserProfilePage from "./pages/Account/UserProfilePage";
+import UserMedicalHistoryPage from "./pages/Account/UserMedicalHistoryPage";
 
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
 
       {/* USER PROFILE */}
       <Route path="/user/profile" element={<UserProfilePage />} />
+      <Route path="/user/medical-history" element={<UserMedicalHistoryPage />} />
     </Routes>
   );
 }
