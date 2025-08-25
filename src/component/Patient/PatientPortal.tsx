@@ -58,13 +58,13 @@ export default function PatientPortalLogin({
   const isValidOtp = /^\d{6}$/.test(otp);
 
   // --- Record code validation ---
-  // Format: PREFIX-XXXX-DDMMYYYY
-  const recordPattern = /^[A-Z]{2,}-[A-Z0-9]{4}-\d{8}$/;
+  // Format: PREFIX-XXXXXX
+  const recordPattern = /^[A-Z]{2,}-[A-Z0-9]{6}/;
   let recordError = "";
   if (recordCode.length > 0) {
     if (!recordPattern.test(recordCode)) {
       recordError =
-        "Mã hồ sơ không hợp lệ. Ví dụ: HSFM-ABCD-24082025 (PREFIX-XXXX-DDMMYYYY)";
+        "Mã hồ sơ không hợp lệ. Ví dụ: HSFM-ABCDEF (PREFIX-XXXXXX)";
     }
   }
   const isValidRecord = recordPattern.test(recordCode);
@@ -128,7 +128,7 @@ export default function PatientPortalLogin({
               }`}
               onClick={() => setTab("phone")}
             >
-              Tra cứu bằng số điện thoại
+              Số điện thoại
             </button>
             <button
               type="button"
@@ -139,7 +139,7 @@ export default function PatientPortalLogin({
               }`}
               onClick={() => setTab("record")}
             >
-              Tra cứu bằng mã hồ sơ
+              Mã hồ sơ
             </button>
           </div>
 
@@ -148,7 +148,7 @@ export default function PatientPortalLogin({
             {tab === "phone" ? (
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-slate-700">
-                  Số điện thoại
+                  Tra cứu số điện thoại
                 </label>
 
                 <input
@@ -227,11 +227,11 @@ export default function PatientPortalLogin({
             ) : (
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-slate-700">
-                  Mã hồ sơ
+                  Tra cứu mã hồ sơ
                 </label>
 
                 <input
-                  placeholder="Ví dụ: HSFM-ABCD-24082025"
+                  placeholder="Ví dụ: HSFM-ABCDEF"
                   className={`w-full rounded-[var(--rounded)] border bg-white px-4 py-2 text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 ${
                     recordError
                       ? "border-red-400 focus:ring-red-400"
