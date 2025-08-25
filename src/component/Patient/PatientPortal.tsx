@@ -128,7 +128,7 @@ export default function PatientPortalLogin({
               }`}
               onClick={() => setTab("phone")}
             >
-              Tra cứu bằng số điện thoại
+              Số điện thoại
             </button>
             <button
               type="button"
@@ -139,7 +139,7 @@ export default function PatientPortalLogin({
               }`}
               onClick={() => setTab("record")}
             >
-              Tra cứu bằng mã hồ sơ
+              Mã hồ sơ
             </button>
           </div>
 
@@ -148,7 +148,7 @@ export default function PatientPortalLogin({
             {tab === "phone" ? (
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-slate-700">
-                  Số điện thoại
+                  Tra cứu số điện thoại
                 </label>
 
                 <input
@@ -227,7 +227,7 @@ export default function PatientPortalLogin({
             ) : (
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-slate-700">
-                  Mã hồ sơ
+                  Tra cứu mã hồ sơ
                 </label>
 
                 <input
