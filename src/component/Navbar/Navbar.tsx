@@ -227,6 +227,13 @@ export const Navbar = () => {
                     <User className="w-7 h-7 rounded-md text-primary" />
                     Đăng nhập
                   </button>
+                  <Link
+                    to="/user/profile"
+                    className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50"
+                  >
+                    <User className="w-7 h-7 rounded-md text-primary" />
+                    user
+                  </Link>
                 </div>
               </div>
             </div>
