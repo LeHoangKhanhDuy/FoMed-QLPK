@@ -21,7 +21,7 @@ const menuItems = [
   },
   {
     to: "/user/prescriptions",
-    label: "Đơn thuốc",
+    label: "Danh sách đơn thuốc",
     icon: <Pill className="w-5 h-5" />,
   },
   {
@@ -72,7 +72,7 @@ const Sidebar = ({
       {/* Nút toggle - nằm bên trái - cùng hàng với icon đầu tiên */}
       <button
         onClick={toggleCollapse}
-        className="hidden md:inline-flex mb-4 self-start p-2 rounded hover:bg-blue-100 transition-all cursor-pointer"
+        className="hidden md:inline-flex mb-4 self-start p-2 rounded hover:bg-sky-100 transition-all cursor-pointer"
       >
         {isCollapsed ? (
           <Menu className="w-5 h-5" />
@@ -89,8 +89,8 @@ const Sidebar = ({
                 <li
                   className={`mb-2 p-2 flex items-center gap-2 font-semibold cursor-pointer transition-all duration-300 ease-in-out rounded-md ${
                     isActive
-                      ? "bg-blue-100 text-[var(--primary)] border border-[var(--primary)]"
-                      : "text-black hover:bg-blue-100"
+                      ? "bg-sky-100 text-sky-500 border border-sky-500"
+                      : "text-black hover:bg-sky-100"
                   }`}
                 >
                   {icon}

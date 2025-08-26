@@ -2,64 +2,67 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SkeletonRow from "../../Utils/SkeletonRow";
 
-interface MedicalRecord {
+interface PrescriptionItem {
   id: number;
-  record_code: string;
-  date: string;
+  rx_code: string; // Mã đơn thuốc
+  issued_at: string; // Ngày kê (hiển thị)
   doctor: string;
-  service: string;
-  status: string;
+  diagnosis: string; // Chẩn đoán
 }
 
-const fakeData: MedicalRecord[] = [
+// ====== Fake data: chỉ những đơn của bệnh nhân đã khám xong ======
+const fakePrescriptions: PrescriptionItem[] = [
   {
-    id: 1,
-    record_code: "HSFM-ABCDEF",
-    date: "2025-08-01 09:00",
-    doctor: "BS. Nguyễn Văn A",
-    service: "Khám tổng quát",
-    status: "completed",
+    id: 101,
+    rx_code: "DTFM-5534",
+    issued_at: "2025/08/01 10:30",
+    doctor: "TS.BS Nguyễn Văn A",
+    diagnosis: "Cảm cúm",
   },
   {
-    id: 2,
-    record_code: "HSFM-ABEREF",
-    date: "2025-08-05 14:30",
-    doctor: "BS. Trần Thị B",
-    service: "Xét nghiệm máu",
-    status: "pending",
+    id: 102,
+    rx_code: "DTFM-1234",
+    issued_at: "2025/08/03 15:05",
+    doctor: "TS.BS Nguyễn Văn A",
+    diagnosis: "Viêm họng cấp",
   },
   {
-    id: 3,
-    record_code: "HSFM-UOCDEF",
-    date: "2025-08-10 10:15",
-    doctor: "BS. Lê Văn C",
-    service: "Khám tim mạch",
-    status: "canceled",
+    id: 103,
+    rx_code: "DTFM-4334",
+    issued_at: "2025/08/06 09:20",
+    doctor: "TS.BS Nguyễn Văn A",
+    diagnosis: "Tăng huyết áp độ 1",
   },
   {
-    id: 4,
-    record_code: "HSFM-LKHDEF",
-    date: "2025-08-10 13:15",
-    doctor: "BS. Lê Văn D",
-    service: "Khám tim mạch",
-    status: "booked",
+    id: 104,
+    rx_code: "DTFM-1287",
+    issued_at: "2025/07/01 08:10",
+    doctor: "TS.BS Nguyễn Văn A",
+    diagnosis: "Dị ứng thời tiết",
+  },
+  {
+    id: 105,
+    rx_code: "DTFM-1353",
+    issued_at: "2025-08-10 11:45",
+    doctor: "TS.BS Nguyễn Văn A",
+    diagnosis: "Viêm da cơ địa",
   },
 ];
 
-export const MedicalHistory = () => {
+export default function PrescriptionList() {
   const [loading] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
   // --- Search
-  const filteredHistory = (fakeData ?? []).filter((record) => {
-    const searchString = Object.values(record).join(" ").toLowerCase();
+  const filtered = (fakePrescriptions ?? []).filter((rx) => {
+    const searchString = Object.values(rx).join(" ").toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
   // --- Pagination
   const pageSize = 10;
-  const totalPages = Math.ceil(filteredHistory.length / pageSize); // 0, 1, 2, ...
+  const totalPages = Math.ceil(filtered.length / pageSize); // 0, 1, 2, ...
 
   // nếu đang ở trang > totalPages thì kéo về trang hợp lệ
   useEffect(() => {
@@ -69,10 +72,10 @@ export const MedicalHistory = () => {
   }, [totalPages, currentPage]);
 
   const startIdx = (currentPage - 1) * pageSize;
-  const pagedRecords = filteredHistory.slice(startIdx, startIdx + pageSize);
+  const pagedItems = filtered.slice(startIdx, startIdx + pageSize);
 
   const handlePageChange = (pageNumber: number) => {
-    if (totalPages < 2) return; // không cho đổi trang khi < 2 trang
+    if (totalPages < 2) return; // < 2 trang thì không đổi
     if (pageNumber < 1 || pageNumber > totalPages) return;
     setCurrentPage(pageNumber);
   };
@@ -108,70 +111,32 @@ export const MedicalHistory = () => {
   const pageItems =
     totalPages >= 2 ? buildPageItems(currentPage, totalPages, 7) : [];
 
-  // --- Status badge
-  const StatusBadge = ({ status }: { status: string }) => {
-    let style = "";
-    let text = "";
-
-    switch (status) {
-      case "pending":
-        style = "bg-yellow-100 text-yellow-600";
-        text = "Đang chờ";
-        break;
-      case "completed":
-        style = "bg-green-100 text-green-600";
-        text = "Đã khám";
-        break;
-      case "canceled":
-        style = "bg-red-100 text-red-600";
-        text = "Đã hủy";
-        break;
-      case "booked":
-        style = "bg-blue-100 text-blue-600";
-        text = "Đã đặt";
-        break;
-      default:
-        style = "bg-gray-200 text-gray-600";
-        text = "Không xác định";
-        break;
-    }
-
-    return (
-      <span
-        className={`inline-block rounded-full px-3 py-1 text-sm font-semibold whitespace-nowrap ${style}`}
-      >
-        {text}
-      </span>
-    );
-  };
-
   return (
     <div className="md:flex-row min-h-screen p-4 mx-auto max-w-screen-2xl px-0 lg:px-0 gap-6">
       <h2 className="text-2xl font-bold text-center md:text-left">
-        Lịch sử khám bệnh
+        Danh sách đơn thuốc
       </h2>
 
       {/* Ô tìm kiếm */}
       <div className="mt-4">
         <input
           type="text"
-          placeholder="Tìm hồ sơ..."
+          placeholder="Tìm đơn thuốc..."
           className="border border-gray-300 rounded-sm px-4 py-2 w-full sm:w-1/3"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Bảng lịch sử khám */}
+      {/* Bảng đơn thuốc */}
       <div className="max-w-full mt-6 overflow-x-auto rounded-sm border border-gray-200">
         <table className="min-w-[900px] w-full text-left text-sm text-gray-700">
           <thead className="bg-sky-500 text-white">
             <tr>
-              <th className="px-6 py-3">Mã hồ sơ</th>
-              <th className="px-6 py-3">Ngày khám</th>
+              <th className="px-6 py-3">Mã đơn</th>
+              <th className="px-6 py-3">Ngày kê</th>
               <th className="px-6 py-3">Bác sĩ</th>
-              <th className="px-6 py-3">Dịch vụ</th>
-              <th className="px-6 py-3">Trạng thái</th>
+              <th className="px-6 py-3">Chẩn đoán</th>
               <th className="px-6 py-3">Chức năng</th>
             </tr>
           </thead>
@@ -179,24 +144,21 @@ export const MedicalHistory = () => {
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <SkeletonRow key={i} columns={6} />
+                  <SkeletonRow key={i} columns={7} />
                 ))}
               </>
-            ) : pagedRecords.length > 0 ? (
-              pagedRecords.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50 cursor-pointer">
-                  <td className="px-5 py-4 font-medium text-gray-800">
-                    {record.record_code}
+            ) : pagedItems.length > 0 ? (
+              pagedItems.map((rx) => (
+                <tr key={rx.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium text-gray-800">
+                    {rx.rx_code}
                   </td>
-                  <td className="px-5 py-4">{record.date}</td>
-                  <td className="px-5 py-4">{record.doctor}</td>
-                  <td className="px-5 py-4">{record.service}</td>
-                  <td className="px-5 py-4">
-                    <StatusBadge status={record.status} />
-                  </td>
-                  <td className="px-3 py-3 text-center whitespace-nowrap">
+                  <td className="px-6 py-4">{rx.issued_at}</td>
+                  <td className="px-6 py-4">{rx.doctor}</td>
+                  <td className="px-6 py-4">{rx.diagnosis}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <Link
-                      to="/user/medical-history/detail"
+                      to="/user/prescriptions/details"
                       className="bg-primary-linear text-white text-sm px-3 py-2 rounded-[var(--rounded)] cursor-pointer"
                     >
                       Chi tiết
@@ -206,8 +168,8 @@ export const MedicalHistory = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-5 py-4 text-center text-gray-600">
-                  Không có hồ sơ nào
+                <td colSpan={7} className="px-6 py-4 text-center text-gray-600">
+                  Không có đơn thuốc nào
                 </td>
               </tr>
             )}
@@ -254,4 +216,4 @@ export const MedicalHistory = () => {
       )}
     </div>
   );
-};
+}
