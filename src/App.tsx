@@ -8,6 +8,9 @@ import { BookingPackagePage } from "./pages/Booking/BookingPackagePage";
 import { PatientPortalPage } from "./pages/Patient/PatientPortalPage";
 import UserProfilePage from "./pages/Account/UserProfilePage";
 import UserMedicalHistoryPage from "./pages/Account/UserMedicalHistoryPage";
+import UserPrescriptionPage from "./pages/Account/UserPrescriptionPage";
+import UserPrescriptionDetailPage from "./pages/Account/UserPrescriptionDetailPage";
+import UserMedicalHistoryDetailPage from "./pages/Account/UserMedicalHistoryDetailPage";
 
 
 function App() {
@@ -33,6 +36,9 @@ function App() {
       {/* USER PROFILE */}
       <Route path="/user/profile" element={<UserProfilePage />} />
       <Route path="/user/medical-history" element={<UserMedicalHistoryPage />} />
+      <Route path="/user/medical-history/detail" element={<UserMedicalHistoryDetailPage />} />
+      <Route path="/user/prescriptions" element={<UserPrescriptionPage />} />
+      <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />} />
     </Routes>
   );
 }
