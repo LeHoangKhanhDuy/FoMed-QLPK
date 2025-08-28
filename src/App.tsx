@@ -11,6 +11,8 @@ import UserMedicalHistoryPage from "./pages/Account/UserMedicalHistoryPage";
 import UserPrescriptionPage from "./pages/Account/UserPrescriptionPage";
 import UserPrescriptionDetailPage from "./pages/Account/UserPrescriptionDetailPage";
 import UserMedicalHistoryDetailPage from "./pages/Account/UserMedicalHistoryDetailPage";
+import UserLabResultListPage from "./pages/Account/UserLabResultsListPage";
+import UserLabResultDetailPage from "./pages/Account/UserLabResultDetailPage";
 
 
 function App() {
@@ -39,6 +41,8 @@ function App() {
       <Route path="/user/medical-history/detail" element={<UserMedicalHistoryDetailPage />} />
       <Route path="/user/prescriptions" element={<UserPrescriptionPage />} />
       <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />} />
+      <Route path="/user/lab-result" element={<UserLabResultListPage />} />
+      <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />} />
     </Routes>
   );
 }
