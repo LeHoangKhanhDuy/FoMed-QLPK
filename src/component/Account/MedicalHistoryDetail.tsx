@@ -287,20 +287,23 @@ export default function MedicalHistoryDetails() {
   return (
     <div className="md:flex-row min-h-screen p-4 mx-auto max-w-screen-2xl px-0 lg:px-0 gap-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-2xl font-bold text-center md:text-left">
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 items-center gap-3">
+        {/* Tiêu đề: chiếm 2 cột trên md+ */}
+        <h2 className="md:col-span-2 text-2xl font-bold text-center md:text-left m-0 min-w-0">
           Chi tiết hồ sơ khám bệnh
         </h2>
-        <div className="flex gap-2">
+
+        {/* Nút: mobile ở giữa, md+ đẩy sang phải */}
+        <div className="flex flex-wrap gap-2 justify-center md:justify-end">
           <button
             onClick={printPage}
-            className="rounded-[var(--rounded)] border px-3 py-2 text-sm bg-white hover:border-sky-400 cursor-pointer"
+            className="h-9 rounded-[var(--rounded)] border px-3 text-sm bg-white hover:border-sky-400 cursor-pointer"
           >
             In đơn
           </button>
           <button
             onClick={downloadPdf}
-            className="rounded-[var(--rounded)] bg-primary-linear text-white px-3 py-2 text-sm cursor-pointer"
+            className="h-9 rounded-[var(--rounded)] bg-primary-linear text-white px-4 text-sm cursor-pointer"
           >
             Tải PDF
           </button>

@@ -25,7 +25,7 @@ const menuItems = [
     icon: <Pill className="w-5 h-5" />,
   },
   {
-    to: "/user/result",
+    to: "/user/lab-result",
     label: "Kết quả xét nghiệm",
     icon: <TestTubeDiagonal className="w-5 h-5" />,
   },
