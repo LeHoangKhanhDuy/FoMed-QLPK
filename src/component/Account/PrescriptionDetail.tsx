@@ -69,9 +69,10 @@ export default function PrescriptionDetails({
 }) {
   return (
     <div className="md:flex-row min-h-screen p-4 mx-auto max-w-screen-2xl px-0 lg:px-0 gap-6">
-      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-4">
-        <h2 className="text-2xl font-bold">Chi tiết đơn thuốc</h2>
-      </div>
+      <h2 className="flex flex-wrap items-center justify-center sm:justify-start text-2xl font-bold gap-2 mb-4">
+        <span className="">Đơn thuốc</span>
+        <span className="text-sky-500">#{rx.rx_code}</span>
+      </h2>
 
       {/* ========= BẢNG KÊ THUỐC ========= */}
       <div className="rounded-xl border border-slate-200 bg-white overflow-x-auto">
