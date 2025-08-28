@@ -289,8 +289,11 @@ export default function MedicalHistoryDetails() {
       {/* Header */}
       <div className="mb-4 grid grid-cols-1 md:grid-cols-3 items-center gap-3">
         {/* Tiêu đề: chiếm 2 cột trên md+ */}
-        <h2 className="md:col-span-2 text-2xl font-bold text-center md:text-left m-0 min-w-0">
-          Chi tiết hồ sơ khám bệnh
+        <h2 className="md:col-span-2 flex items-baseline gap-2 text-xl sm:text-2xl font-bold text-center md:text-left m-0 min-w-0">
+          <span className="truncate">Hồ sơ khám bệnh</span>
+          <span className="text-sky-500 ">
+            #{rx.rx_code}
+          </span>
         </h2>
 
         {/* Nút: mobile ở giữa, md+ đẩy sang phải */}

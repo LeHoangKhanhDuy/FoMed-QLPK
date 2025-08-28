@@ -13,6 +13,8 @@ import UserPrescriptionDetailPage from "./pages/Account/UserPrescriptionDetailPa
 import UserMedicalHistoryDetailPage from "./pages/Account/UserMedicalHistoryDetailPage";
 import UserLabResultListPage from "./pages/Account/UserLabResultsListPage";
 import UserLabResultDetailPage from "./pages/Account/UserLabResultDetailPage";
+import { DoctorProfilePage } from "./pages/Doctor/DoctorProfilePage";
+
 
 
 function App() {
@@ -43,6 +45,9 @@ function App() {
       <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />} />
       <Route path="/user/lab-result" element={<UserLabResultListPage />} />
       <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />} />
+
+      {/* DOCTOR */}
+      <Route path="/user/doctor" element={<DoctorProfilePage />} />
     </Routes>
   );
 }
