@@ -6,7 +6,7 @@ import star from "../../assets/images/star.png";
 import visit from "../../assets/images/user.png";
 import { Link } from "react-router-dom";
 
-export interface ClinicCardProps {
+export interface DoctorCardProps {
   name: string;
   specialty: string;
   experience: string;
@@ -23,7 +23,7 @@ export interface ClinicCardProps {
   onBook?: () => void; // handler khi bấm Đặt lịch
 }
 
-const ClinicCard: React.FC<ClinicCardProps> = ({
+const DoctorCard: React.FC<DoctorCardProps> = ({
   name,
   specialty,
   experience,
@@ -125,4 +125,4 @@ const ClinicCard: React.FC<ClinicCardProps> = ({
   );
 };
 
-export default ClinicCard;
+export default DoctorCard;

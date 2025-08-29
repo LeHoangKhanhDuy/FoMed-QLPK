@@ -278,13 +278,13 @@ export const Navbar = () => {
             <div className="flex flex-wrap justify-center gap-2">
               <Link
                 to="/booking-package"
-                className="bg-primary-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
+                className="bg-primary-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition duration-200 active:scale-95 cursor-pointer"
               >
                 <ClipboardClock className="size-5" /> Đặt lịch
               </Link>
               <Link
                 to="/patient-portal-login"
-                className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition cursor-pointer"
+                className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition duration-200 active:scale-95 cursor-pointer"
               >
                 <ScanHeart className="size-5" /> Tra cứu kết quả
               </Link>
