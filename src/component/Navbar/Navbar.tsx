@@ -2,6 +2,7 @@ import {
   AlignJustify,
   BadgeInfo,
   ClipboardClock,
+  Hospital,
   PhoneIcon,
   ScanHeart,
   User,
@@ -9,14 +10,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import SpecialtyDropdownMenu from "./SpecialtyDropdown";
 import MedServiceDropdownMenu from "./MedServiceDropdown";
 import HelpMedDropdownMenu from "./HelpMedDropdown";
 import mail from "../../assets/images/gmaillogo.png";
 import fb from "../../assets/images/facebookLogo.png";
 import zalo from "../../assets/images/logoZalo.png";
 import logo from "../../assets/images/FoCode Logo.png";
-import SpecialtyDropdownMobile from "./SpecialtyDropdownMobile";
 import MedServiceDropdownMobile from "./MedServiceDropdownMobile";
 import HelpMedDropdownMobile from "./HelpMedDropdownMobile";
 import AuthModal from "../Auth/AuthModalProps";
@@ -163,8 +162,16 @@ export const Navbar = () => {
                   {/* CATEGORY (FE tĩnh) */}
                   <div className="mb-3">
                     <div className="flex flex-col gap-2 text-sm font-semibold">
-                      <SpecialtyDropdownMobile />
+                      {/* <SpecialtyDropdownMobile /> */}
                       <MedServiceDropdownMobile />
+                      <Link
+                        to="/user/specialties"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 pr-3.5 pl-3 text-base/7 font-semibold text-gray-900"
+                      >
+                        <Hospital className="w-8 h-8 rounded-md bg-primary-linear p-1.5 text-white" />
+                        Chuyên khoa
+                      </Link>
                     </div>
                   </div>
 
@@ -257,8 +264,15 @@ export const Navbar = () => {
         <nav className="hidden lg:block border-t">
           <div className="flex flex-col lg:flex-row items-center justify-between px-4 md:px-2 xl:px-0 py-4 gap-4 max-w-7xl mx-auto">
             <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold">
-              <SpecialtyDropdownMenu />
+              {/* <SpecialtyDropdownMenu /> */}
               <MedServiceDropdownMenu />
+              <Link
+                to="/user/specialties"
+                className="hover:text-[var(--hover)] flex justify-center items-center gap-1"
+              >
+                <Hospital className="w-5 h-5" />
+                Chuyên khoa
+              </Link>
               <HelpMedDropdownMenu />
               <Link
                 to="/new-code"
@@ -267,6 +281,7 @@ export const Navbar = () => {
                 <BadgeInfo className="w-5 h-5" />
                 Về FoMed
               </Link>
+
               <Link
                 to="/free-code"
                 className="hover:text-[var(--hover)] flex justify-center items-center gap-1"

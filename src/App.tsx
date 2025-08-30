@@ -14,6 +14,7 @@ import UserMedicalHistoryDetailPage from "./pages/Account/UserMedicalHistoryDeta
 import UserLabResultListPage from "./pages/Account/UserLabResultsListPage";
 import UserLabResultDetailPage from "./pages/Account/UserLabResultDetailPage";
 import { DoctorProfilePage } from "./pages/Doctor/DoctorProfilePage";
+import { SpecialtyPage } from "./pages/Specialty/SpecialtiesPage";
 
 
 
@@ -28,10 +29,7 @@ function App() {
 
       {/* BOOKING */}
       <Route path="/booking-doctor" element={<BookingDoctorPage />} />
-      <Route
-        path="/booking-doctor/booking-date"
-        element={<BookingDatePage />}
-      />
+      <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
       <Route path="/booking-package" element={<BookingPackagePage />} />
 
       {/* PATIENT PORTAL */}
@@ -48,6 +46,9 @@ function App() {
 
       {/* DOCTOR */}
       <Route path="/user/doctor" element={<DoctorProfilePage />} />
+
+      {/* SPECIALTIES */}
+      <Route path="/user/specialties" element={<SpecialtyPage />} />
     </Routes>
   );
 }
