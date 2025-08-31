@@ -32,8 +32,8 @@ const services: Service[] = [
   { label: "Đặt lịch tiêm chủng", icon: injection },
   { label: "Xem đơn thuốc", icon: medicin },
   { label: "Khám Tai - Mũi - Họng", icon: hospital },
-  { label: "Khám sức khỏe tổng quát", icon: clinic },
-  { label: "Tầm soát ung thư", icon: doctor },
+  { label: "Đặt theo gói khám bệnh", icon: clinic },
+  { label: "Đặt lịch theo bác sĩ", icon: doctor },
   { label: "Khám sức khỏe sinh sản", icon: health },
 ];
 

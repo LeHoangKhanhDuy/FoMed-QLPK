@@ -11,7 +11,7 @@ export const DoctorProfilePage = () => {
     avatar:
       "https://medpro.vn/_next/image?url=https%3A%2F%2Fcdn.medpro.vn%2Fprod-partner%2F20af7575-df2e-4224-b40d-36055b476ba6-do-dang-khoa.webp&w=384&q=75",
     specialty: "Nội Tổng Quát",
-    experience: "20 năm kinh nghiệm",
+    experience: "+20 năm kinh nghiệm",
     schedule_type: "T2, T3, T4, T5, T6, T7",
     visitCount: 100,
     star: 4.5,

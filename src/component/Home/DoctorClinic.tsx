@@ -8,7 +8,7 @@ const CLINICS = [
   {
     id: 1,
     name: "TS.BS NGUYỄN KIM CHUNG",
-    experience: "30 năm kinh nghiệm",
+    experience: "+20 năm kinh nghiệm",
     specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
     visitCount: 100,
@@ -18,7 +18,7 @@ const CLINICS = [
   {
     id: 2,
     name: "TS.BS NGUYỄN KIM CHUNG",
-    experience: "30 năm kinh nghiệm",
+    experience: "+20 năm kinh nghiệm",
     specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
     visitCount: 100,
@@ -28,7 +28,7 @@ const CLINICS = [
   {
     id: 3,
     name: "TS.BS NGUYỄN KIM CHUNG",
-    experience: "30 năm kinh nghiệm",
+    experience: "+20 năm kinh nghiệm",
     specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
     visitCount: 100,
@@ -38,7 +38,7 @@ const CLINICS = [
   {
     id: 4,
     name: "TS.BS NGUYỄN KIM CHUNG",
-    experience: "30 năm kinh nghiệm",
+    experience: "+20 năm kinh nghiệm",
     specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
     visitCount: 100,
@@ -48,7 +48,7 @@ const CLINICS = [
   {
     id: 5,
     name: "TS.BS NGUYỄN KIM CHUNG",
-    experience: "30 năm kinh nghiệm",
+    experience: "+20 năm kinh nghiệm",
     specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
     visitCount: 100,
@@ -58,7 +58,7 @@ const CLINICS = [
   {
     id: 6,
     name: "TS.BS NGUYỄN KIM CHUNG",
-    experience: "30 năm kinh nghiệm",
+    experience: "+20 năm kinh nghiệm",
     specialty: "Ngoại Thần Kinh - Cột Sống",
     rating: 5,
     visitCount: 100,

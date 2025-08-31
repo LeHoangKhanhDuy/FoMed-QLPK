@@ -167,7 +167,7 @@ export default function LabResultDetails({
           {result.notes && (
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="font-bold mb-2">Ghi chú</div>
-              <p className="text-slate-700">{result.notes}</p>
+              <p className="text-slate-700">- {result.notes}</p>
             </div>
           )}
           {result.warnings?.length ? (
