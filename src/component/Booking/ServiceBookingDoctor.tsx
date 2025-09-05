@@ -210,12 +210,13 @@ export default function ServiceBookingDoctor({
                     </td>
                     <td className="py-3 text-center">
                       <div className="flex flex-col md:flex-row gap-2 justify-center">
-                        <button
-                          onClick={() => onDetail?.(d.id)}
+                        <Link
+                          to="/user/doctor"
+                          //onClick={() => onDetail?.(d.id)}
                           className="px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm cursor-pointer"
                         >
                           Chi tiết
-                        </button>
+                        </Link>
                         <Link
                           to="/booking-doctor/booking-date"
                           onClick={() => onBook?.(d.id)}
