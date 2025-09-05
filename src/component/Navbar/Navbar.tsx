@@ -103,7 +103,7 @@ export const Navbar = () => {
                 </a>
               </div>
 
-              {/* MOBILE MENU - FE ONLY */}
+              {/* MOBILE MENU */}
               <div className="block lg:hidden relative">
                 {/* Nút mở menu */}
                 <button
@@ -240,6 +240,13 @@ export const Navbar = () => {
                   >
                     <User className="w-7 h-7 rounded-md text-primary" />
                     user
+                  </Link>
+                  <Link
+                    to="/cms/dashboard"
+                    className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50"
+                  >
+                    <User className="w-7 h-7 rounded-md text-primary" />
+                    cms
                   </Link>
                 </div>
               </div>

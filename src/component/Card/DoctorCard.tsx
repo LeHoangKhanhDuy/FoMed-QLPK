@@ -34,7 +34,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   className = "",
   // default fallback
   detailHref = "/user/doctor",
-  bookHref = "/user/doctor",
+  bookHref = "/booking/select-service",
   onView,
   onBook,
 }) => {

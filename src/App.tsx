@@ -15,6 +15,10 @@ import UserLabResultListPage from "./pages/Account/UserLabResultsListPage";
 import UserLabResultDetailPage from "./pages/Account/UserLabResultDetailPage";
 import { DoctorProfilePage } from "./pages/Doctor/DoctorProfilePage";
 import { SpecialtyPage } from "./pages/Specialty/SpecialtiesPage";
+import DoctorListPage from "./pages/Doctor/DoctorListPage";
+import BookingSelectServicePage from "./pages/Booking/PackageSelectPage";
+import { DashboardPage } from "./pages/Admin/Dashboard/DashboardPage";
+import { AppointmentCreatePage } from "./pages/Admin/Appointment/AppointmentCreatePage";
 
 
 
@@ -31,6 +35,7 @@ function App() {
       <Route path="/booking-doctor" element={<BookingDoctorPage />} />
       <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
       <Route path="/booking-package" element={<BookingPackagePage />} />
+      <Route path="/booking/select-service" element={<BookingSelectServicePage />} />
 
       {/* PATIENT PORTAL */}
       <Route path="/patient-portal-login" element={<PatientPortalPage />} />
@@ -46,9 +51,14 @@ function App() {
 
       {/* DOCTOR */}
       <Route path="/user/doctor" element={<DoctorProfilePage />} />
+      <Route path="/user/doctor-list" element={<DoctorListPage />} />
 
       {/* SPECIALTIES */}
       <Route path="/user/specialties" element={<SpecialtyPage />} />
+
+      {/* CSM ADMIN */}
+      <Route path="/cms/dashboard" element={<DashboardPage />} />
+      <Route path="/cms/create-appointments" element={<AppointmentCreatePage />} />
     </Routes>
   );
 }
