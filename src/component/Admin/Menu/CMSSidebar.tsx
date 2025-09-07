@@ -27,7 +27,7 @@ const items: Item[] = [
     badge: "12",
   },
   { name: "Quản lý bệnh nhân", href: "/csm/patients", icon: Users },
-  { name: "Quản lý bác sĩ", href: "/csm/doctors", icon: Stethoscope },
+  { name: "Quản lý bác sĩ", href: "/cms/doctor-schedule", icon: Stethoscope },
   { name: "Quản lý phòng khám", href: "/csm/clinics", icon: Hospital },
   { name: "Quản lý chuyên khoa", href: "/csm/specialties", icon: Building2 },
   { name: "Quản lý dịch vụ", href: "/csm/services", icon: ClipboardList },

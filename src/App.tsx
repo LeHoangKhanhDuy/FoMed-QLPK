@@ -19,6 +19,7 @@ import DoctorListPage from "./pages/Doctor/DoctorListPage";
 import BookingSelectServicePage from "./pages/Booking/PackageSelectPage";
 import { DashboardPage } from "./pages/Admin/Dashboard/DashboardPage";
 import { AppointmentCreatePage } from "./pages/Admin/Appointment/AppointmentCreatePage";
+import { DoctorScheduleAdminPage } from "./pages/Admin/Doctor/DoctorScheduleAdminPage";
 
 
 
@@ -59,6 +60,7 @@ function App() {
       {/* CSM ADMIN */}
       <Route path="/cms/dashboard" element={<DashboardPage />} />
       <Route path="/cms/create-appointments" element={<AppointmentCreatePage />} />
+      <Route path="/cms/doctor-schedule" element={<DoctorScheduleAdminPage />} />
     </Routes>
   );
 }
