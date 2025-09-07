@@ -1,6 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Check, X, Eye, Clock, Search } from "lucide-react";
-import type { Appointment, AppointmentStatus } from "../../../types/appointment";
+import type {
+  Appointment,
+  AppointmentStatus,
+} from "../../../types/appointment/appointment";
 
 type Props = {
   items: Appointment[];
@@ -24,8 +27,10 @@ export default function AppointmentList({
     Record<number, AppointmentStatus>
   >({});
 
-  const getStatus = (id: number, fallback: AppointmentStatus) =>
-    tempStatus[id] ?? fallback;
+  const getStatus = useCallback(
+    (id: number, fallback: AppointmentStatus) => tempStatus[id] ?? fallback,
+    [tempStatus]
+  );
 
   // hiển thị cả pending + booked là "chờ khám"
   const filtered = useMemo(() => {
@@ -43,7 +48,7 @@ export default function AppointmentList({
         p.serviceName.toLowerCase().includes(q) ||
         p.code.toLowerCase().includes(q)
     );
-  }, [items, query, tempStatus]);
+  }, [items, query, getStatus]);
 
   const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = useMemo(() => {
@@ -62,10 +67,10 @@ export default function AppointmentList({
 
   const renderBadge = (status: AppointmentStatus) => {
     const map: Record<AppointmentStatus, { text: string; cls: string }> = {
-      pending: { text: "Đang chờ", cls: "bg-amber-50 text-amber-700" },
-      booked: { text: "Đã đặt", cls: "bg-blue-50 text-blue-700" },
-      done: { text: "Đã khám", cls: "bg-emerald-50 text-emerald-700" },
-      cancelled: { text: "Đã huỷ", cls: "bg-rose-50 text-rose-700" },
+      pending: { text: "Đang chờ", cls: "bg-yellow-100 text-yellow-600" },
+      booked: { text: "Đã đặt", cls: "bg-blue-100 text-blue-600" },
+      done: { text: "Đã khám", cls: "bg-green-100 text-green-600" },
+      cancelled: { text: "Đã huỷ", cls: "bg-red-100 text-red-600" },
     };
     const it = map[status];
     return (
@@ -105,13 +110,12 @@ export default function AppointmentList({
             <tr className="bg-sky-500 text-center text-white">
               <th className="py-2 pr-3">Mã hồ sơ</th>
               <th className="py-2 pr-3">Bệnh nhân</th>
-              <th className="py-2 pr-3">Liên hệ</th>
-              <th className="py-2 pr-3">Phòng khám</th>
+              <th className="py-2 pr-3">Số điện thoại</th>
               <th className="py-2 pr-3">Bác sĩ</th>
               <th className="py-2 pr-3">Dịch vụ</th>
               <th className="py-2 pr-3">Ngày/Giờ</th>
               <th className="py-2 pr-3">Trạng thái</th>
-              <th className="py-2 pr-3">Tạo lúc</th>
+              <th className="py-2 pr-3">Thời gian</th>
               <th className="py-2 pr-3">Thao tác</th>
             </tr>
           </thead>
@@ -119,7 +123,7 @@ export default function AppointmentList({
           <tbody>
             {paged.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-6 text-center text-slate-500">
+                <td colSpan={9} className="py-6 text-center text-slate-500">
                   Không có lịch chờ khám.
                 </td>
               </tr>
@@ -135,7 +139,6 @@ export default function AppointmentList({
                   <td className="py-2 pr-3 font-medium">{a.code}</td>
                   <td className="py-2 pr-3">{a.patientName}</td>
                   <td className="py-2 pr-3">{a.patientPhone}</td>
-                  <td className="py-2 pr-3">{a.clinicName}</td>
                   <td className="py-2 pr-3">{a.doctorName}</td>
                   <td className="py-2 pr-3">{a.serviceName}</td>
                   <td className="py-2 pr-3">
@@ -149,28 +152,28 @@ export default function AppointmentList({
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => setStatus(a.id, "pending")}
-                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-amber-50 text-amber-700 px-2 py-1 hover:bg-amber-100"
+                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-yellow-100 text-yellow-600 px-2 py-1 hover:bg-amber-100"
                         title="Chuyển sang Đang chờ"
                       >
                         Chờ
                       </button>
                       <button
                         onClick={() => setStatus(a.id, "booked")}
-                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-blue-50 text-blue-700 px-2 py-1 hover:bg-blue-100"
+                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-blue-100 text-blue-600 px-2 py-1 hover:bg-blue-100"
                         title="Chuyển sang Đã đặt"
                       >
                         <Check className="w-4 h-4" /> Đặt
                       </button>
                       <button
                         onClick={() => setStatus(a.id, "done")}
-                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-emerald-50 text-emerald-700 px-2 py-1 hover:bg-emerald-100"
+                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-green-100 text-green-600 px-2 py-1 hover:bg-emerald-100"
                         title="Chuyển sang Đã khám"
                       >
                         Đã khám
                       </button>
                       <button
                         onClick={() => setStatus(a.id, "cancelled")}
-                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-rose-50 text-rose-700 px-2 py-1 hover:bg-rose-100"
+                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-red-100 text-red-600 px-2 py-1 hover:bg-rose-100"
                         title="Chuyển sang Đã huỷ"
                       >
                         <X className="w-4 h-4" /> Huỷ

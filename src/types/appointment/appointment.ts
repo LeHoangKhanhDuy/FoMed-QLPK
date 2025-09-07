@@ -8,7 +8,6 @@ export type AppointmentStatus =
 export type AppointmentPayload = {
   patientName: string;
   patientPhone: string;
-  clinicId: number | "";
   doctorId: number | "";
   serviceId: number | "";
   date: string; // YYYY-MM-DD
@@ -21,7 +20,6 @@ export type Appointment = {
   code: string;
   patientName: string;
   patientPhone: string;
-  clinicName: string;
   doctorName: string;
   serviceName: string;
   date: string; // ISO date

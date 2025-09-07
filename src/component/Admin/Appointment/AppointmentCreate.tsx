@@ -1,23 +1,16 @@
-import {
-  CalendarPlus,
-  PhoneIcon,
-  User2,
-  Building2,
-  Stethoscope,
-} from "lucide-react";
+import { CalendarPlus, PhoneIcon, User2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type {
   Appointment,
   AppointmentPayload,
   AppointmentStatus,
-} from "../../../types/appointment";
+} from "../../../types/appointment/appointment";
 import AppointmentList from "./AppointmentList";
 
 /** ====== Demo data (thay bằng API thật) ====== */
 type Doctor = { id: number; name: string; specialty: string };
 type Service = { id: number; name: string };
-type Clinic = { id: number; name: string; address: string };
 
 const FAKE_DOCTORS: Doctor[] = [
   { id: 1, name: "BS. Nguyễn An", specialty: "Tim mạch" },
@@ -26,10 +19,6 @@ const FAKE_DOCTORS: Doctor[] = [
 const FAKE_SERVICES: Service[] = [
   { id: 1, name: "Khám tổng quát" },
   { id: 2, name: "Khám tim mạch" },
-];
-const FAKE_CLINICS: Clinic[] = [
-  { id: 1, name: "FoMed Clinic 1", address: "123 Võ Văn Tần, Q3" },
-  { id: 2, name: "FoMed Clinic 2", address: "456 Lê Lợi, Q1" },
 ];
 
 let seedId = 1032;
@@ -42,7 +31,6 @@ export default function AppointmentCreate() {
   const [form, setForm] = useState<AppointmentPayload>({
     patientName: "",
     patientPhone: "",
-    clinicId: "",
     doctorId: "",
     serviceId: "",
     date: "",
@@ -61,7 +49,6 @@ export default function AppointmentCreate() {
         code: "AP-2025001",
         patientName: "Nguyễn Văn A",
         patientPhone: "0901234567",
-        clinicName: "FoMed Clinic 1",
         doctorName: "BS. Nguyễn An",
         serviceName: "Khám tổng quát",
         date: "2025-09-10",
@@ -74,7 +61,6 @@ export default function AppointmentCreate() {
         code: "AP-2025002",
         patientName: "Trần Thị B",
         patientPhone: "0912345678",
-        clinicName: "FoMed Clinic 2",
         doctorName: "BS. Trần Bình",
         serviceName: "Khám tim mạch",
         date: "2025-09-12",
@@ -96,7 +82,6 @@ export default function AppointmentCreate() {
     setForm({
       patientName: "",
       patientPhone: "",
-      clinicId: "",
       doctorId: "",
       serviceId: "",
       date: "",
@@ -108,7 +93,6 @@ export default function AppointmentCreate() {
     if (!form.patientName.trim()) return alert("Vui lòng nhập tên bệnh nhân");
     if (!isValidVNPhone(form.patientPhone))
       return alert("SĐT không hợp lệ (10 số, bắt đầu bằng 0)");
-    if (!form.clinicId) return alert("Vui lòng chọn phòng khám");
     if (!form.doctorId) return alert("Vui lòng chọn bác sĩ");
     if (!form.serviceId) return alert("Vui lòng chọn dịch vụ");
     if (!form.date) return alert("Vui lòng chọn ngày");
@@ -116,7 +100,6 @@ export default function AppointmentCreate() {
 
     setSubmitting(true);
     try {
-      const clinic = FAKE_CLINICS.find((c) => c.id === form.clinicId)!;
       const doctor = FAKE_DOCTORS.find((d) => d.id === form.doctorId)!;
       const service = FAKE_SERVICES.find((s) => s.id === form.serviceId)!;
 
@@ -125,7 +108,6 @@ export default function AppointmentCreate() {
         code: `AP-${seedId}`,
         patientName: form.patientName.trim(),
         patientPhone: form.patientPhone.trim(),
-        clinicName: clinic.name,
         doctorName: doctor.name,
         serviceName: service.name,
         date: form.date,
@@ -188,26 +170,6 @@ export default function AppointmentCreate() {
             </div>
           </div>
 
-          {/* Phòng khám */}
-          <div className="space-y-2">
-            <label className="text-sm text-slate-600">Phòng khám</label>
-            <div className="relative">
-              <select
-                value={form.clinicId}
-                onChange={(e) => update("clinicId", Number(e.target.value))}
-                className="mt-2 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-400 bg-white"
-              >
-                <option value="">-- Chọn phòng khám --</option>
-                {FAKE_CLINICS.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {c.address}
-                  </option>
-                ))}
-              </select>
-              <Building2 className="w-4 h-4 text-slate-400 absolute right-3 top-5" />
-            </div>
-          </div>
-
           {/* Bác sĩ */}
           <div className="space-y-2">
             <label className="text-sm text-slate-600">Bác sĩ</label>
@@ -224,7 +186,6 @@ export default function AppointmentCreate() {
                   </option>
                 ))}
               </select>
-              <Stethoscope className="w-4 h-4 text-slate-400 absolute right-3 top-5" />
             </div>
           </div>
 
