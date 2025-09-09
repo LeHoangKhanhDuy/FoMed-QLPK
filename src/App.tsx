@@ -20,6 +20,8 @@ import BookingSelectServicePage from "./pages/Booking/PackageSelectPage";
 import { DashboardPage } from "./pages/Admin/Dashboard/DashboardPage";
 import { AppointmentCreatePage } from "./pages/Admin/Appointment/AppointmentCreatePage";
 import { DoctorScheduleAdminPage } from "./pages/Admin/Doctor/DoctorScheduleAdminPage";
+import { PatientListTodayAdminPage } from "./pages/Admin/Patient/PatientListTodayPage";
+import { DoctorPatientListWorkspacePage } from "./pages/Admin/Patient/DoctorPatientWorkspacePage";
 
 
 
@@ -61,6 +63,8 @@ function App() {
       <Route path="/cms/dashboard" element={<DashboardPage />} />
       <Route path="/cms/create-appointments" element={<AppointmentCreatePage />} />
       <Route path="/cms/doctor-schedule" element={<DoctorScheduleAdminPage />} />
+      <Route path="/cms/patient-list" element={<PatientListTodayAdminPage />} />
+      <Route path="/cms/patient-list/workspace" element={<DoctorPatientListWorkspacePage />} />
     </Routes>
   );
 }
