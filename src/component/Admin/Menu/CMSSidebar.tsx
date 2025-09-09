@@ -26,7 +26,7 @@ const items: Item[] = [
     icon: CalendarDays,
     badge: "12",
   },
-  { name: "Quản lý bệnh nhân", href: "/csm/patients", icon: Users },
+  { name: "Quản lý bệnh nhân", href: "/cms/patient-list", icon: Users },
   { name: "Quản lý bác sĩ", href: "/cms/doctor-schedule", icon: Stethoscope },
   { name: "Quản lý phòng khám", href: "/csm/clinics", icon: Hospital },
   { name: "Quản lý chuyên khoa", href: "/csm/specialties", icon: Building2 },
