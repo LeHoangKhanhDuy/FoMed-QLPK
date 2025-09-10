@@ -236,7 +236,7 @@ export default function DoctorPatientWorkspace() {
                   await submitLabOrder(lab);
                   setTab("rx");
                 }}
-                className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white disabled:opacity-60"
+                className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white"
               >
                 Lưu
               </button>

@@ -22,6 +22,9 @@ import { AppointmentCreatePage } from "./pages/Admin/Appointment/AppointmentCrea
 import { DoctorScheduleAdminPage } from "./pages/Admin/Doctor/DoctorScheduleAdminPage";
 import { PatientListTodayAdminPage } from "./pages/Admin/Patient/PatientListTodayPage";
 import { DoctorPatientListWorkspacePage } from "./pages/Admin/Patient/DoctorPatientWorkspacePage";
+import { UserManagerPage } from "./pages/Admin/User/UserManagerPage";
+import { ServiceManagerPage } from "./pages/Admin/Service/ServiceManagerPage";
+import { DrugManagerPage } from "./pages/Admin/Drug/DrugManagerPage";
 
 
 
@@ -65,6 +68,9 @@ function App() {
       <Route path="/cms/doctor-schedule" element={<DoctorScheduleAdminPage />} />
       <Route path="/cms/patient-list" element={<PatientListTodayAdminPage />} />
       <Route path="/cms/patient-list/workspace" element={<DoctorPatientListWorkspacePage />} />
+      <Route path="/cms/users-manager" element={<UserManagerPage />} />
+      <Route path="/cms/service-manager" element={<ServiceManagerPage />} />
+      <Route path="/cms/drug-manager" element={<DrugManagerPage />} />
     </Routes>
   );
 }

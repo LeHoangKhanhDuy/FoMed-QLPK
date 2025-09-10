@@ -1,13 +1,12 @@
 import {
   LayoutDashboard,
   Stethoscope,
-  Hospital,
-  Building2,
   ClipboardList,
   Users,
   CalendarDays,
-  CreditCard,
   Wallet,
+  UserIcon,
+  Pill,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -28,11 +27,9 @@ const items: Item[] = [
   },
   { name: "Quản lý bệnh nhân", href: "/cms/patient-list", icon: Users },
   { name: "Quản lý bác sĩ", href: "/cms/doctor-schedule", icon: Stethoscope },
-  { name: "Quản lý phòng khám", href: "/csm/clinics", icon: Hospital },
-  { name: "Quản lý chuyên khoa", href: "/csm/specialties", icon: Building2 },
-  { name: "Quản lý dịch vụ", href: "/csm/services", icon: ClipboardList },
-
-  { name: "Giao dịch / ví", href: "/csm/transactions", icon: CreditCard },
+  { name: "Quản lý người dùng", href: "/cms/users-manager", icon: UserIcon },
+  { name: "Quản lý dịch vụ", href: "/cms/service-manager", icon: ClipboardList },
+  { name: "Quản lý thuốc", href: "/cms/drug-manager", icon: Pill },
   {
     name: "Yêu cầu rút tiền",
     href: "/csm/withdrawals",
