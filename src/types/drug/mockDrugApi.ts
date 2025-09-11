@@ -12,7 +12,7 @@ let ITEMS: DrugItem[] = [
     unit: "viên",
     price: 1500,
     stock: 1200,
-    status: "active",
+    status: "in stock",
     createdAt: new Date().toISOString(),
   },
   {
@@ -22,7 +22,7 @@ let ITEMS: DrugItem[] = [
     unit: "viên",
     price: 2500,
     stock: 300,
-    status: "active",
+    status: "out of stock",
     createdAt: new Date().toISOString(),
   },
   {
@@ -32,7 +32,7 @@ let ITEMS: DrugItem[] = [
     unit: "gói",
     price: 3500,
     stock: 50,
-    status: "inactive",
+    status: "in stock",
     createdAt: new Date().toISOString(),
   },
 ];

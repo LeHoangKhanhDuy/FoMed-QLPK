@@ -1,5 +1,5 @@
 export type DrugID = number;
-export type DrugStatus = "active" | "inactive";
+export type DrugStatus = "in stock" | "out of stock";
 
 export interface DrugItem {
   id: DrugID;
