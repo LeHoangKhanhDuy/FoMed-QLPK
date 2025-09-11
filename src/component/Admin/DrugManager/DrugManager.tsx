@@ -119,7 +119,7 @@ export default function DrugManager() {
       <div className="overflow-x-auto rounded-sm border border-gray-200">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-sky-500 text-white">
+            <tr className="bg-sky-400 text-white">
               <th className="px-3 py-2 text-left">Mã</th>
               <th className="px-3 py-2 text-left">Tên thuốc</th>
               <th className="px-3 py-2">Đơn vị</th>
@@ -141,7 +141,7 @@ export default function DrugManager() {
             {paged.map((d) => (
               <tr key={d.id} className="text-center border-b last:border-none">
                 <td className="px-3 py-2 text-left font-medium">{d.code}</td>
-                <td className="px-3 py-2 text-left">{d.name}</td>
+                <td className="px-3 py-2 text-left font-bold">{d.name}</td>
                 <td className="px-3 py-2">{d.unit}</td>
                 <td className="px-3 py-2 text-red-500 font-semibold">
                   {d.price.toLocaleString("vi-VN")} ₫
@@ -203,7 +203,7 @@ export default function DrugManager() {
       {/* Pagination */}
       <div className="mt-4 flex items-center justify-between">
         <p className="text-sm text-slate-500">
-          Trang {Math.min(page, last)} - {last} 
+          Trang {Math.min(page, last)} - {last}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -211,14 +211,14 @@ export default function DrugManager() {
             disabled={page === 1}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            <ChevronLeft/>
+            <ChevronLeft />
           </button>
           <button
             onClick={() => setPage(Math.min(last, page + 1))}
             disabled={page === last}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            <ChevronRight/>
+            <ChevronRight />
           </button>
         </div>
       </div>

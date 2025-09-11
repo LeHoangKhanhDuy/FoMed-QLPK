@@ -174,7 +174,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-xl bg-white rounded-xl shadow-lg p-5">
+      <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-lg">
             {initial?.id ? "Sửa thuốc" : "Thêm thuốc"}
@@ -187,7 +187,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {/* Mã thuốc */}
           <label className="text-sm">
             <div className="flex items-center gap-1">

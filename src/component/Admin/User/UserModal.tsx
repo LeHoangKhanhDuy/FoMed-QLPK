@@ -14,7 +14,7 @@ const roles: Array<{ v: UserRole; label: string }> = [
   { v: "patient", label: "Bệnh nhân" },
   { v: "staff", label: "Nhân viên" },
   { v: "doctor", label: "Bác sĩ" },
-  { v: "admin", label: "Quản trị" },
+  { v: "admin", label: "Quản trị viên" },
 ];
 
 export default function UserModal({ open, onClose, initial, onSubmit }: Props) {
@@ -63,7 +63,7 @@ export default function UserModal({ open, onClose, initial, onSubmit }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-lg p-5">
+      <div className="relative w-full max-w-lg mx-3 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-lg">
             {initial?.id ? "Sửa người dùng" : "Thêm người dùng"}
@@ -78,42 +78,61 @@ export default function UserModal({ open, onClose, initial, onSubmit }: Props) {
 
         {err && <p className="mb-3 text-sm text-rose-600">{err}</p>}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Mã</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Mã</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
               className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              placeholder="VD: BN001"
             />
           </label>
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Họ tên</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Họ tên</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              placeholder="VD: Nguyễn Văn A"
             />
           </label>
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">SĐT</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">SĐT</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.phone ?? ""}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              placeholder="VD: 0123456789"
             />
           </label>
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Email</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Email</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               type="email"
               value={form.email ?? ""}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              placeholder="VD: abc@gmail.com"
             />
           </label>
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Vai trò</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Vai trò</span>
+              <span className="text-red-500">*</span>
+            </div>
             <select
               value={form.role}
               onChange={(e) =>
@@ -129,7 +148,10 @@ export default function UserModal({ open, onClose, initial, onSubmit }: Props) {
             </select>
           </label>
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Trạng thái</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Trạng thái</span>
+              <span className="text-red-500">*</span>
+            </div>
             <select
               value={form.status}
               onChange={(e) =>

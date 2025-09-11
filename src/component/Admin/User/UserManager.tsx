@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users, Pencil,  KeyRound, Power } from "lucide-react";
+import { Search, Users, Pencil,  KeyRound, Power, ChevronLeft, ChevronRight } from "lucide-react";
 import type { User, UserRole, UserStatus } from "../../../types/user/user";
 import { apiCreateUser, apiListUsers, apiToggleStatus, apiUpdateUser } from "../../../types/user/mockUserApi";
 import UserModal from "./UserModal";
@@ -134,7 +134,7 @@ export default function UserManager() {
       <div className="overflow-x-auto rounded-sm border border-gray-200">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-sky-500 text-white">
+            <tr className="bg-sky-400 text-white">
               <th className="px-3 py-2 text-left">Mã</th>
               <th className="px-3 py-2 text-left">Họ tên</th>
               <th className="px-3 py-2">Vai trò</th>
@@ -157,7 +157,7 @@ export default function UserManager() {
             {paged.map((u) => (
               <tr key={u.id} className="text-center border-b last:border-none">
                 <td className="px-3 py-2 text-left font-medium">{u.code}</td>
-                <td className="px-3 py-2 text-left">{u.name}</td>
+                <td className="px-3 py-2 text-left font-bold">{u.name}</td>
                 <td className="px-3 py-2">{roleLabel[u.role]}</td>
                 <td className="px-3 py-2">{u.phone ?? "-"}</td>
                 <td className="px-3 py-2">{u.email ?? "-"}</td>
@@ -222,8 +222,7 @@ export default function UserManager() {
       {/* Pagination */}
       <div className="mt-4 flex items-center justify-between">
         <p className="text-sm text-slate-500">
-          Trang {Math.min(page, lastPage)}/{lastPage} — Tổng {filtered.length}{" "}
-          người
+          Trang {Math.min(page, lastPage)} - {lastPage}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -231,14 +230,14 @@ export default function UserManager() {
             disabled={page === 1}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            Trước
+            <ChevronLeft/>
           </button>
           <button
             onClick={() => setPage(Math.min(lastPage, page + 1))}
             disabled={page === lastPage}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            Sau
+            <ChevronRight/>
           </button>
         </div>
       </div>

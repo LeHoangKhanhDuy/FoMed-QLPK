@@ -1,4 +1,4 @@
-import ServiceManager from "../../../component/Admin/Service/ServiceManager";
+import ServiceManager from "../../../component/Admin/ServiceManager/ServiceManager";
 import CSMLayout from "../../../layouts/CMSLayout";
 
 export const ServiceManagerPage = () => {

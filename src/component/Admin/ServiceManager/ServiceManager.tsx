@@ -6,11 +6,23 @@ import {
   Trash2,
   Power,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import type { ServiceItem, ServiceKind, ServiceStatus } from "../../../types/service/service";
-import { apiCreateService, apiDeleteService, apiListServices, apiToggleService, apiUpdateService } from "../../../types/service/mockServiceApi";
+import type {
+  ServiceItem,
+  ServiceKind,
+  ServiceStatus,
+} from "../../../types/serviceapi/service";
+import {
+  apiCreateService,
+  apiDeleteService,
+  apiListServices,
+  apiToggleService,
+  apiUpdateService,
+} from "../../../types/serviceapi/mockServiceApi";
 import ServiceModal from "./ServiceModal";
-
+import ConfirmModal from "../../../common/ConfirmModal";
 
 type FilterKind = "all" | ServiceKind;
 
@@ -23,6 +35,10 @@ export default function ServiceManager() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceItem | null>(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     apiListServices().then(setItems);
@@ -87,10 +103,22 @@ export default function ServiceManager() {
     setItems((arr) => arr.map((x) => (x.id === id ? upd : x)));
   };
 
-  const remove = async (id: number) => {
-    if (!confirm("Xoá dịch vụ này?")) return;
-    await apiDeleteService(id);
-    setItems((arr) => arr.filter((x) => x.id !== id));
+  const askDelete = (id: number) => {
+    setDeletingId(id);
+    setConfirmOpen(true);
+  };
+
+  const doDelete = async () => {
+    if (!deletingId) return;
+    setConfirmLoading(true);
+    try {
+      await apiDeleteService(deletingId);
+      setItems((arr) => arr.filter((x) => x.id !== deletingId));
+      setConfirmOpen(false);
+      setDeletingId(null);
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   return (
@@ -139,7 +167,7 @@ export default function ServiceManager() {
       <div className="overflow-x-auto rounded-sm border border-gray-200">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-sky-500 text-white">
+            <tr className="bg-sky-400 text-white">
               <th className="px-3 py-2 text-left">Mã</th>
               <th className="px-3 py-2 text-left">Tên dịch vụ</th>
               <th className="px-3 py-2">Nhóm</th>
@@ -162,7 +190,7 @@ export default function ServiceManager() {
             {paged.map((s) => (
               <tr key={s.id} className="text-center border-b last:border-none">
                 <td className="px-3 py-2 text-left font-medium">{s.code}</td>
-                <td className="px-3 py-2 text-left">
+                <td className="px-3 py-2 text-left font-bold">
                   {s.name}
                   {s.kind === "lab" && s.specimen && (
                     <span className="ml-2 text-xs text-slate-500">
@@ -172,8 +200,8 @@ export default function ServiceManager() {
                 </td>
                 <td className="px-3 py-2">{kindLabel[s.kind]}</td>
                 <td className="px-3 py-2">{s.unit ?? "-"}</td>
-                <td className="px-3 py-2">
-                  {s.price.toLocaleString("vi-VN")}₫
+                <td className="px-3 py-2 text-red-500 font-semibold">
+                  {s.price.toLocaleString("vi-VN")} ₫
                 </td>
                 <td className="px-3 py-2">{s.department ?? "-"}</td>
                 <td className="px-3 py-2">
@@ -204,7 +232,7 @@ export default function ServiceManager() {
                       }
                       className={`cursor-pointer inline-flex items-center gap-1 rounded-md px-2 py-1 ${
                         s.status === "active"
-                          ? "bg-red-100 text-red-700 hover:bg-rose-100"
+                          ? "bg-orange-100 text-orange-500 hover:bg-orange-100"
                           : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
                       }`}
                       title={
@@ -216,12 +244,25 @@ export default function ServiceManager() {
                     </button>
 
                     <button
-                      onClick={() => remove(s.id)}
+                      onClick={() => askDelete(s.id)}
                       className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-rose-50 text-rose-700 px-2 py-1 hover:bg-rose-100"
                       title="Xoá"
                     >
                       <Trash2 className="w-4 h-4" /> Xoá
                     </button>
+
+                    {/* Modal xác nhận dùng chung */}
+                    <ConfirmModal
+                      open={confirmOpen}
+                      onClose={() => setConfirmOpen(false)}
+                      onConfirm={doDelete}
+                      loading={confirmLoading}
+                      title="Xoá dịch vụ khám bệnh"
+                      description="Bạn có chắc muốn xoá dịch vụ này?"
+                      confirmText="Xoá"
+                      cancelText="Huỷ"
+                      danger
+                    />
                   </div>
                 </td>
               </tr>
@@ -233,7 +274,7 @@ export default function ServiceManager() {
       {/* Pagination */}
       <div className="mt-4 flex items-center justify-between">
         <p className="text-sm text-slate-500">
-          Trang {Math.min(page, last)}/{last} — Tổng {filtered.length} dịch vụ
+          Trang {Math.min(page, last)} - {last}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -241,14 +282,14 @@ export default function ServiceManager() {
             disabled={page === 1}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            Trước
+            <ChevronLeft />
           </button>
           <button
             onClick={() => setPage(Math.min(last, page + 1))}
             disabled={page === last}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            Sau
+            <ChevronRight />
           </button>
         </div>
       </div>

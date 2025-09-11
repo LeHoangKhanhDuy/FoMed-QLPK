@@ -2,8 +2,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Stethoscope, FlaskConical, Pill } from "lucide-react";
-import type { DiagnosisPayload, LabItem, LabOrderPayload, PrescriptionLine, PrescriptionPayload } from "../../../types/doctor/doctor";
-
+import type {
+  DiagnosisPayload,
+  LabItem,
+  LabOrderPayload,
+  PrescriptionLine,
+  PrescriptionPayload,
+} from "../../../types/doctor/doctor";
+import SuccessModal from "../../../common/SuccessModal";
 
 // ====== MOCK (thay bằng API thật) ======
 const mockLabItems: LabItem[] = [
@@ -11,8 +17,7 @@ const mockLabItems: LabItem[] = [
   { id: 2, code: "GLU", name: "Đường huyết", sample: "blood" },
   { id: 3, code: "UA", name: "Nước tiểu tổng quát", sample: "urine" },
 ];
-
-const mockDrugs = [
+const mockDrugs: Array<{ id: number; name: string; unit: string }> = [
   { id: 10, name: "Paracetamol 500mg", unit: "viên" },
   { id: 11, name: "Amoxicillin 500mg", unit: "viên" },
   { id: 12, name: "Oresol", unit: "gói" },
@@ -35,6 +40,13 @@ export default function DoctorPatientWorkspace() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
   const nav = useNavigate();
+
+  // Success modal: title + message động
+  const [success, setSuccess] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({ open: false, title: "", message: "" });
 
   const [tab, setTab] = useState<TabKey>("dx");
 
@@ -61,7 +73,7 @@ export default function DoctorPatientWorkspace() {
   }, [patientId]);
 
   const canSubmitDx = useMemo(
-    () => dx.symptoms.trim() && dx.diagnosis.trim(),
+    () => dx.symptoms.trim().length > 0 && dx.diagnosis.trim().length > 0,
     [dx]
   );
 
@@ -72,10 +84,14 @@ export default function DoctorPatientWorkspace() {
       rxLines.length > 0 &&
       rxLines.every(
         (l) =>
-          l.drugId && l.dose.trim() && l.frequency.trim() && l.duration.trim()
+          !!l.drugId && l.dose.trim() && l.frequency.trim() && l.duration.trim()
       ),
     [rxLines]
   );
+
+  // tiện ích mở modal success
+  const openSuccess = (title: string, message: string) =>
+    setSuccess({ open: true, title, message });
 
   return (
     <section className="space-y-4">
@@ -88,7 +104,9 @@ export default function DoctorPatientWorkspace() {
           >
             <ArrowLeft className="w-4 h-4" /> Quay lại
           </button>
-          <h1 className="text-xl font-bold">Hồ sơ khám — BN#{patientId}</h1>
+          <h1 className="text-xl font-bold">
+            Hồ sơ khám bệnh — BN#{patientId}
+          </h1>
         </div>
       </div>
 
@@ -103,6 +121,8 @@ export default function DoctorPatientWorkspace() {
           >
             Chẩn đoán
           </TabBtn>
+        </div>
+        <div className="flex gap-2 mb-4">
           <TabBtn
             id="lab"
             active={tab === "lab"}
@@ -124,7 +144,7 @@ export default function DoctorPatientWorkspace() {
         {/* Panels */}
         {tab === "dx" && (
           <div className="space-y-3">
-            <Field label="Triệu chứng *">
+            <Field label="Triệu chứng">
               <textarea
                 value={dx.symptoms}
                 onChange={(e) => setDx({ ...dx, symptoms: e.target.value })}
@@ -132,7 +152,7 @@ export default function DoctorPatientWorkspace() {
                 className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </Field>
-            <Field label="Chẩn đoán *">
+            <Field label="Chẩn đoán">
               <input
                 value={dx.diagnosis}
                 onChange={(e) => setDx({ ...dx, diagnosis: e.target.value })}
@@ -153,6 +173,10 @@ export default function DoctorPatientWorkspace() {
                 disabled={!canSubmitDx}
                 onClick={async () => {
                   await submitDiagnosis(dx);
+                  openSuccess(
+                    "Đã lưu chẩn đoán",
+                    "Chẩn đoán đã được lưu thành công."
+                  );
                   setTab("lab");
                 }}
                 className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white"
@@ -184,10 +208,10 @@ export default function DoctorPatientWorkspace() {
               <p className="text-sm text-slate-500">Chưa có chỉ định.</p>
             ) : (
               <div className="space-y-2">
-                {lab.items.map((id, idx) => (
-                  <div key={idx} className="flex gap-2">
+                {lab.items.map((labId, idx) => (
+                  <div key={`${labId}-${idx}`} className="flex gap-2">
                     <select
-                      value={id}
+                      value={labId}
                       onChange={(e) =>
                         setLab((l) => ({
                           ...l,
@@ -234,6 +258,10 @@ export default function DoctorPatientWorkspace() {
                 disabled={!canSubmitLab}
                 onClick={async () => {
                   await submitLabOrder(lab);
+                  openSuccess(
+                    "Đã lưu chỉ định",
+                    "Chỉ định xét nghiệm đã được lưu."
+                  );
                   setTab("rx");
                 }}
                 className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white"
@@ -272,7 +300,7 @@ export default function DoctorPatientWorkspace() {
               <div className="space-y-2">
                 {rxLines.map((ln, idx) => (
                   <div
-                    key={idx}
+                    key={`rx-${idx}`}
                     className="grid grid-cols-1 md:grid-cols-5 gap-2 items-start"
                   >
                     <select
@@ -361,6 +389,10 @@ export default function DoctorPatientWorkspace() {
                     lines: rxLines,
                     advice: rxAdvice || undefined,
                   });
+                  openSuccess(
+                    "Đã lưu toa thuốc",
+                    "Toa thuốc đã được lưu thành công."
+                  );
                   nav(-1); // quay về danh sách sau khi lưu
                 }}
                 className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white"
@@ -371,6 +403,15 @@ export default function DoctorPatientWorkspace() {
           </div>
         )}
       </div>
+
+      {/* Success modal dùng chung */}
+      <SuccessModal
+        open={success.open}
+        onClose={() => setSuccess((s) => ({ ...s, open: false }))}
+        title={success.title}
+        message={success.message}
+        autoCloseMs={1200}
+      />
     </section>
   );
 }
@@ -392,7 +433,9 @@ function TabBtn({
     <button
       onClick={onClick}
       className={`cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-md border ${
-        active ? "bg-sky-50 border-sky-300 text-sky-700" : "hover:bg-gray-50"
+        active
+          ? "bg-sky-50 border-sky-300 text-sky-500 font-semibold"
+          : "hover:bg-gray-50"
       }`}
     >
       {icon} {children}
@@ -409,7 +452,10 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block mb-1 text-sm text-slate-600">{label}</span>
+      <div className="flex items-center gap-1">
+        <span className="block mb-1 text-sm text-slate-600">{label}</span>
+        <p className="text-red-500">*</p>
+      </div>
       {children}
     </label>
   );

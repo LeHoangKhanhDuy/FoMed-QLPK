@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, FileUser } from "lucide-react";
+import { Search, FileUser, ChevronRight, ChevronLeft } from "lucide-react";
 import type { Patient } from "../../../types/doctor/doctor";
 import { Link } from "react-router-dom";
 
@@ -104,7 +104,7 @@ export default function PatientListToday({
             {paged.map((p) => (
               <tr key={p.id} className="text-center border-b last:border-none">
                 <td className="px-3 py-2 text-left font-medium">{p.code}</td>
-                <td className="px-3 py-2 text-left">{p.name}</td>
+                <td className="px-3 py-2 text-left font-bold">{p.name}</td>
                 <td className="px-3 py-2">{p.sex}</td>
                 <td className="px-3 py-2">{p.dob.slice(0, 4)}</td>
                 <td className="px-3 py-2">{p.phone ?? "-"}</td>
@@ -176,7 +176,7 @@ function ListPagination({
   return (
     <div className="mt-4 flex items-center justify-between">
       <p className="text-sm text-slate-500">
-        Trang {Math.min(page, last)}/{last} — Tổng {total} bệnh nhân
+        Trang {Math.min(page, last)} - {last}
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -184,14 +184,14 @@ function ListPagination({
           disabled={page === 1}
           className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
         >
-          Trước
+          <ChevronLeft/>
         </button>
         <button
           onClick={() => setPage(Math.min(last, page + 1))}
           disabled={page === last}
           className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
         >
-          Sau
+          <ChevronRight/>
         </button>
       </div>
     </div>

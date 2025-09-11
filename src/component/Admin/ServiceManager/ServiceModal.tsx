@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-
 import { Save, X } from "lucide-react";
-import type { ServiceItem, ServiceKind, ServiceStatus } from "../../../types/service/service";
+import type {
+  ServiceItem,
+  ServiceKind,
+  ServiceStatus,
+} from "../../../types/serviceapi/service";
 
 type Props = {
   open: boolean;
@@ -70,7 +73,8 @@ export default function ServiceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-lg p-5">
+      {/* mx-3 để panel không sát mép trên mobile */}
+      <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-lg">
             {initial?.id ? "Sửa dịch vụ" : "Thêm dịch vụ"}
@@ -85,9 +89,13 @@ export default function ServiceModal({
 
         {err && <p className="mb-3 text-sm text-rose-600">{err}</p>}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Luôn 2 cột, mỗi hàng 2 ô */}
+        <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Mã dịch vụ *</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Mã dịch vụ</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
@@ -96,7 +104,10 @@ export default function ServiceModal({
           </label>
 
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Tên dịch vụ *</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Tên dịch vụ</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -105,7 +116,10 @@ export default function ServiceModal({
           </label>
 
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Nhóm</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Nhóm</span>
+              <span className="text-red-500">*</span>
+            </div>
             <select
               value={form.kind}
               onChange={(e) =>
@@ -122,7 +136,10 @@ export default function ServiceModal({
           </label>
 
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Đơn vị tính</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Đơn vị tính</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.unit ?? ""}
               onChange={(e) => setForm({ ...form, unit: e.target.value })}
@@ -133,7 +150,10 @@ export default function ServiceModal({
 
           {form.kind === "lab" && (
             <label className="text-sm">
-              <span className="block mb-1 text-slate-600">Loại mẫu (XN)</span>
+              <div className="flex items-center gap-1">
+                <span className="block mb-1 text-slate-600">Loại mẫu (XN)</span>
+                <span className="text-red-500">*</span>
+              </div>
               <select
                 value={form.specimen ?? "blood"}
                 onChange={(e) =>
@@ -156,7 +176,10 @@ export default function ServiceModal({
           )}
 
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Khoa/Phòng</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Khoa/Phòng</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.department ?? ""}
               onChange={(e) => setForm({ ...form, department: e.target.value })}
@@ -166,7 +189,10 @@ export default function ServiceModal({
           </label>
 
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Đơn giá (VNĐ)</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Đơn giá (VNĐ)</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               type="number"
               min={0}
@@ -179,7 +205,10 @@ export default function ServiceModal({
           </label>
 
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Trạng thái</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Trạng thái</span>
+              <span className="text-red-500">*</span>
+            </div>
             <select
               value={form.status}
               onChange={(e) =>

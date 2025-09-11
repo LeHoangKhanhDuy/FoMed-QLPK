@@ -23,7 +23,7 @@ import { DoctorScheduleAdminPage } from "./pages/Admin/Doctor/DoctorScheduleAdmi
 import { PatientListTodayAdminPage } from "./pages/Admin/Patient/PatientListTodayPage";
 import { DoctorPatientListWorkspacePage } from "./pages/Admin/Patient/DoctorPatientWorkspacePage";
 import { UserManagerPage } from "./pages/Admin/User/UserManagerPage";
-import { ServiceManagerPage } from "./pages/Admin/Service/ServiceManagerPage";
+import { ServiceManagerPage } from "./pages/Admin/ServiceManager/ServiceManagerPage";
 import { DrugManagerPage } from "./pages/Admin/Drug/DrugManagerPage";
 
 

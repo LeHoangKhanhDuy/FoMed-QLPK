@@ -49,8 +49,8 @@ export default function ConfirmModal({
       aria-labelledby="confirm-title"
       aria-describedby="confirm-desc"
     >
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white rounded-xl shadow-lg p-5">
+      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white rounded-xl shadow-md p-8">
         <div className="flex justify-center mb-3">
           <div className="flex items-center gap-2">
             <AlertTriangle
