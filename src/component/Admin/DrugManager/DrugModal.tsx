@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import { Save, X } from "lucide-react";
 import type { DrugItem, DrugStatus } from "../../../types/drug/drug";
 
@@ -10,6 +9,11 @@ type Props = {
   onSubmit: (payload: Omit<DrugItem, "id" | "createdAt">) => Promise<void>;
 };
 
+const UNIT_OPTIONS = ["viên", "gói", "ống", "chai", "vỉ", "ml", "hộp"] as const;
+
+type Field = "code" | "name" | "unit" | "price" | "stock" | "status";
+type FieldErrors = Partial<Record<Field, string>>;
+
 export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
   const [form, setForm] = useState<Omit<DrugItem, "id" | "createdAt">>({
     code: initial?.code ?? "",
@@ -17,11 +21,86 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     unit: initial?.unit ?? "viên",
     price: initial?.price ?? 0,
     stock: initial?.stock ?? 0,
-    status: (initial?.status as DrugStatus) ?? "active",
+    status: (initial?.status as DrugStatus) ?? "in stock",
   });
-  const [err, setErr] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
 
+  // —— Validators ——
+  const vCode = (v: string) => {
+    if (!v.trim()) return "Vui lòng nhập mã thuốc";
+    if (!/^[A-Za-z0-9\-_]{2,32}$/.test(v))
+      return "Mã 2–32 ký tự, chỉ chữ/số, -, _";
+    return "";
+  };
+  const vName = (v: string) => {
+    if (!v.trim()) return "Vui lòng nhập tên thuốc";
+    if (v.trim().length < 2 || v.trim().length > 120) return "Tên 2–120 ký tự";
+    return "";
+  };
+  const vUnit = (v: string) => {
+    if (!UNIT_OPTIONS.includes(v as never)) return "Vui lòng chọn đơn vị hợp lệ";
+    return "";
+  };
+  const vPrice = (n: number) => {
+    if (!Number.isFinite(n)) return "Giá không hợp lệ";
+    if (n < 0) return "Giá phải ≥ 0";
+    if (!Number.isInteger(n)) return "Giá phải là số nguyên";
+    return "";
+  };
+  const vStock = (n: number) => {
+    if (!Number.isFinite(n)) return "Tồn kho không hợp lệ";
+    if (n < 0) return "Tồn kho phải ≥ 0";
+    if (!Number.isInteger(n)) return "Tồn kho phải là số nguyên";
+    return "";
+  };
+  const vStatus = (s: DrugStatus) => {
+    if (s !== "in stock" && s !== "out of stock")
+      return "Trạng thái không hợp lệ";
+    return "";
+  };
+
+  const validateField = (field: Field, value: unknown): string => {
+    switch (field) {
+      case "code":
+        return vCode(String(value));
+      case "name":
+        return vName(String(value));
+      case "unit":
+        return vUnit(String(value));
+      case "price":
+        return vPrice(Number(value));
+      case "stock":
+        return vStock(Number(value));
+      case "status":
+        return vStatus(value as DrugStatus);
+      default:
+        return "";
+    }
+  };
+
+  const validateForm = (f = form): FieldErrors => {
+    const out: FieldErrors = {
+      code: validateField("code", f.code),
+      name: validateField("name", f.name),
+      unit: validateField("unit", f.unit),
+      price: validateField("price", f.price),
+      stock: validateField("stock", f.stock),
+      status: validateField("status", f.status),
+    };
+    Object.keys(out).forEach((k) => {
+      if (!out[k as Field]) delete out[k as Field];
+    });
+    return out;
+  };
+
+  const isValid = useMemo(
+    () => Object.keys(validateForm()).length === 0,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form]
+  );
+
+  // —— Effects ——
   useEffect(() => {
     if (!open) return;
     setForm({
@@ -30,27 +109,68 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
       unit: initial?.unit ?? "viên",
       price: initial?.price ?? 0,
       stock: initial?.stock ?? 0,
-      status: (initial?.status as DrugStatus) ?? "active",
+      status: (initial?.status as DrugStatus) ?? "in stock",
     });
-    setErr(null);
+    setErrors({});
   }, [open, initial]);
 
+  // —— Handlers ——
+  const setField =
+    <K extends keyof typeof form>(key: K) =>
+    (val: (typeof form)[K]) => {
+      setForm((f) => ({ ...f, [key]: val }));
+      setErrors((e) => {
+        const msg = validateField(key as Field, val);
+        const next = { ...e };
+        if (msg) next[key as Field] = msg;
+        else delete next[key as Field];
+        return next;
+      });
+    };
+
+  const onChangePriceText: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const raw = e.target.value.replace(/\D/g, ""); // chỉ giữ số
+    const n = raw === "" ? 0 : Number(raw);
+    setField("price")(n);
+  };
+
+  const onChangeStock: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const n = Math.max(0, Math.floor(Number(e.target.value)));
+    setField("stock")(Number.isFinite(n) ? n : 0);
+  };
+
   const submit = async () => {
-    if (!form.name.trim()) return setErr("Vui lòng nhập tên thuốc");
-    if (form.price < 0 || form.stock < 0)
-      return setErr("Giá/Tồn kho không hợp lệ");
+    const errs = validateForm();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    // Đồng bộ trạng thái theo tồn kho
+    const normalized: Omit<DrugItem, "id" | "createdAt"> = {
+      ...form,
+      status:
+        form.stock > 0
+          ? ("in stock" as DrugStatus)
+          : ("out of stock" as DrugStatus),
+    };
+
     setLoading(true);
     try {
-      await onSubmit(form);
+      await onSubmit(normalized);
       onClose();
     } catch {
-      setErr("Không lưu được thuốc");
+      setErrors((e) => ({ ...e, code: e.code ?? "Không lưu được thuốc" }));
     } finally {
       setLoading(false);
     }
   };
 
+  const errorCls = (field: Field) =>
+    `w-full rounded-md border px-3 py-2 outline-none  ${
+      errors[field] ? "border-rose-400 focus:ring-rose-400" : ""
+    }`;
+
   if (!open) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -67,70 +187,115 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
           </button>
         </div>
 
-        {err && <p className="mb-3 text-sm text-rose-600">{err}</p>}
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Mã thuốc */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Mã thuốc</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Mã thuốc</span>
+              <p className="text-red-500">*</p>
+            </div>
             <input
               value={form.code}
-              onChange={(e) => setForm({ ...form, code: e.target.value })}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              onChange={(e) => setField("code")(e.target.value)}
+              className={errorCls("code")}
+              placeholder="VD: PARA500"
             />
+            {errors.code && (
+              <p className="mt-1 text-xs text-rose-600">{errors.code}</p>
+            )}
           </label>
+
+          {/* Tên thuốc */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Tên thuốc *</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Tên thuốc</span>
+              <p className="text-red-500">*</p>
+            </div>
             <input
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              onChange={(e) => setField("name")(e.target.value)}
+              className={errorCls("name")}
+              placeholder="VD: Paracetamol 500mg"
             />
+            {errors.name && (
+              <p className="mt-1 text-xs text-rose-600">{errors.name}</p>
+            )}
           </label>
+
+          {/* Đơn vị */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Đơn vị *</span>
-            <input
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Đơn vị</span>
+              <p className="text-red-500">*</p>
+            </div>
+            <select
               value={form.unit}
-              onChange={(e) => setForm({ ...form, unit: e.target.value })}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-              placeholder="viên, ống, gói, ml…"
-            />
+              onChange={(e) => setField("unit")(e.target.value)}
+              className={errorCls("unit")}
+            >
+              {UNIT_OPTIONS.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
+            {errors.unit && (
+              <p className="mt-1 text-xs text-rose-600">{errors.unit}</p>
+            )}
           </label>
+
+          {/* Giá (text numeric để không rớt số 0 đầu khi nhập) */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Giá (VNĐ) *</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Giá (VNĐ)</span>
+              <p className="text-red-500">*</p>
+            </div>
             <input
-              type="number"
-              min={0}
-              value={form.price}
-              onChange={(e) =>
-                setForm({ ...form, price: Number(e.target.value) })
-              }
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              type="text"
+              inputMode="numeric"
+              value={form.price.toString()}
+              onChange={onChangePriceText}
+              className={errorCls("price")}
+              placeholder="VD: 15000"
             />
+            {errors.price && (
+              <p className="mt-1 text-xs text-rose-600">{errors.price}</p>
+            )}
           </label>
+
+          {/* Tồn kho */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Tồn kho *</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Tồn kho</span>
+              <p className="text-red-500">*</p>
+            </div>
             <input
               type="number"
               min={0}
               value={form.stock}
-              onChange={(e) =>
-                setForm({ ...form, stock: Number(e.target.value) })
-              }
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              onChange={onChangeStock}
+              className={errorCls("stock")}
+              placeholder="VD: 100"
             />
+            {errors.stock && (
+              <p className="mt-1 text-xs text-rose-600">{errors.stock}</p>
+            )}
           </label>
+
+          {/* Trạng thái (giữ value tiếng Anh, hiển thị TV). Sẽ được override khi lưu theo stock */}
           <label className="text-sm">
             <span className="block mb-1 text-slate-600">Trạng thái</span>
             <select
               value={form.status}
-              onChange={(e) =>
-                setForm({ ...form, status: e.target.value as DrugStatus })
-              }
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              onChange={(e) => setField("status")(e.target.value as DrugStatus)}
+              className={errorCls("status")}
             >
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Tạm khoá</option>
+              <option value="in stock">Còn hàng</option>
+              <option value="out of stock">Hết hàng</option>
             </select>
+            {errors.status && (
+              <p className="mt-1 text-xs text-rose-600">{errors.status}</p>
+            )}
           </label>
         </div>
 
@@ -143,8 +308,9 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
           </button>
           <button
             onClick={submit}
-            disabled={loading}
-            className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white disabled:opacity-60 inline-flex items-center gap-2"
+            disabled={loading || !isValid}
+            className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white inline-flex items-center gap-2"
+            title={!isValid ? "Vui lòng sửa các lỗi trước khi lưu" : "Lưu"}
           >
             <Save className="w-4 h-4" /> Lưu
           </button>

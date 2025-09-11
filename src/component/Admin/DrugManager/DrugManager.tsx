@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Pill, Pencil, Trash2, Power } from "lucide-react";
-import type { DrugItem, DrugStatus } from "../../../types/drug/drug";
-import { apiAdjustStock, apiCreateDrug, apiDeleteDrug, apiListDrugs, apiToggleDrug, apiUpdateDrug } from "../../../types/drug/mockDrugApi";
+import { Search, Pill, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import type { DrugItem } from "../../../types/drug/drug";
+import {
+  apiCreateDrug,
+  apiDeleteDrug,
+  apiListDrugs,
+  apiUpdateDrug,
+} from "../../../types/drug/mockDrugApi";
 import DrugModal from "./DrugModal";
+import ConfirmModal from "../../../common/ConfirmModal";
 
 export default function DrugManager() {
   const [items, setItems] = useState<DrugItem[]>([]);
@@ -12,6 +18,10 @@ export default function DrugManager() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DrugItem | null>(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     apiListDrugs().then(setItems);
@@ -38,11 +48,6 @@ export default function DrugManager() {
     if (page > last) setPage(1);
   }, [last, page]);
 
-  const badge = (s: DrugStatus) =>
-    s === "active"
-      ? "bg-emerald-100 text-emerald-700"
-      : "bg-slate-200 text-slate-600";
-
   const openCreate = () => {
     setEditing(null);
     setOpen(true);
@@ -62,20 +67,22 @@ export default function DrugManager() {
     }
   };
 
-  const toggle = async (id: number, s: DrugStatus) => {
-    const upd = await apiToggleDrug(id, s);
-    setItems((arr) => arr.map((x) => (x.id === id ? upd : x)));
+  const askDelete = (id: number) => {
+    setDeletingId(id);
+    setConfirmOpen(true);
   };
 
-  const adjust = async (id: number, delta: number) => {
-    const upd = await apiAdjustStock(id, delta);
-    setItems((arr) => arr.map((x) => (x.id === id ? upd : x)));
-  };
-
-  const remove = async (id: number) => {
-    if (!confirm("Xoá thuốc này?")) return;
-    await apiDeleteDrug(id);
-    setItems((arr) => arr.filter((x) => x.id !== id));
+  const doDelete = async () => {
+    if (!deletingId) return;
+    setConfirmLoading(true);
+    try {
+      await apiDeleteDrug(deletingId);
+      setItems((arr) => arr.filter((x) => x.id !== deletingId));
+      setConfirmOpen(false);
+      setDeletingId(null);
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   return (
@@ -136,37 +143,26 @@ export default function DrugManager() {
                 <td className="px-3 py-2 text-left font-medium">{d.code}</td>
                 <td className="px-3 py-2 text-left">{d.name}</td>
                 <td className="px-3 py-2">{d.unit}</td>
-                <td className="px-3 py-2">
-                  {d.price.toLocaleString("vi-VN")}₫
+                <td className="px-3 py-2 text-red-500 font-semibold">
+                  {d.price.toLocaleString("vi-VN")} ₫
                 </td>
+
+                {/* Ô tồn kho: chỉ input số lượng */}
+                <td className="px-3 py-2">{d.stock.toLocaleString("vi-VN")}</td>
+
+                {/* Trạng thái: luôn tính từ stock để hiển thị đúng */}
                 <td className="px-3 py-2">
-                  <div className="inline-flex items-center gap-1">
-                    <span>{d.stock.toLocaleString("vi-VN")}</span>
-                    <button
-                      onClick={() => adjust(d.id, +10)}
-                      className="cursor-pointer rounded-md border px-2 py-0.5 hover:bg-gray-50 text-xs"
-                      title="Nhập +10"
-                    >
-                      +10
-                    </button>
-                    <button
-                      onClick={() => adjust(d.id, -10)}
-                      className="cursor-pointer rounded-md border px-2 py-0.5 hover:bg-gray-50 text-xs"
-                      title="Xuất -10"
-                    >
-                      -10
-                    </button>
-                  </div>
+                  {d.stock > 0 ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                      Còn hàng
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                      Hết hàng
+                    </span>
+                  )}
                 </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badge(
-                      d.status
-                    )}`}
-                  >
-                    {d.status === "active" ? "Đang hoạt động" : "Tạm khoá"}
-                  </span>
-                </td>
+
                 <td className="py-2 pr-3">
                   <div className="flex items-center justify-center gap-2">
                     <button
@@ -176,32 +172,26 @@ export default function DrugManager() {
                     >
                       <Pencil className="w-4 h-4" /> Sửa
                     </button>
-
                     <button
-                      onClick={() =>
-                        toggle(
-                          d.id,
-                          d.status === "active" ? "inactive" : "active"
-                        )
-                      }
-                      className={`cursor-pointer inline-flex items-center gap-1 rounded-md px-2 py-1 ${
-                        d.status === "active"
-                          ? "bg-red-100 text-red-700 hover:bg-rose-100"
-                          : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                      }`}
-                      title={d.status === "active" ? "Khoá" : "Mở"}
-                    >
-                      <Power className="w-4 h-4" />
-                      {d.status === "active" ? "Khoá" : "Mở"}
-                    </button>
-
-                    <button
-                      onClick={() => remove(d.id)}
+                      onClick={() => askDelete(d.id)}
                       className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-rose-50 text-rose-700 px-2 py-1 hover:bg-rose-100"
                       title="Xoá"
                     >
                       <Trash2 className="w-4 h-4" /> Xoá
                     </button>
+
+                    {/* Modal xác nhận dùng chung */}
+                    <ConfirmModal
+                      open={confirmOpen}
+                      onClose={() => setConfirmOpen(false)}
+                      onConfirm={doDelete}
+                      loading={confirmLoading}
+                      title="Xoá thuốc"
+                      description="Bạn có chắc muốn xoá thuốc này? Thao tác không thể hoàn tác."
+                      confirmText="Xoá"
+                      cancelText="Huỷ"
+                      danger
+                    />
                   </div>
                 </td>
               </tr>
@@ -213,7 +203,7 @@ export default function DrugManager() {
       {/* Pagination */}
       <div className="mt-4 flex items-center justify-between">
         <p className="text-sm text-slate-500">
-          Trang {Math.min(page, last)}/{last} — Tổng {filtered.length} mặt hàng
+          Trang {Math.min(page, last)} - {last} 
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -221,14 +211,14 @@ export default function DrugManager() {
             disabled={page === 1}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            Trước
+            <ChevronLeft/>
           </button>
           <button
             onClick={() => setPage(Math.min(last, page + 1))}
             disabled={page === last}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            Sau
+            <ChevronRight/>
           </button>
         </div>
       </div>
