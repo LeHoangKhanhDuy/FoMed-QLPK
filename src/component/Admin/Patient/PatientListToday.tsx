@@ -7,14 +7,13 @@ type Props = {
   items: Patient[];
   perPage?: number;
   title?: string;
-  onSetStatus?: (id: number, status: Patient["status"]) => void; // 👈 thêm
+  onSetStatus?: (id: number, status: Patient["status"]) => void;
 };
 
 export default function PatientListToday({
   items,
   perPage = 8,
   title = "Danh sách bệnh nhân hôm nay",
-  onSetStatus,
 }: Props) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -49,6 +48,7 @@ export default function PatientListToday({
       "Đã đặt": "bg-blue-100 text-blue-700",
       "Đã khám": "bg-green-100 text-green-700",
       "Đã hủy": "bg-red-100 text-red-700",
+      "Vắng mặt": "bg-slate-200 text-slate-700",
     };
     return map[s] ?? "bg-slate-100 text-slate-700";
   };
@@ -80,12 +80,14 @@ export default function PatientListToday({
       <div className="overflow-x-auto rounded-sm border border-gray-200">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-sky-500 text-white">
+            <tr className="bg-sky-400 text-white">
+              <th className="px-3 py-2 text-left">STT</th>
               <th className="px-3 py-2 text-left">Mã hồ sơ</th>
               <th className="px-3 py-2 text-left">Bệnh nhân</th>
-              <th className="px-3 py-2">Giới</th>
+              <th className="px-3 py-2">Giới tính</th>
               <th className="px-3 py-2">Năm sinh</th>
               <th className="px-3 py-2">SĐT</th>
+              <th className="px-3 py-2">Dịch vụ</th>
               <th className="px-3 py-2">Giờ khám</th>
               <th className="px-3 py-2">Trạng thái</th>
               <th className="px-3 py-2">Thao tác</th>
@@ -103,11 +105,13 @@ export default function PatientListToday({
 
             {paged.map((p) => (
               <tr key={p.id} className="text-center border-b last:border-none">
-                <td className="px-3 py-2 text-left font-medium">{p.code}</td>
+                <td className="px-3 py-2 text-left font-medium">#{p.id}</td>
+                <td className="px-3 py-2 text-left">{p.code}</td>
                 <td className="px-3 py-2 text-left font-bold">{p.name}</td>
                 <td className="px-3 py-2">{p.sex}</td>
                 <td className="px-3 py-2">{p.dob.slice(0, 4)}</td>
                 <td className="px-3 py-2">{p.phone ?? "-"}</td>
+                <td className="px-3 py-2">{p.service}</td>
                 <td className="px-3 py-2">{p.visitTime}</td>
                 <td className="px-3 py-2">
                   <span
@@ -119,30 +123,14 @@ export default function PatientListToday({
                   </span>
                 </td>
                 <td className="py-2 pr-3">
-                  <div className="flex items-center justify-center gap-2">
-                    {/* Select trạng thái */}
-                    <select
-                      value={p.status}
-                      onChange={(e) =>
-                        onSetStatus?.(p.id, e.target.value as Patient["status"])
-                      }
-                      className="rounded-md border px-2 py-1 text-sm focus:ring-2 focus:ring-sky-500"
-                    >
-                      <option value="Chờ khám">Chờ khám</option>
-                      <option value="Đã đặt">Đã đặt</option>
-                      <option value="Đã khám">Đã khám</option>
-                      <option value="Đã hủy">Đã hủy</option>
-                    </select>
-
-                    {/* Nút mở workspace */}
-                    <Link
-                      to="/cms/patient-list/workspace"
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-gray-50"
-                      title="Khám bệnh"
-                    >
-                      Khám bệnh
-                    </Link>
-                  </div>
+                  {/* Nút mở workspace */}
+                  <Link
+                    to="/cms/patient-list/workspace"
+                    className="cursor-pointer inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-gray-50"
+                    title="Khám bệnh"
+                  >
+                    Khám bệnh
+                  </Link>
                 </td>
               </tr>
             ))}
@@ -184,14 +172,14 @@ function ListPagination({
           disabled={page === 1}
           className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
         >
-          <ChevronLeft/>
+          <ChevronLeft />
         </button>
         <button
           onClick={() => setPage(Math.min(last, page + 1))}
           disabled={page === last}
           className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
         >
-          <ChevronRight/>
+          <ChevronRight />
         </button>
       </div>
     </div>

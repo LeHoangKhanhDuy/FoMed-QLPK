@@ -1,4 +1,4 @@
-// src/types/doctor.ts
+
 export type ID = number;
 
 export type Sex = "Nam" | "Nữ" | "Khác";
@@ -10,8 +10,9 @@ export interface Patient {
   sex: Sex;
   dob: string; // YYYY-MM-DD
   phone?: string;
+  service: string;
   visitTime: string; // ISO hoặc "HH:mm"
-  status: "Chờ khám" | "Đã đặt" | "Đã khám" | "Đã hủy";
+  status: "Chờ khám" | "Đã đặt" | "Đã khám" | "Đã hủy" | "Vắng mặt";
 }
 
 export interface DiagnosisPayload {

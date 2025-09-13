@@ -148,6 +148,7 @@ export default function AppointmentList({
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-center text-white">
+              <th className="py-2 pr-3">STT</th>
               <th className="py-2 pr-3">Mã hồ sơ</th>
               <th className="py-2 pr-3">Bệnh nhân</th>
               <th className="py-2 pr-3">Số điện thoại</th>
@@ -176,6 +177,7 @@ export default function AppointmentList({
                   key={a.id}
                   className="text-center border-b last:border-none"
                 >
+                  <td className="py-2 pr-3">#{a.id}</td>
                   <td className="py-2 pr-3">{a.code}</td>
                   <td className="py-2 pr-3 font-bold">{a.patientName}</td>
                   <td className="py-2 pr-3">{a.patientPhone}</td>
