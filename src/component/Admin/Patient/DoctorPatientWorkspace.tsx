@@ -1,7 +1,7 @@
 // src/features/doctor/pages/DoctorPatientWorkspace.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Stethoscope, FlaskConical, Pill } from "lucide-react";
+import { ArrowLeft, Stethoscope, FlaskConical, Pill, Trash2 } from "lucide-react";
 import type {
   DiagnosisPayload,
   LabItem,
@@ -10,6 +10,7 @@ import type {
   PrescriptionPayload,
 } from "../../../types/doctor/doctor";
 import SuccessModal from "../../../common/SuccessModal";
+import { SelectMenu } from "../../ui/select-menu";
 
 // ====== MOCK (thay bằng API thật) ======
 const mockLabItems: LabItem[] = [
@@ -121,8 +122,6 @@ export default function DoctorPatientWorkspace() {
           >
             Chẩn đoán
           </TabBtn>
-        </div>
-        <div className="flex gap-2 mb-4">
           <TabBtn
             id="lab"
             active={tab === "lab"}
@@ -149,14 +148,14 @@ export default function DoctorPatientWorkspace() {
                 value={dx.symptoms}
                 onChange={(e) => setDx({ ...dx, symptoms: e.target.value })}
                 rows={3}
-                className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </Field>
             <Field label="Chẩn đoán">
               <input
                 value={dx.diagnosis}
                 onChange={(e) => setDx({ ...dx, diagnosis: e.target.value })}
-                className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </Field>
             <Field label="Ghi chú">
@@ -164,7 +163,7 @@ export default function DoctorPatientWorkspace() {
                 value={dx.note ?? ""}
                 onChange={(e) => setDx({ ...dx, note: e.target.value })}
                 rows={3}
-                className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </Field>
 
@@ -179,7 +178,7 @@ export default function DoctorPatientWorkspace() {
                   );
                   setTab("lab");
                 }}
-                className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white"
+                className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white"
               >
                 Lưu
               </button>
@@ -198,7 +197,7 @@ export default function DoctorPatientWorkspace() {
                     items: [...l.items, mockLabItems[0]?.id ?? 0],
                   }))
                 }
-                className="bg-primary-linear text-white cursor-pointer rounded-md px-3 py-1.5"
+                className="bg-primary-linear text-white cursor-pointer rounded-[var(--rounded)] px-3 py-1.5"
               >
                 + Thêm
               </button>
@@ -210,24 +209,21 @@ export default function DoctorPatientWorkspace() {
               <div className="space-y-2">
                 {lab.items.map((labId, idx) => (
                   <div key={`${labId}-${idx}`} className="flex gap-2">
-                    <select
+                    <SelectMenu<number>
                       value={labId}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         setLab((l) => ({
                           ...l,
                           items: l.items.map((x, i) =>
-                            i === idx ? Number(e.target.value) : x
+                            i === idx ? Number(v) : x
                           ),
                         }))
                       }
-                      className="rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-                    >
-                      {mockLabItems.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.code} — {s.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={mockLabItems.map((s) => ({
+                        value: s.id,
+                        label: `${s.code} — ${s.name}`,
+                      }))}
+                    />
 
                     <button
                       onClick={() =>
@@ -236,9 +232,9 @@ export default function DoctorPatientWorkspace() {
                           items: l.items.filter((_, i) => i !== idx),
                         }))
                       }
-                      className="cursor-pointer rounded-md bg-rose-50 text-rose-700 px-2 py-1 hover:bg-rose-100 text-xs"
+                      className="cursor-pointer rounded-md text-rose-600 px-2 py-1 text-xs"
                     >
-                      Xoá
+                      <Trash2 className="w-5 h-5 hover:text-rose-700" />
                     </button>
                   </div>
                 ))}
@@ -249,7 +245,7 @@ export default function DoctorPatientWorkspace() {
               <input
                 value={lab.note ?? ""}
                 onChange={(e) => setLab({ ...lab, note: e.target.value })}
-                className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
               />
             </Field>
 
@@ -264,7 +260,7 @@ export default function DoctorPatientWorkspace() {
                   );
                   setTab("rx");
                 }}
-                className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white"
+                className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white"
               >
                 Lưu
               </button>
@@ -273,9 +269,9 @@ export default function DoctorPatientWorkspace() {
         )}
 
         {tab === "rx" && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="font-medium">Danh mục thuốc</p>
+              <p className="font-semibold">Danh mục thuốc</p>
               <button
                 onClick={() =>
                   setRxLines((ls) => [
@@ -288,7 +284,7 @@ export default function DoctorPatientWorkspace() {
                     },
                   ])
                 }
-                className="bg-primary-linear text-white cursor-pointer rounded-md px-3 py-1.5 "
+                className="bg-primary-linear text-white cursor-pointer rounded-[var(--rounded)] px-3 py-1.5 "
               >
                 + Thêm thuốc
               </button>
@@ -301,27 +297,22 @@ export default function DoctorPatientWorkspace() {
                 {rxLines.map((ln, idx) => (
                   <div
                     key={`rx-${idx}`}
-                    className="grid grid-cols-1 md:grid-cols-5 gap-2 items-start"
+                    className="mb-2 grid grid-cols-1 md:grid-cols-5 gap-2 items-start"
                   >
-                    <select
+                    <SelectMenu
                       value={ln.drugId}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         setRxLines((arr) =>
                           arr.map((x, i) =>
-                            i === idx
-                              ? { ...x, drugId: Number(e.target.value) }
-                              : x
+                            i === idx ? { ...x, drugId: Number(v) } : x
                           )
                         )
                       }
-                      className="rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-                    >
-                      {mockDrugs.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={mockDrugs.map((d) => ({
+                        value: d.id,
+                        label: d.name,
+                      }))}
+                    />
                     <input
                       placeholder="Liều (vd: 1 viên)"
                       value={ln.dose}
@@ -332,7 +323,7 @@ export default function DoctorPatientWorkspace() {
                           )
                         )
                       }
-                      className="rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                      className="mt-1 rounded-[var(--rounded)] border px-3 py-3 outline-none focus:ring-2 focus:ring-sky-500"
                     />
                     <input
                       placeholder="Tần suất (vd: 2 lần/ngày)"
@@ -344,7 +335,7 @@ export default function DoctorPatientWorkspace() {
                           )
                         )
                       }
-                      className="rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                      className="mt-1 rounded-[var(--rounded)] border px-3 py-3 outline-none focus:ring-2 focus:ring-sky-500"
                     />
                     <input
                       placeholder="Thời gian (vd: 5 ngày)"
@@ -356,15 +347,16 @@ export default function DoctorPatientWorkspace() {
                           )
                         )
                       }
-                      className="rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                      className="mt-1 rounded-[var(--rounded)] border px-3 py-3 outline-none focus:ring-2 focus:ring-sky-500"
                     />
                     <button
                       onClick={() =>
                         setRxLines((arr) => arr.filter((_, i) => i !== idx))
                       }
-                      className="cursor-pointer rounded-md bg-rose-50 text-rose-700 px-2 py-1 hover:bg-rose-100 text-xs"
+                      className="cursor-pointer flex items-center justify-center rounded-md text-rose-600 w-14 h-14"
+                      title="Xóa thuốc"
                     >
-                      Xoá
+                      <Trash2 className="w-5 h-5 hover:text-rose-700" />
                     </button>
                   </div>
                 ))}
@@ -376,7 +368,8 @@ export default function DoctorPatientWorkspace() {
                 rows={3}
                 value={rxAdvice}
                 onChange={(e) => setRxAdvice(e.target.value)}
-                className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                placeholder="VD: Ngày dùng 3 lần mỗi lần 2 viên"
               />
             </Field>
 
@@ -395,9 +388,9 @@ export default function DoctorPatientWorkspace() {
                   );
                   nav(-1); // quay về danh sách sau khi lưu
                 }}
-                className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white"
+                className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white"
               >
-                Lưu toa & Hoàn tất
+                Lưu & Hoàn tất
               </button>
             </div>
           </div>
@@ -410,7 +403,7 @@ export default function DoctorPatientWorkspace() {
         onClose={() => setSuccess((s) => ({ ...s, open: false }))}
         title={success.title}
         message={success.message}
-        autoCloseMs={1200}
+        autoCloseMs={3000}
       />
     </section>
   );

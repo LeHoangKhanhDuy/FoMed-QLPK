@@ -12,20 +12,33 @@ type SelectValue<T extends Allowed> = T | ""; // cho phép rỗng khi chưa ch�
 
 type Props<T extends Allowed> = {
   label?: string;
-  value?: SelectValue<T>; // có thể undefined từ ngoài, ta sẽ chuẩn hoá về ""
+  required?: boolean;
+  value?: SelectValue<T>;
   options: SelectOption<T>[];
   placeholder?: string;
   onChange: (v: SelectValue<T>) => void;
   className?: string;
+
+  // thêm để đồng bộ với input
+  invalid?: boolean;
+  error?: string;
+  disabled?: boolean;
 };
+
+const cx = (...a: Array<string | false | undefined>) =>
+  a.filter(Boolean).join(" ");
 
 export function SelectMenu<T extends Allowed>({
   label,
+  required,
   value,
   options,
   placeholder = "Chọn...",
   onChange,
   className = "",
+  invalid = false,
+  error,
+  disabled = false,
 }: Props<T>) {
   // chuẩn hoá undefined -> ""
   const safeValue = (value ?? "") as SelectValue<T>;
@@ -33,21 +46,45 @@ export function SelectMenu<T extends Allowed>({
     safeValue === "" ? undefined : options.find((o) => o.value === safeValue);
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={cx("space-y-1.5", className)}>
       {label && (
         <div className="flex items-center gap-1">
           <label className="text-sm text-slate-600">{label}</label>
-          <p className="text-red-500">*</p>
+          {required && <span className="text-red-500">*</span>}
         </div>
       )}
 
       <Menu as="div" className="relative">
-        <Menu.Button className="mt-1 w-full flex items-center justify-between rounded-lg border px-3 py-2 bg-white text-left outline-none cursor-pointer">
-          <span className="truncate">{current?.label ?? placeholder}</span>
-          <ChevronDown className="w-4 h-4 opacity-70" />
+        <Menu.Button
+          disabled={disabled}
+          aria-invalid={invalid || undefined}
+          className={cx(
+            // base: cao 48px, font >=16 để iOS không zoom, đổ bóng nhẹ
+            "mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 text-[16px] leading-6 text-left shadow-xs outline-none cursor-pointer",
+            invalid ? "border-red-400 focus:ring-red-300" : "border-slate-200",
+            "pr-10", // chừa chỗ icon bên phải
+            disabled && "opacity-60 pointer-events-none"
+          )}
+        >
+          <span className={cx("block truncate", !current && "text-slate-400")}>
+            {current?.label ?? placeholder}
+          </span>
+
+          {/* caret cố định bên phải để giống input có icon */}
+          <ChevronDown
+            className={cx(
+              "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4",
+              invalid ? "text-red-400" : "text-slate-400"
+            )}
+          />
         </Menu.Button>
 
-        <Menu.Items className="absolute z-10 mt-1 w-full rounded-lg border bg-white shadow-md focus:outline-none">
+        <Menu.Items
+          className={cx(
+            "absolute left-0 right-0 z-20 mt-1 overflow-hidden rounded-xl border bg-white shadow-lg focus:outline-none",
+            "border-slate-200"
+          )}
+        >
           <div className="max-h-64 overflow-auto py-1">
             {/* Tùy chọn rỗng */}
             <Menu.Item>
@@ -55,9 +92,10 @@ export function SelectMenu<T extends Allowed>({
                 <button
                   type="button"
                   onClick={() => onChange("" as SelectValue<T>)}
-                  className={`w-full px-3 py-2 text-left cursor-pointer ${
-                    active ? "bg-slate-50" : ""
-                  }`}
+                  className={cx(
+                    "w-full px-4 py-3 text-left text-[16px] leading-6 cursor-pointer",
+                    active && "bg-slate-50"
+                  )}
                 >
                   {placeholder}
                 </button>
@@ -72,13 +110,14 @@ export function SelectMenu<T extends Allowed>({
                     <button
                       type="button"
                       onClick={() => onChange(o.value as SelectValue<T>)}
-                      className={`w-full px-3 py-2 text-left flex items-center justify-between cursor-pointer ${
-                        active ? "bg-slate-50" : ""
-                      }`}
+                      className={cx(
+                        "w-full px-4 py-3 text-left text-[16px] leading-6 flex items-center justify-between cursor-pointer",
+                        active && "bg-slate-50"
+                      )}
                     >
                       <span className="truncate">{o.label}</span>
                       {selected && (
-                        <Check className="w-5 h-5 text-green-500 shrink-0" />
+                        <Check className="h-5 w-5 text-green-500 shrink-0" />
                       )}
                     </button>
                   )}
@@ -88,6 +127,8 @@ export function SelectMenu<T extends Allowed>({
           </div>
         </Menu.Items>
       </Menu>
+
+      {invalid && !!error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
 }

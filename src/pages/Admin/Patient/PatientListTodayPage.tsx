@@ -11,6 +11,7 @@ const MOCK_PATIENTS: Patient[] = [
     dob: "1990-05-12",
     visitTime: "08:30",
     status: "Chờ khám",
+    service: "Khám Tổng quát",
   },
   {
     id: 2,
@@ -20,6 +21,7 @@ const MOCK_PATIENTS: Patient[] = [
     dob: "1985-09-21",
     visitTime: "09:15",
     status: "Đã đặt",
+    service: "Khám Tổng quát",
   },
   {
     id: 3,
@@ -29,6 +31,7 @@ const MOCK_PATIENTS: Patient[] = [
     dob: "1978-03-10",
     visitTime: "10:00",
     status: "Đã khám",
+    service: "Khám Tổng quát",
   },
   {
     id: 4,
@@ -38,6 +41,17 @@ const MOCK_PATIENTS: Patient[] = [
     dob: "2000-12-05",
     visitTime: "10:45",
     status: "Đã hủy",
+    service: "Khám Tổng quát",
+  },
+  {
+    id: 5,
+    code: "BN0005",
+    name: "Lê Minh K",
+    sex: "Nam",
+    dob: "2005-12-05",
+    visitTime: "10:50",
+    status: "Vắng mặt",
+    service: "Khám Tổng quát",
   },
 ];
 

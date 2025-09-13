@@ -5,10 +5,12 @@ import type {
   AppointmentPayload,
   AppointmentStatus,
 } from "../../../types/appointment/appointment";
-import AppointmentList from "./AppointmentList";
 import { SelectMenu } from "../../ui/select-menu";
-import DateTimeForm from "./DateTimeForm";
 import toast from "react-hot-toast";
+import { FormField } from "../../ui/form-field";
+import { Input } from "../../ui/input";
+import { DateInput, TimeInput } from "./DateTimeForm";
+import AppointmentList from "./AppointmentList";
 
 // ====== Demo data (thay bằng API thật) ======
 type Doctor = { id: number; name: string; specialty: string };
@@ -216,15 +218,6 @@ export default function AppointmentCreate() {
     return sameDay.length + 1; // preview
   }, [appointments, form.date]);
 
-  // classes cho input theo trạng thái lỗi
-  const inputClass = (hasErr: boolean) =>
-    cn(
-      "mt-2 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2",
-      hasErr
-        ? "border-red-400 focus:ring-red-300"
-        : "border-slate-200 focus:ring-sky-400"
-    );
-
   // helper đánh dấu field đầu có lỗi để scroll
   const firstErrorKey = (Object.keys(errors) as (keyof Errors)[]).find(
     (k) => errors[k]
@@ -244,105 +237,80 @@ export default function AppointmentCreate() {
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tên bệnh nhân */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1">
-                <label className="text-sm text-slate-600">Tên bệnh nhân</label>
-                <p className="text-red-500">*</p>
-              </div>
-              <div className="relative">
-                <input
-                  {...markFirstAttr("patientName")}
-                  value={form.patientName}
-                  onChange={(e) => update("patientName", e.target.value)}
-                  onBlur={() => markTouched("patientName")}
-                  placeholder="VD: Nguyễn Văn A"
-                  className={inputClass(
-                    !!(touched.patientName && errors.patientName)
-                  )}
-                />
-                <User2
-                  className={cn(
-                    "w-5 h-5 absolute right-3 top-5",
-                    touched.patientName && errors.patientName
-                      ? "text-red-400"
-                      : "text-slate-400"
-                  )}
-                />
-              </div>
-              {touched.patientName && errors.patientName && (
-                <p className="text-xs text-red-500">{errors.patientName}</p>
-              )}
-            </div>
+            <FormField
+              label="Tên bệnh nhân"
+              required
+              error={touched.patientName ? errors.patientName : ""}
+            >
+              <Input
+                value={form.patientName}
+                onChange={(e) => update("patientName", e.target.value)}
+                onBlur={() => markTouched("patientName")}
+                placeholder="VD: Nguyễn Văn A"
+                leftIcon={<User2 className="h-5 w-5" />}
+                invalid={!!(touched.patientName && errors.patientName)}
+                autoComplete="name"
+                enterKeyHint="next"
+              />
+            </FormField>
 
             {/* Số điện thoại */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1">
-                <label className="text-sm text-slate-600">Số điện thoại</label>
-                <p className="text-red-500">*</p>
-              </div>
-              <div className="relative">
-                <input
-                  {...markFirstAttr("patientPhone")}
-                  value={form.patientPhone}
-                  onChange={(e) =>
-                    update("patientPhone", e.target.value.replace(/\D/g, ""))
-                  }
-                  onBlur={() => markTouched("patientPhone")}
-                  placeholder="VD: 0123456789"
-                  className={inputClass(
-                    !!(touched.patientPhone && errors.patientPhone)
-                  )}
-                  inputMode="numeric"
-                />
-                <PhoneIcon
-                  className={cn(
-                    "w-5 h-5 absolute right-3 top-5",
-                    touched.patientPhone && errors.patientPhone
-                      ? "text-red-400"
-                      : "text-slate-400"
-                  )}
-                />
-              </div>
-              {touched.patientPhone && errors.patientPhone && (
-                <p className="text-xs text-red-500">{errors.patientPhone}</p>
-              )}
-            </div>
+            <FormField
+              label="Số điện thoại"
+              required
+              error={touched.patientPhone ? errors.patientPhone : ""}
+            >
+              <Input
+                value={form.patientPhone}
+                onChange={(e) =>
+                  update("patientPhone", e.target.value.replace(/\D/g, ""))
+                }
+                onBlur={() => markTouched("patientPhone")}
+                placeholder="VD: 0123456789"
+                leftIcon={<PhoneIcon className="h-5 w-5" />}
+                invalid={!!(touched.patientPhone && errors.patientPhone)}
+                inputMode="numeric"
+                autoComplete="tel"
+                enterKeyHint="next"
+              />
+            </FormField>
 
             {/* Bác sĩ */}
-            <div className="space-y-2">
-              <SelectMenu
-                label="Bác sĩ"
-                value={form.doctorId}
-                onChange={(v) => update("doctorId", v as number | "")}
-                options={FAKE_DOCTORS.map((d) => ({
-                  value: d.id,
-                  label: `${d.name} (${d.specialty})`,
-                }))}
-              />
-              {touched.doctorId && errors.doctorId && (
-                <p className="text-xs text-red-500">{errors.doctorId}</p>
-              )}
-            </div>
+            <SelectMenu
+              label="Bác sĩ"
+              required
+              value={form.doctorId}
+              options={FAKE_DOCTORS.map((d) => ({
+                value: d.id,
+                label: `${d.name} (${d.specialty})`,
+              }))}
+              onChange={(v) => {
+                update("doctorId", v as number | "");
+                setTouched((t) => ({ ...t, doctorId: true }));
+              }}
+              invalid={!!(touched.doctorId && errors.doctorId)}
+              error={touched.doctorId ? errors.doctorId : ""}
+            />
 
             {/* Dịch vụ */}
-            <div className="space-y-2">
-              {/* Dịch vụ (mock/optional) */}
-              <SelectMenu
-                label="Dịch vụ"
-                value={form.serviceId}
-                onChange={(v) => update("serviceId", v as number | "")}
-                options={FAKE_SERVICES.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                }))}
-              />
-              {touched.serviceId && errors.serviceId && (
-                <p className="text-xs text-red-500">{errors.serviceId}</p>
-              )}
-            </div>
+            <SelectMenu
+              label="Dịch vụ"
+              required
+              value={form.serviceId}
+              options={FAKE_SERVICES.map((s) => ({
+                value: s.id,
+                label: s.name,
+              }))}
+              onChange={(v) => {
+                update("serviceId", v as number | "");
+                setTouched((t) => ({ ...t, serviceId: true }));
+              }}
+              invalid={!!(touched.serviceId && errors.serviceId)}
+              error={touched.serviceId ? errors.serviceId : ""}
+            />
 
             {/* Số thứ tự (preview, không sửa) */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm text-slate-600">
                 Số thứ tự (tự động)
               </label>
@@ -350,17 +318,24 @@ export default function AppointmentCreate() {
                 <input
                   value={nextQueueNo || ""}
                   readOnly
-                  aria-readonly
+                  disabled
                   placeholder="-"
-                  className="mt-2 w-full rounded-lg border px-3 py-2 outline-none bg-slate-50 text-slate-700"
                   title="Số sẽ được hệ thống cấp tự động khi tạo/check-in"
+                  className="mt-1 block w-full h-12 rounded-[var(--rounded)] border border-slate-200 bg-slate-50 px-4 pr-10 text-[16px] leading-6 text-slate-700 shadow-xs outline-none cursor-not-allowed"
                 />
-                <Hash className="w-5 h-5 text-slate-400 absolute right-3 top-5" />
+                <Hash className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               </div>
             </div>
 
             {/* Ngày & Giờ */}
-            <DateTimeForm />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField label="Ngày khám">
+                <DateInput />
+              </FormField>
+              <FormField label="Giờ khám">
+                <TimeInput />
+              </FormField>
+            </div>
 
             {/* Lý do */}
             <div className="md:col-span-2 space-y-2">
