@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { Clock, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Search } from "lucide-react";
 import type {
   Appointment,
   AppointmentStatus,
 } from "../../../types/appointment/appointment";
-import { SelectMenu } from "../../ui/select-menu";
+import ConfirmModal from "../../../common/ConfirmModal";
 
 type Props = {
   items: Appointment[];
@@ -18,9 +18,23 @@ const STATUS_LABEL: Record<AppointmentStatus, string> = {
   waiting: "Đang chờ",
   booked: "Đã đặt",
   done: "Đã khám",
-  cancelled: "Đã huỷ",
+  cancelled: "Hủy lịch",
   no_show: "Vắng mặt",
 };
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+const toDMY = (input: string) => {
+  // ưu tiên parse theo Date; nếu fail thì tách theo '-'
+  const d = new Date(input);
+  if (!Number.isNaN(d.getTime())) {
+    return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
+  }
+  const [y, m, dd] = input.split("-");
+  if (y && m && dd) return `${pad2(Number(dd))}/${pad2(Number(m))}/${y}`;
+  return input; // fallback nguyên bản
+};
+
 
 const STATUS_BADGE: Record<AppointmentStatus, string> = {
   waiting: "bg-amber-100 text-amber-700",
@@ -38,14 +52,34 @@ export default function AppointmentList({
 }: Props) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [tempStatus, setTempStatus] = useState<
-    Record<number, AppointmentStatus>
-  >({});
+  const [tempStatus, setTempStatus] = useState<Record<number, AppointmentStatus>>({});
+  // ---- state cho ConfirmModal ----
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [pending, setPending] = useState<null | { id: number; next: AppointmentStatus }>(null);
 
   const getStatus = useCallback(
     (id: number, fallback: AppointmentStatus) => tempStatus[id] ?? fallback,
     [tempStatus]
   );
+  
+  // const setStatus = (id: number, status: AppointmentStatus) => {
+  //   if (onSetStatus) onSetStatus(id, status);
+  //   else setTempStatus((m) => ({ ...m, [id]: status }));
+  // };
+
+  const doConfirm = async () => {
+    if (!pending) return;
+    setConfirmLoading(true);
+    try {
+      // dùng hàm chung để set (hỗ trợ cả khi có onSetStatus)
+      await Promise.resolve(setStatus(pending.id, pending.next));
+      setConfirmOpen(false);
+      setPending(null);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
 
   // “chờ khám” = waiting + booked
   const filtered = useMemo(() => {
@@ -82,7 +116,7 @@ export default function AppointmentList({
 
   const renderBadge = (status: AppointmentStatus) => (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[status]}`}
+      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${STATUS_BADGE[status]}`}
     >
       {STATUS_LABEL[status]}
     </span>
@@ -142,43 +176,45 @@ export default function AppointmentList({
                   key={a.id}
                   className="text-center border-b last:border-none"
                 >
-                  <td className="py-2 pr-3 font-medium">{a.code}</td>
-                  <td className="py-2 pr-3">{a.patientName}</td>
+                  <td className="py-2 pr-3">{a.code}</td>
+                  <td className="py-2 pr-3 font-bold">{a.patientName}</td>
                   <td className="py-2 pr-3">{a.patientPhone}</td>
                   <td className="py-2 pr-3">{a.doctorName}</td>
                   <td className="py-2 pr-3">{a.serviceName ?? "-"}</td>
                   <td className="py-2 pr-3">
-                    {a.date} <span className="text-slate-400">/</span> {a.time}
+                    {a.time}
+                    <span className="text-slate-400"> - </span>
+                    {toDMY(a.date)}
                   </td>
                   <td className="py-2 pr-3">
-                    {new Date(a.createdAt).toLocaleString("vi-VN")}
+                    {new Date(a.createdAt).toLocaleTimeString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </td>
                   <td className="py-2 pr-3">{renderBadge(st)}</td>
                   <td className="py-2 pr-3">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* Select đổi trạng thái (Tailwind thuần) */}
-                      <SelectMenu
-                        value={st}
-                        onChange={(v) =>
-                          setStatus(a.id, v as AppointmentStatus)
-                        }
-                        options={[
-                          { value: "booked", label: "Đã đặt" },
-                          { value: "waiting", label: "Đang chờ" },
-                          { value: "done", label: "Đã khám" },
-                          { value: "cancelled", label: "Đã huỷ" },
-                          { value: "no_show", label: "Vắng mặt" },
-                        ]}
-                      />
+                    <select
+                      value={st}
+                      onChange={(e) => {
+                        const next = e.target.value as AppointmentStatus;
+                        if (next === st) return;
 
-                      {/* <button
-                        onClick={() => onView?.(a.id)}
-                        className="cursor-pointer inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-gray-50"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" /> Chi tiết
-                      </button> */}
-                    </div>
+                        if (next === "cancelled" || next === "no_show") {
+                          setPending({ id: a.id, next });
+                          setConfirmOpen(true);
+                          return;
+                        }
+                        setStatus(a.id, next);
+                      }}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-1.5"
+                    >
+                      <option value="booked">Đã đặt</option>
+                      <option value="waiting">Đang chờ</option>
+                      <option value="done">Đã khám</option>
+                      <option value="cancelled">Hủy lịch</option>
+                      <option value="no_show">Vắng mặt</option>
+                    </select>
                   </td>
                 </tr>
               );
@@ -186,6 +222,29 @@ export default function AppointmentList({
           </tbody>
         </table>
       </div>
+
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => {
+          setConfirmOpen(false);
+          setPending(null);
+        }}
+        onConfirm={doConfirm}
+        loading={confirmLoading}
+        title={
+          pending?.next === "cancelled"
+            ? "Xác nhận Hủy lịch hẹn"
+            : "Đánh dấu vắng mặt"
+        }
+        description={
+          pending?.next === "cancelled"
+            ? "Bạn có chắc muốn hủy lịch hẹn này!"
+            : "Bạn có chắc muốn đánh dấu bệnh nhân này vắng mặt!"
+        }
+        confirmText={pending?.next === "cancelled" ? "Hủy lịch" : "Xác nhận"}
+        cancelText="Đóng"
+        danger
+      />
 
       <ListPagination
         total={filtered.length}
@@ -213,7 +272,7 @@ function ListPagination({
   return (
     <div className="mt-4 flex items-center justify-between">
       <p className="text-sm text-slate-500">
-        Trang {Math.min(page, last)}/{last} — Tổng {total} lịch
+        Trang {Math.min(page, last)} - {last}
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -221,14 +280,14 @@ function ListPagination({
           disabled={page === 1}
           className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
         >
-          Trước
+          <ChevronLeft/>
         </button>
         <button
           onClick={() => setPage(Math.min(last, page + 1))}
           disabled={page === last}
           className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
         >
-          Sau
+          <ChevronRight/>
         </button>
       </div>
     </div>

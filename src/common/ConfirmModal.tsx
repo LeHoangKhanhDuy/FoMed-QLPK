@@ -54,17 +54,17 @@ export default function ConfirmModal({
         <div className="flex justify-center mb-3">
           <div className="flex items-center gap-2">
             <AlertTriangle
-              className={`w-5 h-5 ${
+              className={`w-6 h-6 ${
                 danger ? "text-rose-500" : "text-amber-500"
               }`}
             />
-            <h3 id="confirm-title" className="font-semibold text-lg">
+            <h3 id="confirm-title" className="font-semibold text-2xl">
               {title}
             </h3>
           </div>
         </div>
 
-        <p id="confirm-desc" className="text-sm text-slate-600 mb-4">
+        <p id="confirm-desc" className="text-sm text-slate-600 text-center mb-4">
           {description}
         </p>
 

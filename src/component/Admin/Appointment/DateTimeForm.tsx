@@ -1,59 +1,42 @@
-import { CalendarCheck, Timer } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Input } from "../../ui/input";
 
-export default function DateTimeForm() {
-  const [form, setForm] = useState({
-    date: "",
-    time: "",
-  });
+// util: format ngày yyyy-mm-dd
+function formatDateNow() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+// util: format giờ hh:mm
+function formatTimeNow() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
 
-  const update = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  useEffect(() => {
-    const now = new Date();
-
-    // Lấy ngày theo format YYYY-MM-DD
-    const today = now.toISOString().split("T")[0];
-
-    // Lấy giờ theo format HH:mm
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
-    const currentTime = `${hh}:${mm}`;
-
-    setForm({ date: today, time: currentTime });
-  }, []);
-
+export function DateInput() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-2">
-      {/* Date */}
-      <div className="relative space-y-2">
-        <label className="text-sm text-slate-600">Ngày khám</label>
-        <input
-          type="date"
-          value={form.date}
-          onChange={(e) => update("date", e.target.value)}
-          readOnly
-          aria-readonly
-          className="mt-2 block w-full min-h-[44px] rounded-lg border px-3 py-2 text-base outline-none bg-slate-50 text-slate-700 cursor-pointer"
-        />
-        <CalendarCheck className="w-5 h-5 text-slate-400 absolute right-3 top-11" />
-      </div>
+    <Input
+      type="text" 
+      value={formatDateNow()} 
+      disabled 
+      rightIcon={<CalendarIcon className="h-5 w-5" />}
+      className="!bg-slate-50 cursor-not-allowed text-slate-700"
+    />
+  );
+}
 
-      {/* Time */}
-      <div className="relative space-y-2">
-        <label className="text-sm text-slate-600">Giờ khám</label>
-        <input
-          type="time"
-          value={form.time}
-          onChange={(e) => update("time", e.target.value)}
-          readOnly
-          aria-readonly
-          className="mt-2 block w-full min-h-[44px] rounded-lg border px-3 py-2 text-base outline-none bg-slate-50 text-slate-700 cursor-pointer"
-        />
-        <Timer className="w-5 h-5 text-slate-400 absolute right-3 top-11" />
-      </div>
-    </div>
+export function TimeInput() {
+  return (
+    <Input
+      type="text"
+      value={formatTimeNow()}
+      disabled
+      rightIcon={<Clock className="h-5 w-5" />}
+      className="!bg-slate-50 cursor-not-allowed text-slate-700"
+    />
   );
 }
