@@ -3,6 +3,7 @@ import { Search, Users, Pencil,  KeyRound, Power, ChevronLeft, ChevronRight } fr
 import type { User, UserRole, UserStatus } from "../../../types/user/user";
 import { apiCreateUser, apiListUsers, apiToggleStatus, apiUpdateUser } from "../../../types/user/mockUserApi";
 import UserModal from "./UserModal";
+import { SelectMenu } from "../../ui/select-menu";
 
 
 type FilterRole = "all" | UserRole;
@@ -99,31 +100,38 @@ export default function UserManager() {
           </span>
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="space-y-1 flex flex-col sm:flex-row gap-2 w-full sm:w-auto ">
+          {/* Search */}
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <Search className="absolute left-3 top-7.5 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm tên, mã, SĐT, email…"
-              className="w-full rounded-lg border pl-9 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              className="mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 pl-9 pr-3 py-3 text-[16px] leading-6 text-left shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as FilterRole)}
-            className="rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-          >
-            <option value="all">Tất cả vai trò</option>
-            <option value="patient">Bệnh nhân</option>
-            <option value="staff">Nhân viên</option>
-            <option value="doctor">Bác sĩ</option>
-            <option value="admin">Quản trị</option>
-          </select>
 
+          {/* Select */}
+          <div className="w-full sm:w-48">
+            <SelectMenu<FilterRole>
+              value={role}
+              onChange={(v) => setRole((v as FilterRole) || "all")}
+              options={[
+                { value: "all", label: "Tất cả vai trò" },
+                { value: "patient", label: "Bệnh nhân" },
+                { value: "staff", label: "Nhân viên" },
+                { value: "doctor", label: "Bác sĩ" },
+                { value: "admin", label: "Quản trị" },
+              ]}
+              className="h-11"
+            />
+          </div>
+
+          {/* Button */}
           <button
             onClick={openCreate}
-            className="cursor-pointer rounded-lg bg-primary-linear text-white px-3 py-2"
+            className="mt-1 cursor-pointer h-12 rounded-[var(--rounded)] bg-primary-linear text-white px-4 text-sm font-medium"
           >
             + Thêm người dùng
           </button>
@@ -230,14 +238,14 @@ export default function UserManager() {
             disabled={page === 1}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            <ChevronLeft/>
+            <ChevronLeft />
           </button>
           <button
             onClick={() => setPage(Math.min(lastPage, page + 1))}
             disabled={page === lastPage}
             className="cursor-pointer px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
           >
-            <ChevronRight/>
+            <ChevronRight />
           </button>
         </div>
       </div>

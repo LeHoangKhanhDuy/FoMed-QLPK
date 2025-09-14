@@ -103,13 +103,13 @@ export default function DrugManager() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm tên, mã, đơn vị…"
-            className="w-full rounded-lg border pl-9 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rounded-[var(--rounded)] border pl-9 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
           />
         </div>
 
         <button
           onClick={openCreate}
-          className="cursor-pointer rounded-lg bg-primary-linear text-white px-3 py-2"
+          className="cursor-pointer rounded-[var(--rounded)] bg-primary-linear text-white px-3 py-2"
         >
           + Thêm thuốc
         </button>
@@ -120,7 +120,7 @@ export default function DrugManager() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-white">
-              <th className="px-3 py-2 text-left">Mã</th>
+              <th className="px-3 py-2 text-left">Mã thuốc</th>
               <th className="px-3 py-2 text-left">Tên thuốc</th>
               <th className="px-3 py-2">Đơn vị</th>
               <th className="px-3 py-2">Giá</th>
@@ -153,46 +153,45 @@ export default function DrugManager() {
                 {/* Trạng thái: luôn tính từ stock để hiển thị đúng */}
                 <td className="px-3 py-2">
                   {d.stock > 0 ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                       Còn hàng
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                       Hết hàng
                     </span>
                   )}
                 </td>
 
                 <td className="py-2 pr-3">
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                     <button
                       onClick={() => openEdit(d)}
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-gray-50"
+                      className="cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] border px-2 py-1 hover:bg-gray-50"
                       title="Sửa"
                     >
                       <Pencil className="w-4 h-4" /> Sửa
                     </button>
                     <button
                       onClick={() => askDelete(d.id)}
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-rose-50 text-rose-700 px-2 py-1 hover:bg-rose-100"
+                      className="cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] bg-red-50 text-red-500 px-2 py-1 hover:bg-rose-100"
                       title="Xoá"
                     >
                       <Trash2 className="w-4 h-4" /> Xoá
                     </button>
-
-                    {/* Modal xác nhận dùng chung */}
-                    <ConfirmModal
-                      open={confirmOpen}
-                      onClose={() => setConfirmOpen(false)}
-                      onConfirm={doDelete}
-                      loading={confirmLoading}
-                      title="Xoá thuốc"
-                      description="Bạn có chắc muốn xoá thuốc này? Thao tác không thể hoàn tác."
-                      confirmText="Xoá"
-                      cancelText="Huỷ"
-                      danger
-                    />
                   </div>
+                  {/* Modal xác nhận dùng chung */}
+                  <ConfirmModal
+                    open={confirmOpen}
+                    onClose={() => setConfirmOpen(false)}
+                    onConfirm={doDelete}
+                    loading={confirmLoading}
+                    title="Xoá thuốc"
+                    description="Bạn có chắc muốn xoá thuốc này? Thao tác không thể hoàn tác."
+                    confirmText="Xoá"
+                    cancelText="Huỷ"
+                    danger
+                  />
                 </td>
               </tr>
             ))}
