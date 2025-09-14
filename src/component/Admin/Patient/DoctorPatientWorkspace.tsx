@@ -103,7 +103,7 @@ export default function DoctorPatientWorkspace() {
             onClick={() => nav(-1)}
             className="cursor-pointer inline-flex items-center gap-2 rounded-md border px-2 py-1 hover:bg-gray-50"
           >
-            <ArrowLeft className="w-4 h-4" /> Quay lại
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <h1 className="text-xl font-bold">
             Hồ sơ khám bệnh — BN#{patientId}
@@ -149,6 +149,7 @@ export default function DoctorPatientWorkspace() {
                 onChange={(e) => setDx({ ...dx, symptoms: e.target.value })}
                 rows={3}
                 className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                placeholder="VD: Sốt, đau đầu,..."
               />
             </Field>
             <Field label="Chẩn đoán">
@@ -156,6 +157,7 @@ export default function DoctorPatientWorkspace() {
                 value={dx.diagnosis}
                 onChange={(e) => setDx({ ...dx, diagnosis: e.target.value })}
                 className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                placeholder="VD: Cảm lạnh,..."
               />
             </Field>
             <Field label="Ghi chú">
@@ -164,6 +166,7 @@ export default function DoctorPatientWorkspace() {
                 onChange={(e) => setDx({ ...dx, note: e.target.value })}
                 rows={3}
                 className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                placeholder="VD: ..."
               />
             </Field>
 
@@ -246,6 +249,7 @@ export default function DoctorPatientWorkspace() {
                 value={lab.note ?? ""}
                 onChange={(e) => setLab({ ...lab, note: e.target.value })}
                 className="w-full rounded-[var(--rounded)] border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                placeholder="VD: Đường trong máu cao"
               />
             </Field>
 
