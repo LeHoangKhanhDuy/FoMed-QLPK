@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Save, X } from "lucide-react";
 import type { DrugItem, DrugStatus } from "../../../types/drug/drug";
+import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 
 type Props = {
   open: boolean;
@@ -10,15 +11,21 @@ type Props = {
 };
 
 const UNIT_OPTIONS = ["viên", "gói", "ống", "chai", "vỉ", "ml", "hộp"] as const;
+type Unit = (typeof UNIT_OPTIONS)[number];
+
+const normalizeUnit = (u?: string): Unit =>
+  UNIT_OPTIONS.includes(u as Unit) ? (u as Unit) : "viên";
+
+type DrugForm = Omit<DrugItem, "id" | "createdAt" | "unit"> & { unit: Unit };
 
 type Field = "code" | "name" | "unit" | "price" | "stock" | "status";
 type FieldErrors = Partial<Record<Field, string>>;
 
 export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
-  const [form, setForm] = useState<Omit<DrugItem, "id" | "createdAt">>({
+  const [form, setForm] = useState<DrugForm>({
     code: initial?.code ?? "",
     name: initial?.name ?? "",
-    unit: initial?.unit ?? "viên",
+    unit: normalizeUnit(initial?.unit),
     price: initial?.price ?? 0,
     stock: initial?.stock ?? 0,
     status: (initial?.status as DrugStatus) ?? "in stock",
@@ -39,7 +46,8 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     return "";
   };
   const vUnit = (v: string) => {
-    if (!UNIT_OPTIONS.includes(v as never)) return "Vui lòng chọn đơn vị hợp lệ";
+    if (!UNIT_OPTIONS.includes(v as never))
+      return "Vui lòng chọn đơn vị hợp lệ";
     return "";
   };
   const vPrice = (n: number) => {
@@ -100,13 +108,23 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     [form]
   );
 
+  const unitOptions: SelectOption<Unit>[] = UNIT_OPTIONS.map((u) => ({
+    value: u,
+    label: u,
+  }));
+
+  const statusOptions: SelectOption<DrugStatus>[] = [
+    { value: "in stock", label: "Còn hàng" },
+    { value: "out of stock", label: "Hết hàng" },
+  ];
+
   // —— Effects ——
   useEffect(() => {
     if (!open) return;
     setForm({
       code: initial?.code ?? "",
       name: initial?.name ?? "",
-      unit: initial?.unit ?? "viên",
+      unit: normalizeUnit(initial?.unit),
       price: initial?.price ?? 0,
       stock: initial?.stock ?? 0,
       status: (initial?.status as DrugStatus) ?? "in stock",
@@ -164,10 +182,11 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     }
   };
 
-  const errorCls = (field: Field) =>
-    `w-full rounded-md border px-3 py-2 outline-none  ${
-      errors[field] ? "border-rose-400 focus:ring-rose-400" : ""
-    }`;
+  const ctrl = (field: Field) =>
+    `mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 " +
+      "text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500 ${
+        errors[field] ? "border-rose-400 focus:ring-rose-400" : ""
+      }`;
 
   if (!open) return null;
 
@@ -176,7 +195,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">
+          <h3 className="font-semibold text-xl uppercase">
             {initial?.id ? "Sửa thuốc" : "Thêm thuốc"}
           </h3>
           <button
@@ -197,7 +216,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
             <input
               value={form.code}
               onChange={(e) => setField("code")(e.target.value)}
-              className={errorCls("code")}
+              className={ctrl("code")}
               placeholder="VD: PARA500"
             />
             {errors.code && (
@@ -214,7 +233,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
             <input
               value={form.name}
               onChange={(e) => setField("name")(e.target.value)}
-              className={errorCls("name")}
+              className={ctrl("name")}
               placeholder="VD: Paracetamol 500mg"
             />
             {errors.name && (
@@ -223,26 +242,15 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
           </label>
 
           {/* Đơn vị */}
-          <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Đơn vị</span>
-              <p className="text-red-500">*</p>
-            </div>
-            <select
-              value={form.unit}
-              onChange={(e) => setField("unit")(e.target.value)}
-              className={errorCls("unit")}
-            >
-              {UNIT_OPTIONS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
-            {errors.unit && (
-              <p className="mt-1 text-xs text-rose-600">{errors.unit}</p>
-            )}
-          </label>
+          <SelectMenu<Unit>
+            label="Đơn vị"
+            required
+            value={form.unit}
+            onChange={(v) => setField("unit")((v as Unit) || form.unit)}
+            options={unitOptions}
+            invalid={!!errors.unit}
+            error={errors.unit}
+          />
 
           {/* Giá (text numeric để không rớt số 0 đầu khi nhập) */}
           <label className="text-sm">
@@ -255,7 +263,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
               inputMode="numeric"
               value={form.price.toString()}
               onChange={onChangePriceText}
-              className={errorCls("price")}
+              className={ctrl("price")}
               placeholder="VD: 15000"
             />
             {errors.price && (
@@ -274,7 +282,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
               min={0}
               value={form.stock}
               onChange={onChangeStock}
-              className={errorCls("stock")}
+              className={ctrl("stock")}
               placeholder="VD: 100"
             />
             {errors.stock && (
@@ -283,20 +291,17 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
           </label>
 
           {/* Trạng thái (giữ value tiếng Anh, hiển thị TV). Sẽ được override khi lưu theo stock */}
-          <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Trạng thái</span>
-            <select
-              value={form.status}
-              onChange={(e) => setField("status")(e.target.value as DrugStatus)}
-              className={errorCls("status")}
-            >
-              <option value="in stock">Còn hàng</option>
-              <option value="out of stock">Hết hàng</option>
-            </select>
-            {errors.status && (
-              <p className="mt-1 text-xs text-rose-600">{errors.status}</p>
-            )}
-          </label>
+          <SelectMenu<DrugStatus>
+            label="Trạng thái"
+            required
+            value={form.status}
+            onChange={(v) =>
+              setField("status")((v as DrugStatus) || form.status)
+            }
+            options={statusOptions}
+            invalid={!!errors.status}
+            error={errors.status}
+          />
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-2">

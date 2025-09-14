@@ -131,7 +131,7 @@ export default function UserManager() {
           {/* Button */}
           <button
             onClick={openCreate}
-            className="mt-1 cursor-pointer h-12 rounded-lg bg-primary-linear text-white px-4 text-sm font-medium"
+            className="mt-1 cursor-pointer h-12 rounded-[var(--rounded)] bg-primary-linear text-white px-4 text-sm font-medium"
           >
             + Thêm người dùng
           </button>

@@ -5,6 +5,7 @@ import type {
   ServiceKind,
   ServiceStatus,
 } from "../../../types/serviceapi/service";
+import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 
 type Props = {
   open: boolean;
@@ -13,11 +14,33 @@ type Props = {
   onSubmit: (payload: Omit<ServiceItem, "id" | "createdAt">) => Promise<void>;
 };
 
-const kindOptions: Array<{ v: ServiceKind; label: string }> = [
-  { v: "exam", label: "Khám" },
-  { v: "lab", label: "Xét nghiệm" },
-  { v: "imaging", label: "Chẩn đoán hình ảnh" },
-  { v: "procedure", label: "Thủ thuật" },
+const kindMenuOptions: SelectOption<ServiceKind>[] = [
+  { value: "exam", label: "Khám" },
+  { value: "lab", label: "Xét nghiệm" },
+  { value: "imaging", label: "Chẩn đoán hình ảnh" },
+  { value: "procedure", label: "Thủ thuật" },
+];
+
+type Specimen = NonNullable<ServiceItem["specimen"]>;
+const specimenOptions: SelectOption<Specimen>[] = [
+  { value: "blood", label: "Máu" },
+  { value: "urine", label: "Nước tiểu" },
+  { value: "swab", label: "Dịch tỵ hầu" },
+  { value: "stool", label: "Phân" },
+  { value: "other", label: "Khác" },
+];
+
+const statusOptions: SelectOption<ServiceStatus>[] = [
+  { value: "active", label: "Đang hoạt động" },
+  { value: "inactive", label: "Tạm khoá" },
+];
+
+type Department = NonNullable<ServiceItem["department"]>;
+const departmentOptions: SelectOption<Department>[] = [
+  { value: "Khám bệnh", label: "Khám bệnh" },
+  { value: "XN Huyết học", label: "XN Huyết học" },
+  { value: "XN Sinh hoá", label: "XN Sinh hoá" },
+  { value: "CĐHA", label: "CĐHA" },
 ];
 
 export default function ServiceModal({
@@ -54,6 +77,10 @@ export default function ServiceModal({
     setErr(null);
   }, [open, initial]);
 
+  const ctrl =
+    "mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 " +
+    "text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500";
+
   const submit = async () => {
     if (!form.code.trim() || !form.name.trim())
       return setErr("Vui lòng nhập mã và tên dịch vụ");
@@ -76,7 +103,7 @@ export default function ServiceModal({
       {/* mx-3 để panel không sát mép trên mobile */}
       <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">
+          <h3 className="font-semibold text-xl uppercase">
             {initial?.id ? "Sửa dịch vụ" : "Thêm dịch vụ"}
           </h3>
           <button
@@ -99,7 +126,8 @@ export default function ServiceModal({
             <input
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              className={ctrl}
+              placeholder="VD: TQ001"
             />
           </label>
 
@@ -111,29 +139,20 @@ export default function ServiceModal({
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              className={ctrl}
+              placeholder="VD: Khám tổng quát"
             />
           </label>
 
-          <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Nhóm</span>
-              <span className="text-red-500">*</span>
-            </div>
-            <select
-              value={form.kind}
-              onChange={(e) =>
-                setForm({ ...form, kind: e.target.value as ServiceKind })
-              }
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              {kindOptions.map((o) => (
-                <option key={o.v} value={o.v}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectMenu<ServiceKind>
+            label="Nhóm"
+            required
+            value={form.kind}
+            onChange={(v) =>
+              setForm((f) => ({ ...f, kind: (v as ServiceKind) || f.kind }))
+            }
+            options={kindMenuOptions}
+          />
 
           <label className="text-sm">
             <div className="flex items-center gap-1">
@@ -143,54 +162,43 @@ export default function ServiceModal({
             <input
               value={form.unit ?? ""}
               onChange={(e) => setForm({ ...form, unit: e.target.value })}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-              placeholder="lượt, mẫu, lần…"
+              className={ctrl}
+              placeholder="VD: lượt, mẫu, lần"
             />
           </label>
 
+          {/* Loại mẫu (chỉ khi Xét nghiệm) */}
           {form.kind === "lab" && (
-            <label className="text-sm">
-              <div className="flex items-center gap-1">
-                <span className="block mb-1 text-slate-600">Loại mẫu (XN)</span>
-                <span className="text-red-500">*</span>
-              </div>
-              <select
-                value={form.specimen ?? "blood"}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    specimen: e.target.value as NonNullable<
-                      ServiceItem["specimen"]
-                    >,
-                  })
-                }
-                className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-              >
-                <option value="blood">Máu</option>
-                <option value="urine">Nước tiểu</option>
-                <option value="swab">Dịch tỵ hầu</option>
-                <option value="stool">Phân</option>
-                <option value="other">Khác</option>
-              </select>
-            </label>
+            <SelectMenu<Specimen>
+              label="Loại mẫu (XN)"
+              required
+              value={(form.specimen as Specimen) ?? "blood"}
+              onChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  specimen: (v as Specimen) || f.specimen,
+                }))
+              }
+              options={specimenOptions}
+            />
           )}
 
-          <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Khoa/Phòng</span>
-              <span className="text-red-500">*</span>
-            </div>
-            <input
-              value={form.department ?? ""}
-              onChange={(e) => setForm({ ...form, department: e.target.value })}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-              placeholder="CĐHA, Xét nghiệm, Khám bệnh…"
-            />
-          </label>
+          <SelectMenu<Department>
+            label="Khoa/Phòng"
+            required
+            value={(form.department as Department) ?? "Khám bệnh"}
+            onChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                department: (v as Department) || f.department,
+              }))
+            }
+            options={departmentOptions}
+          />
 
           <label className="text-sm">
             <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Đơn giá (VNĐ)</span>
+              <span className="block mb-2 text-slate-600">Đơn giá (VNĐ)</span>
               <span className="text-red-500">*</span>
             </div>
             <input
@@ -200,39 +208,35 @@ export default function ServiceModal({
               onChange={(e) =>
                 setForm({ ...form, price: Number(e.target.value) })
               }
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+              className={ctrl}
             />
           </label>
 
-          <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Trạng thái</span>
-              <span className="text-red-500">*</span>
-            </div>
-            <select
-              value={form.status}
-              onChange={(e) =>
-                setForm({ ...form, status: e.target.value as ServiceStatus })
-              }
-              className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Tạm khoá</option>
-            </select>
-          </label>
+          <SelectMenu<ServiceStatus>
+            label="Trạng thái"
+            required
+            value={form.status}
+            onChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                status: (v as ServiceStatus) || f.status,
+              }))
+            }
+            options={statusOptions}
+          />
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="cursor-pointer px-3 py-2 rounded-md border hover:bg-gray-50"
+            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] border hover:bg-gray-50"
           >
             Huỷ
           </button>
           <button
             onClick={submit}
             disabled={loading}
-            className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white disabled:opacity-60 inline-flex items-center gap-2"
+            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white inline-flex items-center gap-2"
           >
             <Save className="w-4 h-4" /> Lưu
           </button>

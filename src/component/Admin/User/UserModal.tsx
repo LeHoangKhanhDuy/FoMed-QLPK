@@ -71,7 +71,7 @@ export default function UserModal({ open, onClose, initial, onSubmit }: Props) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-lg mx-3 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">
+          <h3 className="font-semibold text-xl uppercase">
             {initial?.id ? "Sửa người dùng" : "Thêm người dùng"}
           </h3>
           <button
