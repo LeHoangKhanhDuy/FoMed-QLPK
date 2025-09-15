@@ -167,14 +167,14 @@ export default function DrugManager() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                     <button
                       onClick={() => openEdit(d)}
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] border px-2 py-1 hover:bg-gray-50"
+                      className="bg-warning-linear text-white cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] border px-2 py-1"
                       title="Sửa"
                     >
                       <Pencil className="w-4 h-4" /> Sửa
                     </button>
                     <button
                       onClick={() => askDelete(d.id)}
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] bg-red-50 text-red-500 px-2 py-1 hover:bg-rose-100"
+                      className="cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] bg-error-linear text-white px-2 py-1"
                       title="Xoá"
                     >
                       <Trash2 className="w-4 h-4" /> Xoá

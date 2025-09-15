@@ -182,17 +182,17 @@ export default function UserManager() {
                   {new Date(u.createdAt).toLocaleString("vi-VN")}
                 </td>
                 <td className="py-2 pr-3">
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                     <button
                       onClick={() => openEdit(u)}
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-gray-50"
+                      className="bg-warning-linear text-white cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px]"
                       title="Sửa thông tin"
                     >
                       <Pencil className="w-4 h-4" /> Sửa
                     </button>
 
                     <button
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-gray-50"
+                      className="bg-primary-linear text-white cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px]"
                       title="Reset mật khẩu"
                     >
                       <KeyRound className="w-4 h-4" /> Reset
@@ -205,9 +205,9 @@ export default function UserManager() {
                           u.status === "active" ? "inactive" : "active"
                         )
                       }
-                      className={`cursor-pointer inline-flex items-center gap-1 rounded-md px-2 py-1 ${
+                      className={`cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px] ${
                         u.status === "active"
-                          ? "bg-red-100 text-red-700 hover:bg-rose-100"
+                          ? "bg-orange-100 text-orange-500 hover:bg-orange-100"
                           : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
                       }`}
                       title={

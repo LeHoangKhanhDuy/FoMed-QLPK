@@ -209,7 +209,7 @@ export default function AppointmentList({
                         }
                         setStatus(a.id, next);
                       }}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-1.5"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-1.5 cursor-pointer"
                     >
                       <option value="booked">Đã đặt</option>
                       <option value="waiting">Đang chờ</option>

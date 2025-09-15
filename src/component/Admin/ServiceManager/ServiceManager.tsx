@@ -220,7 +220,7 @@ export default function ServiceManager() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                     <button
                       onClick={() => openEdit(s)}
-                      className="cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] border px-2 py-1 hover:bg-gray-50 min-w-[80px]"
+                      className="bg-warning-linear text-white cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px]"
                       title="Sửa"
                     >
                       <Pencil className="w-4 h-4" /> Sửa
@@ -248,7 +248,7 @@ export default function ServiceManager() {
 
                     <button
                       onClick={() => askDelete(s.id)}
-                      className="cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] bg-red-50 text-red-500 px-2 py-1 hover:bg-rose-100 min-w-[80px]"
+                      className="cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] bg-error-linear text-white px-2 py-1 min-w-[80px]"
                       title="Xoá"
                     >
                       <Trash2 className="w-4 h-4" /> Xoá
