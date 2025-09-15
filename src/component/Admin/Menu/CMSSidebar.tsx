@@ -4,7 +4,6 @@ import {
   ClipboardList,
   Users,
   CalendarDays,
-  Wallet,
   UserIcon,
   Pill,
 } from "lucide-react";
@@ -30,12 +29,6 @@ const items: Item[] = [
   { name: "Quản lý người dùng", href: "/cms/users-manager", icon: UserIcon },
   { name: "Quản lý dịch vụ", href: "/cms/service-manager", icon: ClipboardList },
   { name: "Quản lý thuốc", href: "/cms/drug-manager", icon: Pill },
-  {
-    name: "Yêu cầu rút tiền",
-    href: "/csm/withdrawals",
-    icon: Wallet,
-    badge: "3",
-  },
 ];
 
 export default function CMSSidebar() {

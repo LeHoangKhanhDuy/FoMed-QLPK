@@ -71,7 +71,7 @@ export default function PatientListToday({
             value={query}
             onChange={onChangeQuery}
             placeholder="Tìm tên, SĐT, mã hồ sơ…"
-            className="w-full rounded-lg border pl-9 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rounded-[var(--rounded)] border pl-9 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
           />
         </div>
       </header>
@@ -115,7 +115,7 @@ export default function PatientListToday({
                 <td className="px-3 py-2">{p.visitTime}</td>
                 <td className="px-3 py-2">
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClass(
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusClass(
                       p.status
                     )}`}
                   >
@@ -126,7 +126,7 @@ export default function PatientListToday({
                   {/* Nút mở workspace */}
                   <Link
                     to="/cms/patient-list/workspace"
-                    className="cursor-pointer inline-flex items-center gap-1 rounded-md border px-2 py-1 hover:bg-gray-50"
+                    className="cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] border px-2 py-1 hover:bg-gray-50"
                     title="Khám bệnh"
                   >
                     Khám bệnh

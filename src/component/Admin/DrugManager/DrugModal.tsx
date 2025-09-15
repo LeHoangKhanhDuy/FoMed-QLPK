@@ -307,14 +307,14 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
         <div className="mt-5 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="cursor-pointer px-3 py-2 rounded-md border hover:bg-gray-50"
+            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] border hover:bg-gray-50"
           >
             Huỷ
           </button>
           <button
             onClick={submit}
             disabled={loading || !isValid}
-            className="cursor-pointer px-3 py-2 rounded-md bg-primary-linear text-white inline-flex items-center gap-2"
+            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white inline-flex items-center gap-2"
             title={!isValid ? "Vui lòng sửa các lỗi trước khi lưu" : "Lưu"}
           >
             <Save className="w-4 h-4" /> Lưu
