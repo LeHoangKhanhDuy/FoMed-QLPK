@@ -7,7 +7,7 @@ const doctors = [
   {
     id: 1,
     name: "BS. Hồ Thị Thu Hồng",
-    title: "Bác sĩ Tim mạch - Nội tổng quát",
+    title: "Bác sĩ Tim mạch",
     specialty: "20 năm kinh nghiệm",
     experience: "ĐH Y Dược TPHCM, 1982 - 1988",
     education: "Y Đa Khoa",
@@ -25,7 +25,7 @@ const doctors = [
       "https://medpro.vn/_next/image?url=https%3A%2F%2Fcdn.medpro.vn%2Fprod-partner%2F20af7575-df2e-4224-b40d-36055b476ba6-do-dang-khoa.webp&w=384&q=75",
   },
   {
-    id: 2,
+    id: 3,
     name: "BS. CKII. Nguyễn Thị Ngọc Loan",
     title: "Bác sĩ Nội tổng quát",
     specialty: "20 năm kinh nghiệm",
@@ -35,7 +35,7 @@ const doctors = [
       "https://medpro.vn/_next/image?url=https%3A%2F%2Fcdn.medpro.vn%2Fprod-partner%2F20af7575-df2e-4224-b40d-36055b476ba6-do-dang-khoa.webp&w=384&q=75",
   },
   {
-    id: 2,
+    id: 4,
     name: "BS. CKII. Nguyễn Thị Ngọc Loan",
     title: "Bác sĩ Nội tổng quát",
     specialty: "20 năm kinh nghiệm",

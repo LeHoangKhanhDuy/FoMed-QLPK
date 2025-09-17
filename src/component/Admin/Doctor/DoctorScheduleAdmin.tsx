@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
-import type { Doctor, Shift, ShiftPayload } from "../../../types/schedule/types";
+import type {
+  Doctor,
+  Shift,
+  ShiftPayload,
+} from "../../../types/schedule/types";
 import { addDays, startOfWeek, toYMD } from "../../../types/schedule/date";
-import { apiCreateShift, apiDeleteShift, apiListDoctors, apiListShifts, apiUpdateShift } from "../../../types/schedule/mockApi";
+import {
+  apiCreateShift,
+  apiDeleteShift,
+  apiListDoctors,
+  apiListRooms,
+  apiListShifts,
+  apiUpdateShift,
+} from "../../../types/schedule/mockApi";
 import { Toolbar } from "./Toolbar";
 import { WeekGrid } from "./WeekGrid";
 import { ShiftModal } from "./ShiftModal";
@@ -12,6 +23,7 @@ export default function DoctorScheduleAdmin() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [doctorId, setDoctorId] = useState<number | "all">("all");
   const [query, setQuery] = useState("");
+  const [rooms, setRooms] = useState<string[]>([]);
 
   const [weekStart, setWeekStart] = useState<Date>(() =>
     startOfWeek(new Date())
@@ -27,12 +39,14 @@ export default function DoctorScheduleAdmin() {
   const [editing, setEditing] = useState<Shift | null>(null);
 
   const load = async () => {
-    const [ds, ss] = await Promise.all([
+    const [ds, ss, rs] = await Promise.all([
       apiListDoctors(),
       apiListShifts({ from: weekFrom, to: weekTo }),
+      apiListRooms(),
     ]);
     setDoctors(ds);
     setShifts(ss);
+    setRooms(rs);
   };
 
   useEffect(() => {
@@ -45,11 +59,13 @@ export default function DoctorScheduleAdmin() {
     return shifts.filter((s) => {
       if (doctorId !== "all" && s.doctorId !== doctorId) return false;
       if (!q) return true;
+      const timeRange = `${s.start} – ${s.end}`.toLowerCase();
       return (
         s.doctorName.toLowerCase().includes(q) ||
-        s.code.toLowerCase().includes(q) ||
-        (s.note?.toLowerCase().includes(q) ?? false) ||
-        (s.room?.toLowerCase().includes(q) ?? false)
+        (s.location?.toLowerCase().includes(q) ?? false) ||
+        s.status.toLowerCase().includes(q) ||
+        s.date.toLowerCase().includes(q) ||
+        timeRange.includes(q)
       );
     });
   }, [shifts, doctorId, query]);
@@ -120,6 +136,7 @@ export default function DoctorScheduleAdmin() {
         doctors={doctors}
         initial={editing ?? undefined}
         onSubmit={handleSubmit}
+        rooms={rooms}
       />
     </section>
   );
