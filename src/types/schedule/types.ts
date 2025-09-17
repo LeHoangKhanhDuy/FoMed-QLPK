@@ -2,23 +2,22 @@ export type Doctor = {
   id: number;
   name: string;
   specialty: string;
+  title?: string;
 };
 
-export type ShiftStatus = "scheduled" | "completed" | "cancelled";
+export type ScheduleStatus = "scheduled" | "working" | "cancelled";
 
 export type Shift = {
-  id: number;
-  code: string;
+  id: number; // ScheduleId
   doctorId: number;
-  doctorName: string;
+  doctorName: string; // denormalized để hiển thị nhanh
   date: string; // YYYY-MM-DD
   start: string; // HH:mm
   end: string; // HH:mm
-  room?: string;
-  note?: string;
-  status: ShiftStatus;
+  location?: string; // phòng/khoa/bệnh viện
+  status: ScheduleStatus;
 };
 
-export type ShiftPayload = Omit<Shift, "id" | "doctorName" | "code"> & {
+export type ShiftPayload = Omit<Shift, "id" | "doctorName"> & {
   id?: number; // khi edit
 };

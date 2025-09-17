@@ -23,9 +23,9 @@ export const WeekGrid: React.FC<Props> = ({
       {days.map((d) => (
         <div key={d} className="rounded-xl border bg-white shadow-sm p-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="font-semibold">{formatVNDate(d)}</p>
+            <p className="font-bold text-lg">{formatVNDate(d)}</p>
             {isSameDay(d, toYMD(new Date())) && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-green-50 text-green-600 px-2 py-0.5 text-xs">
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-500 px-2 py-1 text-xs">
                 <Clock className="w-4 h-4" /> Hôm nay
               </span>
             )}
