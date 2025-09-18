@@ -17,6 +17,7 @@ import {
 import { Toolbar } from "./Toolbar";
 import { WeekGrid } from "./WeekGrid";
 import { ShiftModal } from "./ShiftModal";
+import toast from "react-hot-toast";
 
 export default function DoctorScheduleAdmin() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -95,9 +96,14 @@ export default function DoctorScheduleAdmin() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Xoá ca trực này?")) return;
-    await apiDeleteShift(id);
-    setShifts((arr) => arr.filter((x) => x.id !== id));
+    try {
+      await apiDeleteShift(id);
+      setShifts((arr) => arr.filter((x) => x.id !== id));
+      toast.success("Đã xoá lịch làm việc");
+    } catch (e) {
+      console.error(e);
+      toast.error("Xoá không thành công");
+    }
   };
 
   return (
