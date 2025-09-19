@@ -6,6 +6,7 @@ import {
   CalendarDays,
   UserIcon,
   Pill,
+  Wallet2,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -18,17 +19,13 @@ type Item = {
 
 const items: Item[] = [
   { name: "Thống kê", href: "/cms/dashboard", icon: LayoutDashboard },
-  {
-    name: "Tạo lịch khám",
-    href: "/cms/create-appointments",
-    icon: CalendarDays,
-    badge: "12",
-  },
+  { name: "Tạo lịch khám", href: "/cms/create-appointments", icon: CalendarDays, badge: "12"},
   { name: "Quản lý bệnh nhân", href: "/cms/patient-list", icon: Users },
   { name: "Quản lý bác sĩ", href: "/cms/doctor-schedule", icon: Stethoscope },
+  { name: "Quản lý thanh toán", href: "/cms/billing", icon: Wallet2 },
   { name: "Quản lý người dùng", href: "/cms/users-manager", icon: UserIcon },
   { name: "Quản lý dịch vụ", href: "/cms/service-manager", icon: ClipboardList },
-  { name: "Quản lý thuốc", href: "/cms/drug-manager", icon: Pill },
+  { name: "Quản lý thuốc", href: "/cms/drug-manager", icon: Pill }
 ];
 
 export default function CMSSidebar() {

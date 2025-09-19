@@ -1,4 +1,9 @@
-export type InvoiceStatus = "draft" | "paid" | "refunded" | "void";
+export type InvoiceStatus =
+  | "Nháp"
+  | "Đã thanh toán"
+  | "Chưa thanh toán"
+  | "Hoàn tiền"
+  | "Hủy";
 
 export type InvoiceItemType = "exam" | "service" | "drug";
 
@@ -12,7 +17,7 @@ export type InvoiceItem = {
   amount: number; // qty * unitPrice
 };
 
-export type PaymentMethod = "cash" | "card" | "transfer" | "online";
+export type PaymentMethod = "cash" | "card" | "transfer" | "wallet";
 
 export type Payment = {
   id: number;
@@ -35,6 +40,19 @@ export type Invoice = {
   payments: Payment[];
   note?: string;
 };
+
+export type CompletedVisit = {
+  appointmentId: number;
+  patientId: number;
+  patientName: string;
+  doctorName: string;
+  finishedAt: string; // ISO
+  // Các gợi ý tính phí (tuỳ chọn, BE có thì dùng)
+  examFee?: number;
+  services?: Array<{ id?: number; name: string; price: number }>;
+  drugs?: Array<{ id?: number; name: string; qty: number; unitPrice: number }>;
+};
+
 
 export const calcSubTotal = (items: InvoiceItem[]) =>
   items.reduce((s, it) => s + it.amount, 0);

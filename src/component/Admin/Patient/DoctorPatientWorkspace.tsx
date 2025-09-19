@@ -97,7 +97,7 @@ export default function DoctorPatientWorkspace() {
   return (
     <section className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={() => nav(-1)}
@@ -109,7 +109,7 @@ export default function DoctorPatientWorkspace() {
             Hồ sơ khám bệnh — BN#{patientId}
           </h1>
         </div>
-      </div>
+      </header>
 
       {/* Tabs */}
       <div className="rounded-xl border bg-white p-4 shadow-sm">
