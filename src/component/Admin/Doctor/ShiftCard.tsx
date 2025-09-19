@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Edit,
   Trash2,
@@ -7,11 +7,12 @@ import {
   CalendarCheck,
 } from "lucide-react";
 import type { Shift, ScheduleStatus } from "../../../types/schedule/types";
+import ConfirmModal from "../../../common/ConfirmModal";
 
 type Props = {
   shift: Shift;
   onEdit: (s: Shift) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => void; // parent thực hiện API & cập nhật state
 };
 
 const STATUS_UI: Record<
@@ -51,7 +52,6 @@ function StatusBadge({ status }: { status: ScheduleStatus }) {
   );
 }
 
-// dd/MM/yyyy
 const fmtDate = (ymd: string) => {
   const m = /^\d{4}-\d{2}-\d{2}$/.test(ymd) ? ymd.split("-") : null;
   if (!m) return ymd;
@@ -60,19 +60,32 @@ const fmtDate = (ymd: string) => {
 };
 
 export const ShiftCard: React.FC<Props> = ({ shift, onEdit, onDelete }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const askDelete = () => setConfirmOpen(true);
+
+  const doDelete = async () => {
+    setConfirmLoading(true);
+    try {
+      // giao cho parent lo API + cập nhật danh sách
+      await Promise.resolve(onDelete(shift.id));
+      setConfirmOpen(false);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
   return (
     <section className="h-[120px] md:h-[200px] flex flex-col justify-between">
-      {/* ===== Mobile layout (≤640px) ===== */}
+      {/* Mobile */}
       <div className="sm:hidden space-y-4">
-        {/* Row 1: Doctor name — Status */}
         <div className="flex items-start justify-between gap-2">
           <p className="text-lg font-bold leading-snug line-clamp-2">
             {shift.doctorName}
           </p>
           <StatusBadge status={shift.status} />
         </div>
-
-        {/* Row 2: Date — Location */}
         <div className="flex items-center justify-between text-md">
           <span className="opacity-90">{fmtDate(shift.date)}</span>
           {shift.location && (
@@ -81,21 +94,17 @@ export const ShiftCard: React.FC<Props> = ({ shift, onEdit, onDelete }) => {
         </div>
       </div>
 
-      {/* ===== Desktop layout (giữ nguyên) ===== */}
+      {/* Desktop (giữ nguyên) */}
       <div className="hidden sm:block space-y-2">
         <p className="mt-1 text-lg font-bold">{shift.doctorName}</p>
-
         <p className="text-md">
           {shift.start} – {shift.end}
         </p>
-
         {shift.location && <p className="text-md mb-3">{shift.location}</p>}
-
-        {/* Badge trạng thái */}
         <StatusBadge status={shift.status} />
       </div>
 
-      {/* Buttons (giữ nguyên cho cả mobile/desktop) */}
+      {/* Actions */}
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={() => onEdit(shift)}
@@ -104,12 +113,25 @@ export const ShiftCard: React.FC<Props> = ({ shift, onEdit, onDelete }) => {
           <Edit className="w-5 h-5" /> Sửa
         </button>
         <button
-          onClick={() => onDelete(shift.id)}
+          onClick={askDelete}
           className="cursor-pointer inline-flex items-center gap-1 px-2 py-2 rounded-[var(--rounded)] bg-error-linear text-white text-sm"
         >
           <Trash2 className="w-5 h-5" /> Xoá
         </button>
       </div>
+
+      {/* Confirm delete */}
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={doDelete}
+        loading={confirmLoading}
+        title="Xoá lịch làm việc!"
+        description="Bạn có chắc muốn xoá lịch làm việc này?"
+        confirmText="Xoá"
+        cancelText="Huỷ"
+        danger
+      />
     </section>
   );
 };

@@ -64,7 +64,10 @@ export default function ConfirmModal({
           </div>
         </div>
 
-        <p id="confirm-desc" className="text-sm text-slate-600 text-center mb-4">
+        <p
+          id="confirm-desc"
+          className="text-sm text-slate-600 text-center mb-4"
+        >
           {description}
         </p>
 
@@ -73,14 +76,14 @@ export default function ConfirmModal({
             ref={closeBtnRef}
             onClick={onClose}
             disabled={loading}
-            className="cursor-pointer px-3 py-2 rounded-md border hover:bg-gray-50 disabled:opacity-60"
+            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] border hover:bg-gray-50 disabled:opacity-60"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`cursor-pointer px-3 py-2 rounded-md text-white ${
+            className={`cursor-pointer px-3 py-2 rounded-[var(--rounded)] text-white ${
               danger ? "bg-error-linear" : "bg-primary-linear"
             }`}
           >

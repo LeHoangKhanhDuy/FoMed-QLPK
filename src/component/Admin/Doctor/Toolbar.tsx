@@ -45,9 +45,15 @@ export const Toolbar: React.FC<Props> = ({
     })),
   ];
 
+  const toDMY = (ymd: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd;
+    const [y, m, d] = ymd.split("-");
+    return `${d}/${m}/${y}`;
+  };
+
   // class tái dùng để đồng bộ kích thước
   const squareBtn =
-    "cursor-pointer h-12 w-12 inline-flex items-center justify-center rounded-[var(--rounded)] border bg-white hover:bg-gray-50";
+    "cursor-pointer h-12 w-10 inline-flex items-center justify-center rounded-[var(--rounded)] border bg-white hover:bg-gray-50";
   const pillBtn =
     "group cursor-pointer h-12 px-4  inline-flex items-center gap-2 rounded-[var(--rounded)] border bg-white text-red-500 hover:bg-gray-50";
   const inputCls =
@@ -62,9 +68,9 @@ export const Toolbar: React.FC<Props> = ({
 
         <div className="h-12 px-3 rounded-[var(--rounded)] border bg-white text-sm inline-flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-sky-500" />
-          <span className="font-medium">{weekFrom}</span>
-          <span className="text-slate-400">→</span>
-          <span className="font-medium">{weekTo}</span>
+          <span className="font-medium">{toDMY(weekFrom)}</span>
+          <span className="text-slate-400">-</span>
+          <span className="font-medium">{toDMY(weekTo)}</span>
         </div>
 
         <button onClick={onNext} className={squareBtn} title="Tuần sau">

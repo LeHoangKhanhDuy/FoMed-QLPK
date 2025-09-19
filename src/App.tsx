@@ -25,53 +25,66 @@ import { DoctorPatientListWorkspacePage } from "./pages/Admin/Patient/DoctorPati
 import { UserManagerPage } from "./pages/Admin/User/UserManagerPage";
 import { ServiceManagerPage } from "./pages/Admin/ServiceManager/ServiceManagerPage";
 import { DrugManagerPage } from "./pages/Admin/Drug/DrugManagerPage";
-
-
+import { Toaster } from "react-hot-toast";
+import { BillingManagerPage } from "./pages/Admin/BillingMangerPage/BillingManagerPage";
+import { InvoiceDetailManagerPage } from "./pages/Admin/BillingMangerPage/InvoiceDetailManagerPage";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
+    <>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
 
-      {/* AUTH */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+        {/* AUTH */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
-      {/* BOOKING */}
-      <Route path="/booking-doctor" element={<BookingDoctorPage />} />
-      <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
-      <Route path="/booking-package" element={<BookingPackagePage />} />
-      <Route path="/booking/select-service" element={<BookingSelectServicePage />} />
+        {/* BOOKING */}
+        <Route path="/booking-doctor" element={<BookingDoctorPage />} />
+        <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
+        <Route path="/booking-package" element={<BookingPackagePage />} />
+        <Route path="/booking/select-service" element={<BookingSelectServicePage />}/>
 
-      {/* PATIENT PORTAL */}
-      <Route path="/patient-portal-login" element={<PatientPortalPage />} />
+        {/* PATIENT PORTAL */}
+        <Route path="/patient-portal-login" element={<PatientPortalPage />} />
 
-      {/* USER PROFILE */}
-      <Route path="/user/profile" element={<UserProfilePage />} />
-      <Route path="/user/medical-history" element={<UserMedicalHistoryPage />} />
-      <Route path="/user/medical-history/detail" element={<UserMedicalHistoryDetailPage />} />
-      <Route path="/user/prescriptions" element={<UserPrescriptionPage />} />
-      <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />} />
-      <Route path="/user/lab-result" element={<UserLabResultListPage />} />
-      <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />} />
+        {/* USER PROFILE */}
+        <Route path="/user/profile" element={<UserProfilePage />} />
+        <Route path="/user/medical-history" element={<UserMedicalHistoryPage />}/>
+        <Route path="/user/medical-history/detail" element={<UserMedicalHistoryDetailPage />}/>
+        <Route path="/user/prescriptions" element={<UserPrescriptionPage />} />
+        <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />}/>
+        <Route path="/user/lab-result" element={<UserLabResultListPage />} />
+        <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />}/>
 
-      {/* DOCTOR */}
-      <Route path="/user/doctor" element={<DoctorProfilePage />} />
-      <Route path="/user/doctor-list" element={<DoctorListPage />} />
+        {/* DOCTOR */}
+        <Route path="/user/doctor" element={<DoctorProfilePage />} />
+        <Route path="/user/doctor-list" element={<DoctorListPage />} />
 
-      {/* SPECIALTIES */}
-      <Route path="/user/specialties" element={<SpecialtyPage />} />
+        {/* SPECIALTIES */}
+        <Route path="/user/specialties" element={<SpecialtyPage />} />
 
-      {/* CSM ADMIN */}
-      <Route path="/cms/dashboard" element={<DashboardPage />} />
-      <Route path="/cms/create-appointments" element={<AppointmentCreatePage />} />
-      <Route path="/cms/doctor-schedule" element={<DoctorScheduleAdminPage />} />
-      <Route path="/cms/patient-list" element={<PatientListTodayAdminPage />} />
-      <Route path="/cms/patient-list/workspace" element={<DoctorPatientListWorkspacePage />} />
-      <Route path="/cms/users-manager" element={<UserManagerPage />} />
-      <Route path="/cms/service-manager" element={<ServiceManagerPage />} />
-      <Route path="/cms/drug-manager" element={<DrugManagerPage />} />
-    </Routes>
+        {/* CSM ADMIN */}
+        <Route path="/cms/dashboard" element={<DashboardPage />} />
+        <Route path="/cms/create-appointments" element={<AppointmentCreatePage />}/>
+        <Route path="/cms/doctor-schedule" element={<DoctorScheduleAdminPage />}/>
+        <Route path="/cms/patient-list" element={<PatientListTodayAdminPage />}/>
+        <Route path="/cms/patient-list/workspace" element={<DoctorPatientListWorkspacePage />}/>
+        <Route path="/cms/users-manager" element={<UserManagerPage />} />
+        <Route path="/cms/service-manager" element={<ServiceManagerPage />} />
+        <Route path="/cms/drug-manager" element={<DrugManagerPage />} />
+        <Route path="/cms/billing" element={<BillingManagerPage />} />
+        <Route path="/cms/billing/details" element={<InvoiceDetailManagerPage />} />
+      </Routes>
+
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: { fontSize: 16 },
+        }}
+      />
+    </>
   );
 }
 
