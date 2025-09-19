@@ -15,8 +15,6 @@ import {
   Circle,
   QrCode,
   Eraser,
-  CheckCircle2,
-  Info,
 } from "lucide-react";
 import {
   apiInvoiceAddPayment,
@@ -94,48 +92,9 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/* ===== Tiny Toast ===== */
-type ToastTone = "success" | "info" | "error";
-function Toast({
-  open,
-  msg,
-  tone,
-  onClose,
-}: {
-  open: boolean;
-  msg: string;
-  tone: ToastTone;
-  onClose: () => void;
-}) {
-  if (!open) return null;
-  const toneCls =
-    tone === "success"
-      ? "border-emerald-200 text-emerald-700"
-      : tone === "error"
-      ? "border-rose-200 text-rose-700"
-      : "border-sky-200 text-sky-700";
-  const Icon =
-    tone === "success" ? CheckCircle2 : tone === "error" ? CircleAlert : Info;
-  return (
-    <div
-      className={`fixed bottom-4 right-4 z-[60] rounded-lg border bg-white px-3 py-2 shadow-md ${toneCls}`}
-    >
-      <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4" />
-        <span className="text-sm">{msg}</span>
-        <button
-          onClick={onClose}
-          className="ml-2 text-slate-400 hover:text-slate-600"
-        >
-          ×
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /* ===== Component ===== */
-export default function InvoiceDetailManager() {
+export default function InvoicePaymentManager() {
   const { invoiceId } = useParams();
   const [inv, setInv] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,17 +103,6 @@ export default function InvoiceDetailManager() {
   const [payDisplay, setPayDisplay] = useState<string>("");
   const [payAmount, setPayAmount] = useState<number>(0);
   const [method, setMethod] = useState<PaymentMethod>("cash");
-
-  // toast
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMsg, setToastMsg] = useState("");
-  const [toastTone, setToastTone] = useState<ToastTone>("success");
-  const showToast = (msg: string, tone: ToastTone = "success") => {
-    setToastMsg(msg);
-    setToastTone(tone);
-    setToastOpen(true);
-    window.setTimeout(() => setToastOpen(false), 2200);
-  };
 
   // QR
   const [showQR, setShowQR] = useState(false);
@@ -266,8 +214,6 @@ export default function InvoiceDetailManager() {
     if (afterPaid >= subtotal && inv.status !== "Đã thanh toán") {
       await apiInvoiceUpdateStatus(inv.id, "Đã thanh toán");
     }
-
-    showToast("Thu tiền thành công", "success");
     await load();
   };
 
@@ -278,7 +224,6 @@ export default function InvoiceDetailManager() {
     const payload = `INV:${inv.code}|AMT:${due}|METHOD:${method}`;
     setQrValue(payload);
     setShowQR(true);
-    showToast("Đã tạo mã thanh toán", "info");
   };
 
   if (loading) {
@@ -304,16 +249,8 @@ export default function InvoiceDetailManager() {
 
   return (
     <section className="space-y-4">
-      {/* Toast */}
-      <Toast
-        open={toastOpen}
-        msg={toastMsg}
-        tone={toastTone}
-        onClose={() => setToastOpen(false)}
-      />
-
       {/* Header */}
-      <header className="flex items-center justify-between rounded-xl border bg-white/80 px-3 py-2 backdrop-blur-xs">
+      <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={() => nav(-1)}
@@ -336,13 +273,13 @@ export default function InvoiceDetailManager() {
       {/* Card */}
       <div className="rounded-2xl border bg-white p-4 sm:p-5 shadow-xs space-y-5">
         {/* Info */}
-        <div className="grid sm:grid-cols-3 gap-3 text-[15px]">
-          <div className="rounded-lg border bg-slate-50/60 px-3 py-2">
-            <div className="flex items-center gap-2 text-slate-600">
+        <div className="grid sm:grid-cols-3 gap-3 text-[16px]">
+          <div className="rounded-[var(--rounded)] border bg-slate-50/60 px-3 py-2">
+            <div className="flex items-center gap-2 text-lg">
               <User2 className="h-5 w-5" />
-              <span className="text-lg">Bệnh nhân</span>
+              <span>Bệnh nhân:</span>
+              <b>{inv.patientName}</b>
             </div>
-            <b className="mt-1 block">{inv.patientName}</b>
           </div>
           <div className="rounded-lg border bg-slate-50/60 px-3 py-2">
             <div className="flex items-center gap-2 text-slate-600 mb-1">
@@ -354,7 +291,7 @@ export default function InvoiceDetailManager() {
           <div className="rounded-lg border bg-slate-50/60 px-3 py-2">
             <div className="flex items-center gap-2 text-slate-600">
               <CalendarDays className="h-5 w-5" />
-              <span className="text-lg">Ngày tạo</span>
+              <span className="text-lg">Thời gian</span>
             </div>
             <div className="mt-1">
               {new Date(inv.createdAt).toLocaleString("vi-VN")}
@@ -368,9 +305,10 @@ export default function InvoiceDetailManager() {
             <thead className="bg-sky-400 text-white">
               <tr>
                 <th className="px-3 py-2 text-left">STT</th>
+                <th className="px-3 py-2 text-left">Mã dịch vụ</th>
                 <th className="px-3 py-2 text-left">Tên dịch vụ</th>
                 <th className="px-3 py-2 text-left">Loại dịch vụ</th>
-                <th className="px-3 py-2 text-left">Số lượng</th>
+                <th className="px-3 py-2 text-center">Số lượng</th>
                 <th className="px-3 py-2 text-left">Đơn giá</th>
                 <th className="px-3 py-2 text-left">Thành tiền</th>
               </tr>
@@ -379,9 +317,10 @@ export default function InvoiceDetailManager() {
               {inv.items.map((it) => (
                 <tr key={it.id} className="border-t">
                   <td className="px-3 py-2">{it.id}</td>
+                  {/* <td className="px-3 py-2">{it.code}</td> */}
                   <td className="px-3 py-2">{it.name}</td>
                   <td className="px-3 py-2 capitalize">{it.type}</td>
-                  <td className="px-3 py-2">{it.qty}</td>
+                  <td className="px-3 py-2 text-center">{it.qty}</td>
                   <td className="px-3 py-2 font-semibold">
                     {formatVND(it.unitPrice)}
                   </td>

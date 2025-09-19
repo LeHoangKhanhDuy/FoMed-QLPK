@@ -27,7 +27,9 @@ import { ServiceManagerPage } from "./pages/Admin/ServiceManager/ServiceManagerP
 import { DrugManagerPage } from "./pages/Admin/Drug/DrugManagerPage";
 import { Toaster } from "react-hot-toast";
 import { BillingManagerPage } from "./pages/Admin/BillingMangerPage/BillingManagerPage";
-import { InvoiceDetailManagerPage } from "./pages/Admin/BillingMangerPage/InvoiceDetailManagerPage";
+import { InvoicePaymentManagerPage } from "./pages/Admin/BillingMangerPage/InvoicePaymentManagerPage";
+import { InvoiceDetailPaymentPage } from "./pages/Admin/BillingMangerPage/InvoiceDetailPaymentPage";
+
 
 function App() {
   return (
@@ -74,7 +76,8 @@ function App() {
         <Route path="/cms/service-manager" element={<ServiceManagerPage />} />
         <Route path="/cms/drug-manager" element={<DrugManagerPage />} />
         <Route path="/cms/billing" element={<BillingManagerPage />} />
-        <Route path="/cms/billing/details" element={<InvoiceDetailManagerPage />} />
+        <Route path="/cms/billing/payment" element={<InvoicePaymentManagerPage />} />
+        <Route path="/cms/billing/details" element={<InvoiceDetailPaymentPage />} />
       </Routes>
 
       <Toaster

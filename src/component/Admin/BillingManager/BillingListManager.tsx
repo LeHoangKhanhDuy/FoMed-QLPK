@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, QrCode, Funnel, Wallet } from "lucide-react";
+import { Plus, Search, Funnel, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   apiInvoiceList,
@@ -407,15 +407,11 @@ export default function BillingListManager() {
                           </td>
                           <td className="py-2 pr-3">
                             <button
-                              onClick={() =>
-                                nav(
-                                  `/cms/billing/new?appointmentId=${v.appointmentId}`
-                                )
-                              }
-                              className="h-9 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] border hover:bg-slate-50 cursor-pointer"
+                              onClick={() => nav("/cms/billing/payment")}
+                              className="h-9 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white cursor-pointer"
                               title="Tạo hoá đơn"
                             >
-                              <QrCode className="w-4 h-4" /> Tạo QR
+                              <Wallet className="w-4 h-4" /> Thanh toán
                             </button>
                           </td>
                         </tr>
