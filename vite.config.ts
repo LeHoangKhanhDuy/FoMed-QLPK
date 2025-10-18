@@ -6,6 +6,15 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   optimizeDeps: {
-    exclude: ["lucide-react"], 
+    exclude: ["lucide-react"],
+  },
+  server: {
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_BASE_URL || "http://localhost:5006",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });

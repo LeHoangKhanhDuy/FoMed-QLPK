@@ -1,6 +1,6 @@
 import DoctorProfile from "../../component/Doctor/DoctorProfile";
 import Footer from "../../component/Footer/Footer";
-import { Navbar } from "../../component/Navbar/Navbar";
+import Navbar from "../../component/Navbar/Navbar";
 import MainLayout from "../../layouts/MainLayout";
 
 export const DoctorProfilePage = () => {

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { cn } from "../../Utils/cn";
 
@@ -30,7 +29,7 @@ export const Input = React.forwardRef<HTMLInputElement, Props>(
             "placeholder:text-slate-400",
             "focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400",
             invalid ? "border-red-400 focus:ring-red-300" : "border-slate-200",
-            leftIcon ? "pl-10" : undefined, 
+            leftIcon ? "pl-10" : undefined,
             rightIcon ? "pr-10" : undefined,
             className
           )}

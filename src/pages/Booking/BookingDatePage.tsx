@@ -3,8 +3,8 @@ import BookingDate, {
   type ServiceInfo,
 } from "../../component/Booking/ServiceBookingDate";
 import Footer from "../../component/Footer/Footer";
-import { Navbar } from "../../component/Navbar/Navbar";
 import MainLayout from "../../layouts/MainLayout";
+import Navbar from "../../component/Navbar/Navbar";
 
 export const BookingDatePage = () => {
   const navigate = useNavigate();
