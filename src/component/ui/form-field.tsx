@@ -1,4 +1,4 @@
-import { cn } from "../../utils/cn";
+import { cn } from "../../Utils/cn";
 
 type FieldProps = {
   label?: string;

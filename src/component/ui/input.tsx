@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "../../utils/cn";
+import { cn } from "../../Utils/cn";
 
 type Props = React.InputHTMLAttributes<HTMLInputElement> & {
   leftIcon?: React.ReactNode;

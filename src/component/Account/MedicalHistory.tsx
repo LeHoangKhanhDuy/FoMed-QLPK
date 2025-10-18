@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import SkeletonRow from "../../utils/SkeletonRow";
+import SkeletonRow from "../../Utils/SkeletonRow";
 
 interface MedicalRecord {
   id: number;
