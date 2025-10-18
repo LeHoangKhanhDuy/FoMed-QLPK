@@ -1,6 +1,6 @@
 import React, { useState, type ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
-import { Navbar } from "../component/Navbar/Navbar";
+import Navbar from "../component/Navbar/Navbar";
 import Footer from "../component/Footer/Footer";
 import Sidebar from "../component/Account/Sidebar";
 

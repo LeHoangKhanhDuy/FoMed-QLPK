@@ -3,16 +3,28 @@ import { X } from "lucide-react";
 import { Fragment, useState } from "react";
 import LoginForm from "../Auth/LoginForm";
 import SignupForm from "../Auth/SignupForm";
+import type { AppUser } from "../../types/auth/login";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: (u: AppUser) => void;
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export default function AuthModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
-
   const toggleMode = () => setIsLogin(!isLogin);
+
+  // callback nhận user từ form
+  const handleSuccess = (u: AppUser) => {
+    window.dispatchEvent(new Event("auth:updated"));
+    onSuccess?.(u); // báo ngược cho Navbar setUser(...)
+    onClose(); // đóng modal
+  };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -54,9 +66,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {/* Nội dung cuộn nếu dài */}
                 <div className="pt-12 px-6 pb-6 overflow-y-auto max-h-[90vh]">
                   {isLogin ? (
-                    <LoginForm onSuccess={onClose} onSwitchMode={toggleMode} />
+                    <LoginForm
+                      onSuccess={handleSuccess}
+                      onSwitchMode={toggleMode}
+                    />
                   ) : (
-                    <SignupForm onSuccess={onClose} onSwitchMode={toggleMode} />
+                    <SignupForm
+                      //onSuccess={handleSuccess}
+                      onSwitchMode={toggleMode}
+                    />
                   )}
                 </div>
               </Dialog.Panel>
