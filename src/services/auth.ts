@@ -1,5 +1,5 @@
 // services/auth.ts
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import type { AppUser, LoginNormalized } from "../types/auth/login";
 
 /* ============ CONFIG ============ */
@@ -36,6 +36,8 @@ export function readUserFromStorage(): AppUser | null {
       name: String(obj.name ?? obj.email ?? ""),
       phone: String(obj.phone ?? ""),
       roles: Array.isArray(obj.roles) ? obj.roles : [],
+      createdAt: obj.createdAt ?? undefined,
+      avatarUrl: obj.avatarUrl ?? null,
     };
   } catch {
     return null;
@@ -45,14 +47,26 @@ export function readUserFromStorage(): AppUser | null {
 export function saveAuth(token: string, user: AppUser, refreshToken?: string) {
   localStorage.setItem(USER_TOKEN_KEY, token);
   if (refreshToken) localStorage.setItem(USER_REFRESH_TOKEN_KEY, refreshToken);
-  localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+
+  const prev = readUserFromStorage();
+  const merged: AppUser = {
+    userId: user.userId ?? prev?.userId ?? 0,
+    email: user.email ?? prev?.email ?? "",
+    name: user.name ?? prev?.name ?? user.email ?? "",
+    phone: user.phone ?? prev?.phone ?? "",
+    roles: user.roles?.length ? user.roles : prev?.roles ?? [],
+    createdAt: user.createdAt ?? prev?.createdAt,
+    avatarUrl: user.avatarUrl ?? prev?.avatarUrl ?? null,
+  };
+
+  localStorage.setItem(USER_INFO_KEY, JSON.stringify(merged));
   setAuthToken(token);
   window.dispatchEvent(new Event("auth:updated"));
 }
 
 export function clearAuth() {
   localStorage.removeItem(USER_TOKEN_KEY);
-  localStorage.removeItem(USER_REFRESH_TOKEN_KEY); 
+  localStorage.removeItem(USER_REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_INFO_KEY);
   setAuthToken(undefined);
   window.dispatchEvent(new Event("auth:updated"));
@@ -149,13 +163,23 @@ function mapUserFromLogin(
 
 function mapUserFromProfile(p?: ProfileResponseData): AppUser {
   if (!p) throw new Error("Profile data is null");
+
+  const created =
+    p.createdAt ??
+    p.created_at ??
+    p.joinDate ??
+    p.joinedAt ??
+    p.createdOn ??
+    p.profileUpdatedAt ??
+    null;
+
   return {
     userId: Number(p.id ?? 0),
     email: p.email ?? "",
     name: p.name ?? p.email ?? "",
     phone: p.phone ?? "",
     roles: [],
-    createdAt: p.createdAt ?? p.created_at ?? p.joinDate ?? undefined, // nhận từ BE
+    createdAt: created ?? undefined,
     avatarUrl: p.avatarUrl ?? null,
   };
 }
@@ -179,12 +203,41 @@ function normalizeLogin(response: BeLoginResponse): LoginNormalized {
 
 /* ============ API CALLS ============ */
 export async function register(email: string, password: string, name: string) {
-  const { data } = await publicHttp.post(
-    "/api/v1/accounts/register-with-email",
-    { email, password, fullName: name }
-  );
-  return data;
+  const payload = {
+    FullName: name.trim(),
+    Email: email.trim(),
+    Password: password,
+    Phone: null as string | null, 
+    Gender: null as string | null, 
+    DateOfBirth: null as string | null, 
+  };
+
+  try {
+    const { data } = await publicHttp.post(
+      "/api/v1/accounts/register-with-email",
+      payload
+    );
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // gom message & ModelState errors
+      const data = error.response?.data as
+        | { message?: string; errors?: Record<string, string[]> }
+        | undefined;
+
+      const msg =
+        data?.message ??
+        (data?.errors
+          ? Object.values(data.errors).flat().join("; ")
+          : undefined) ??
+        "Đăng ký thất bại.";
+
+      throw new Error(msg);
+    }
+    throw error;
+  }
 }
+
 
 export async function login(
   email: string,
@@ -214,27 +267,34 @@ export async function login(
 }
 
 export async function getProfile(token: string): Promise<AppUser> {
-  // API /profile yêu cầu gửi token trong BODY
-  const { data } = await publicHttp.post<BeProfileResponse>(
-    "/api/v1/accounts/profile",
-    { token }
-  );
+  setAuthToken(token);
+  try {
+    const { data } = await authHttp.post<BeProfileResponse>(
+      "/api/v1/accounts/profile",
+      {}
+    );
+    if (!data.data)
+      throw new Error(data.message ?? "Không thể lấy thông tin người dùng");
 
-  console.log("👤 Profile response:", JSON.stringify(data, null, 2));
+    const user = mapUserFromProfile(data.data);
 
-  if (!data.data) {
-    throw new Error(data.message ?? "Không thể lấy thông tin người dùng");
+    // Gắn lại roles từ cache nếu BE chưa trả
+    const stored = readUserFromStorage();
+    if (stored?.roles?.length) user.roles = stored.roles;
+
+    // Lưu lại cache để lần sau có createdAt
+    const tokenStr = localStorage.getItem(USER_TOKEN_KEY) || token;
+    saveAuth(tokenStr, user);
+
+    return user;
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response?.status === 401) {
+      throw new Error("401");
+    }
+    const cached = readUserFromStorage();
+    if (cached) return cached;
+    throw error;
   }
-
-  const user = mapUserFromProfile(data.data);
-
-  // Lấy roles từ storage (đã lưu từ login)
-  const storedUser = readUserFromStorage();
-  if (storedUser?.roles?.length) {
-    user.roles = storedUser.roles;
-  }
-
-  return user;
 }
 
 export async function logout(): Promise<void> {
@@ -247,6 +307,49 @@ export async function logout(): Promise<void> {
     console.error("Logout API error:", error);
   } finally {
     clearAuth();
+  }
+}
+
+// ===== UPLOAD AVATAR =====
+export async function uploadAvatar(file: File): Promise<string> {
+  const token = localStorage.getItem(USER_TOKEN_KEY);
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+
+  // tạo form data
+  const formData = new FormData();
+  formData.append("File", file); // tên field phải khớp với [FromForm] AvatarUploadRequest.File
+
+  // axios instance có header Authorization sẵn
+  setAuthToken(token);
+
+  try {
+    const { data } = await authHttp.post("/api/v1/accounts/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    if (!data?.data?.avatarUrl)
+      throw new Error(data?.message || "Không nhận được URL ảnh từ server.");
+
+    // lưu avatar mới vào localStorage (nếu muốn cập nhật UI tức thì)
+    const user = readUserFromStorage();
+    if (user) {
+      user.avatarUrl = data.data.avatarUrl;
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+      window.dispatchEvent(new Event("auth:updated"));
+    }
+
+    return data.data.avatarUrl;
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      const message =
+        error.response?.data?.message || "Tải ảnh thất bại từ server.";
+      throw new Error(message);
+    }
+
+    console.error("Unknown upload avatar error:", error);
+    throw new Error("Tải ảnh thất bại.");
   }
 }
 

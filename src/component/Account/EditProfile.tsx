@@ -15,7 +15,6 @@ interface User {
   name: string;
   created_at: string;
   phone: string | number;
-  points: number;
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
