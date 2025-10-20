@@ -10,14 +10,17 @@ export const publicHttp = axios.create({
   baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
 });
-// client cho các request cần Bearer (gán token khi đăng nhập xong)
+
 export const authHttp = axios.create({
   baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
 });
 
-export function setAuthToken(token?: string) {
-  if (token)
-    authHttp.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  else delete authHttp.defaults.headers.common["Authorization"];
-}
+// dùng đúng KEY bạn đang lưu token
+const USER_TOKEN_KEY = "userToken";
+
+authHttp.interceptors.request.use((config) => {
+  const token = localStorage.getItem(USER_TOKEN_KEY);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});

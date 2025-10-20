@@ -1,15 +1,14 @@
-export type UserID = number;
-
-export type UserRole = "patient" | "staff" | "doctor" | "admin";
+// src/types/user/user.ts
+export type AdminRole = "ADMIN" | "DOCTOR" | "EMPLOYEE" | "PATIENT";
 export type UserStatus = "active" | "inactive";
 
-export interface User {
-  id: UserID;
-  code: string; // mã hồ sơ/nhân sự
+export type User = {
+  id: number;
+  code: string;
   name: string;
-  phone?: string;
-  email?: string;
-  role: UserRole;
-  status: UserStatus;
-  createdAt: string; // ISO
-}
+  email: string | null;
+  phone: string | null;
+  roles: AdminRole[];
+  status: UserStatus; // map từ IsActive
+  createdAt: string | null;
+};

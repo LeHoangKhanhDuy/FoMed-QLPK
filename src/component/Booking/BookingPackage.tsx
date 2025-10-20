@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import clinic from "../../assets/images/clinic.png";
-import type { ServiceItem } from "../../types/service";
+import type { ServiceItem } from "../../types/serviceType/service";
 import { getService } from "../../services/service";
 import { formatMinutes, formatVND } from "../../Utils/formatVND";
 
@@ -15,8 +15,11 @@ export default function BookingPackages() {
     (async () => {
       try {
         setLoading(true);
-        const res = await getService({ page: 1, pageSize: 10 });
-        setItems(res.data.items ?? []);
+        // ✅ chỉ lấy dịch vụ đang hoạt động
+        const res = await getService({ page: 1, pageSize: 12, isActive: true });
+        // ✅ phòng hờ nếu BE chưa lọc
+        const onlyActive = (res.data.items ?? []).filter((x) => x.isActive);
+        setItems(onlyActive);
       } catch {
         toast.error("Không tải được danh sách dịch vụ.");
       } finally {

@@ -8,7 +8,8 @@ import type {
   ServiceStatus,
   ServiceItem,
   PagedResult,
-} from "../types/service";
+} from "../types/serviceType/service";
+import { authHttp, publicHttp } from "./http";
 
 type ServiceListRaw = {
   success: boolean;
@@ -21,13 +22,14 @@ type ServiceListRaw = {
 };
 
 // ---- helper: nhận cả camelCase lẫn PascalCase
+// ---- helper: nhận cả camelCase lẫn PascalCase
 const normalizeServiceItem = (raw: unknown): ServiceItem => {
   if (typeof raw !== "object" || raw === null) {
-    return { serviceId: 0, name: "", isActive: false };
+    return { serviceId: 0, name: "", basePrice: 0, isActive: false };
   }
   const r = raw as Record<string, unknown>;
 
-  const getNum = (a?: unknown, b?: unknown, c?: unknown) =>
+  const getNum = (a?: unknown, b?: unknown, c?: unknown): number | undefined =>
     typeof a === "number"
       ? a
       : typeof b === "number"
@@ -36,33 +38,34 @@ const normalizeServiceItem = (raw: unknown): ServiceItem => {
       ? (c as number)
       : undefined;
 
-  const getStr = (a?: unknown, b?: unknown) =>
+  // Cho các field có thể NULL trong DB (code, description, imageUrl, category.imageUrl)
+  const getStrNull = (a?: unknown, b?: unknown): string | null =>
+    typeof a === "string" ? a : typeof b === "string" ? (b as string) : null;
+
+  // Cho các field optional (createdAt, updatedAt)
+  const getStrOpt = (a?: unknown, b?: unknown): string | undefined =>
     typeof a === "string"
       ? a
       : typeof b === "string"
       ? (b as string)
       : undefined;
 
-  const getBool = (a?: unknown, b?: unknown) =>
-    typeof a === "boolean"
-      ? a
-      : typeof b === "boolean"
-      ? (b as boolean)
-      : undefined;
-
   return {
     serviceId: getNum(r.serviceId, r.ServiceId, r.id) ?? 0,
-    code: getStr(r.code, r.Code) ?? null,
-    name: getStr(r.name, r.Name) ?? "",
-    description: getStr(r.description, r.Description) ?? null,
-    basePrice: getNum(r.basePrice, r.BasePrice) ?? null,
+    code: getStrNull(r.code, r.Code),
+    name: (getStrNull(r.name, r.Name) ?? "") as string,
+    description: getStrNull(r.description, r.Description),
+    basePrice: (getNum(r.basePrice, r.BasePrice) ?? 0) as number,
     durationMin: getNum(r.durationMin, r.DurationMin) ?? null,
-    isActive: getBool(r.isActive, r.IsActive) ?? false,
+    isActive:
+      typeof r.isActive === "boolean"
+        ? r.isActive
+        : typeof r.IsActive === "boolean"
+        ? (r.IsActive as boolean)
+        : false,
 
-    // >>> THÊM: map ảnh dịch vụ
-    imageUrl: getStr(r.imageUrl, r.ImageUrl) ?? null,
+    imageUrl: getStrNull(r.imageUrl, r.ImageUrl),
 
-    // >>> map category (kèm ảnh)
     category: (() => {
       const c = (r.category ?? r.Category) as
         | Record<string, unknown>
@@ -71,14 +74,14 @@ const normalizeServiceItem = (raw: unknown): ServiceItem => {
       if (!c || typeof c !== "object") return null;
       return {
         categoryId: getNum(c.categoryId, c.CategoryId) ?? 0,
-        name: getStr(c.name, c.Name) ?? "",
-        imageUrl: getStr(c.imageUrl, c.ImageUrl) ?? null, // <<< THÊM
+        name: (getStrNull(c.name, c.Name) ?? "") as string,
+        imageUrl: getStrNull(c.imageUrl, c.ImageUrl),
       };
     })(),
 
-    // >>> Đọc thêm PascalCase nếu BE trả theo kiểu C#
-    createdAt: getStr(r.createdAt, r.CreatedAt),
-    updatedAt: getStr(r.updatedAt, r.UpdatedAt),
+    // ✅ trả về string | undefined (không phải null) để khớp type
+    createdAt: getStrOpt(r.createdAt, r.CreatedAt),
+    updatedAt: getStrOpt(r.updatedAt, r.UpdatedAt),
   };
 };
 
@@ -97,8 +100,7 @@ export async function getService(params?: {
   if (params?.isActive !== undefined)
     q.set("isActive", String(params.isActive));
 
-  const url = `/api/v1/services${q.toString() ? `?${q.toString()}` : ""}`;
-  const { data } = await axios.get(url);
+  const { data } = await publicHttp.get(`/api/v1/services`, { params });
   const raw = data as ServiceListRaw;
 
   const items = (raw.data ?? []).map(normalizeServiceItem);
@@ -121,7 +123,7 @@ export async function createService(
   payload: CreateServicePayload
 ): Promise<{ serviceId: number }> {
   const { data } = await axios.post(`/api/v1/services/add`, payload);
-  return data?.data ?? data; 
+  return data?.data ?? data;
 }
 
 /** Cập nhật dịch vụ */
@@ -143,6 +145,18 @@ export async function toggleService(
 }
 
 /** Xoá dịch vụ */
-export async function deleteService(id: ServiceID): Promise<void> {
-  await axios.delete(`/api/v1/services/remove/${id}`);
+
+export async function deleteService(id: number) {
+  try {
+    await authHttp.delete(`/api/v1/services/remove/${id}`);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Xoá dịch vụ thất bại";
+      throw new Error(msg);
+    }
+    throw new Error("Xoá dịch vụ thất bại");
+  }
 }
