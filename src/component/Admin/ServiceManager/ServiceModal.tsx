@@ -4,7 +4,7 @@ import type {
   ServiceItem,
   ServiceKind,
   ServiceStatus,
-} from "../../../types/serviceapi/service";
+} from "../../../types/service";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 
 type Props = {

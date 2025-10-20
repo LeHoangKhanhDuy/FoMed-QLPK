@@ -12,14 +12,14 @@ import type {
   ServiceItem,
   ServiceKind,
   ServiceStatus,
-} from "../../../types/serviceapi/service";
+} from "../../../types/service";
 import {
   apiCreateService,
   apiDeleteService,
   apiListServices,
   apiToggleService,
   apiUpdateService,
-} from "../../../types/serviceapi/mockServiceApi";
+} from "../../../types/mockServiceApi";
 import ServiceModal from "./ServiceModal";
 import ConfirmModal from "../../../common/ConfirmModal";
 import { SelectMenu } from "../../ui/select-menu";
