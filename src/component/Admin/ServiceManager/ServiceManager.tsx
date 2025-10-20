@@ -12,7 +12,7 @@ import type {
   ServiceItem,
   ServiceKind,
   ServiceStatus,
-} from "../../../types/service";
+} from "../../../types/mockServiceApi";
 import {
   apiCreateService,
   apiDeleteService,
@@ -23,6 +23,8 @@ import {
 import ServiceModal from "./ServiceModal";
 import ConfirmModal from "../../../common/ConfirmModal";
 import { SelectMenu } from "../../ui/select-menu";
+import { formatVND } from "../../../Utils/formatVND";
+
 
 type FilterKind = "all" | ServiceKind;
 
@@ -52,7 +54,7 @@ export default function ServiceManager() {
         !q ||
         s.name.toLowerCase().includes(q) ||
         s.code.toLowerCase().includes(q) ||
-        (s.department ?? "").toLowerCase().includes(q);
+        (s.department ?? "").toString().toLowerCase().includes(q);
       return okKind && okQuery;
     });
   }, [items, query, kind]);
@@ -205,7 +207,7 @@ export default function ServiceManager() {
                 <td className="px-3 py-2">{kindLabel[s.kind]}</td>
                 <td className="px-3 py-2">{s.unit ?? "-"}</td>
                 <td className="px-3 py-2 text-red-500 font-semibold">
-                  {s.price.toLocaleString("vi-VN")} ₫
+                  {formatVND(s.price)}
                 </td>
                 <td className="px-3 py-2">
                   <span

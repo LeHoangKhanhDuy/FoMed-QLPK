@@ -4,7 +4,9 @@ import type {
   ServiceItem,
   ServiceKind,
   ServiceStatus,
-} from "../../../types/service";
+  Specimen,
+  Department,
+} from "../../../types/mockServiceApi";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 
 type Props = {
@@ -21,7 +23,6 @@ const kindMenuOptions: SelectOption<ServiceKind>[] = [
   { value: "procedure", label: "Thủ thuật" },
 ];
 
-type Specimen = NonNullable<ServiceItem["specimen"]>;
 const specimenOptions: SelectOption<Specimen>[] = [
   { value: "blood", label: "Máu" },
   { value: "urine", label: "Nước tiểu" },
@@ -35,7 +36,6 @@ const statusOptions: SelectOption<ServiceStatus>[] = [
   { value: "inactive", label: "Tạm khoá" },
 ];
 
-type Department = NonNullable<ServiceItem["department"]>;
 const departmentOptions: SelectOption<Department>[] = [
   { value: "Khám bệnh", label: "Khám bệnh" },
   { value: "XN Huyết học", label: "XN Huyết học" },
@@ -55,8 +55,8 @@ export default function ServiceModal({
     kind: (initial?.kind as ServiceKind) ?? "exam",
     unit: initial?.unit ?? "lượt",
     price: initial?.price ?? 0,
-    specimen: initial?.specimen,
-    department: initial?.department ?? "",
+    specimen: initial?.specimen ?? null,
+    department: (initial?.department as Department) ?? "Khám bệnh",
     status: (initial?.status as ServiceStatus) ?? "active",
   });
   const [err, setErr] = useState<string | null>(null);
@@ -70,8 +70,8 @@ export default function ServiceModal({
       kind: (initial?.kind as ServiceKind) ?? "exam",
       unit: initial?.unit ?? "lượt",
       price: initial?.price ?? 0,
-      specimen: initial?.specimen,
-      department: initial?.department ?? "",
+      specimen: (initial?.specimen as Specimen) ?? null,
+      department: (initial?.department as Department) ?? "Khám bệnh",
       status: (initial?.status as ServiceStatus) ?? "active",
     });
     setErr(null);
@@ -100,7 +100,6 @@ export default function ServiceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      {/* mx-3 để panel không sát mép trên mobile */}
       <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-xl uppercase">
@@ -116,7 +115,6 @@ export default function ServiceModal({
 
         {err && <p className="mb-3 text-sm text-rose-600">{err}</p>}
 
-        {/* Luôn 2 cột, mỗi hàng 2 ô */}
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">
             <div className="flex items-center gap-1">
@@ -167,7 +165,6 @@ export default function ServiceModal({
             />
           </label>
 
-          {/* Loại mẫu (chỉ khi Xét nghiệm) */}
           {form.kind === "lab" && (
             <SelectMenu<Specimen>
               label="Loại mẫu (XN)"
