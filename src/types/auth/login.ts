@@ -3,9 +3,9 @@ export interface AppUser {
   email: string;
   name: string;
   phone: string;
-  roles: string[];
   createdAt?: string;
   avatarUrl?: string | null;
+  roles: Array<"ADMIN" | "DOCTOR" | "EMPLOYEE" | "USER">;
 }
 
 export interface LoginNormalized {

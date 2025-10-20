@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Outlet, Route, Routes } from "react-router-dom";
 import { HomePage } from "./pages/Home/HomePage";
 import { LoginPage } from "./pages/Auth/LoginPage";
 import { SignupPage } from "./pages/Auth/SingupPage";
@@ -29,7 +29,15 @@ import { Toaster } from "react-hot-toast";
 import { BillingManagerPage } from "./pages/Admin/BillingMangerPage/BillingManagerPage";
 import { InvoicePaymentManagerPage } from "./pages/Admin/BillingMangerPage/InvoicePaymentManagerPage";
 import { InvoiceDetailPaymentPage } from "./pages/Admin/BillingMangerPage/InvoiceDetailPaymentPage";
+import RequireCMSRole from "./auth/RequireCMSRole";
 
+function CmsGuard() {
+  return (
+    <RequireCMSRole>
+      <Outlet />
+    </RequireCMSRole>
+  );
+}
 
 function App() {
   return (
@@ -67,17 +75,21 @@ function App() {
         <Route path="/user/specialties" element={<SpecialtyPage />} />
 
         {/* CSM ADMIN */}
-        <Route path="/cms/dashboard" element={<DashboardPage />} />
-        <Route path="/cms/create-appointments" element={<AppointmentCreatePage />}/>
-        <Route path="/cms/doctor-schedule" element={<DoctorScheduleAdminPage />}/>
-        <Route path="/cms/patient-list" element={<PatientListTodayAdminPage />}/>
-        <Route path="/cms/patient-list/workspace" element={<DoctorPatientListWorkspacePage />}/>
-        <Route path="/cms/users-manager" element={<UserManagerPage />} />
-        <Route path="/cms/service-manager" element={<ServiceManagerPage />} />
-        <Route path="/cms/drug-manager" element={<DrugManagerPage />} />
-        <Route path="/cms/billing" element={<BillingManagerPage />} />
-        <Route path="/cms/billing/payment" element={<InvoicePaymentManagerPage />} />
-        <Route path="/cms/billing/details" element={<InvoiceDetailPaymentPage />} />
+        <Route path="/cms" element={<CmsGuard />}>
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="create-appointments" element={<AppointmentCreatePage />} />
+          <Route path="doctor-schedule" element={<DoctorScheduleAdminPage />} />
+          <Route path="patient-list" element={<PatientListTodayAdminPage />} />
+          <Route path="patient-list/workspace" element={<DoctorPatientListWorkspacePage />} />
+          <Route path="users-manager" element={<UserManagerPage />} />
+          <Route path="service-manager" element={<ServiceManagerPage />} />
+          <Route path="drug-manager" element={<DrugManagerPage />} />
+          <Route path="billing" element={<BillingManagerPage />} />
+          <Route path="billing/payment" element={<InvoicePaymentManagerPage />} />
+          <Route path="billing/details" element={<InvoiceDetailPaymentPage />} />
+        </Route>
+
+        <Route path="/403" element={<div className="p-8 text-center">Không có quyền truy cập.</div>} />
       </Routes>
 
       <Toaster
