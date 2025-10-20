@@ -1,9 +1,18 @@
 import { Check, Eye, EyeOff, Mail, User2Icon, X } from "lucide-react";
 import googleLogo from "../../assets/images/googleLogo.png";
 import { useState } from "react";
+import { isAxiosError } from "axios";
+import toast from "react-hot-toast";
+import { login, register, saveAuth } from "../../services/auth";
+
+type ErrorResponse = {
+  message?: string;
+  errors?: Record<string, string[]>;
+};
 
 export default function SignUpForm({
   onSwitchMode,
+  onSuccess,
 }: {
   onSuccess?: () => void;
   onSwitchMode?: () => void;
@@ -30,13 +39,29 @@ export default function SignUpForm({
   });
   const [showPasswordRules, setShowPasswordRules] = useState(false);
 
+  const getErrMsg = (error: unknown): string => {
+    if (isAxiosError(error)) {
+      const data = error.response?.data as ErrorResponse | undefined;
+
+      // Ưu tiên lỗi "message"
+      if (data?.message) return data.message;
+
+      // Nếu có ModelState errors => gộp lại
+      if (data?.errors) {
+        return Object.values(data.errors).flat().join("; ");
+      }
+    }
+
+    return "Có lỗi xảy ra.";
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setEmailError("");
     setPasswordError("");
     setConfirmPasswordError("");
     setNameError("");
-    setLoading(true);
+    setAgreeToTermsError("");
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     let hasError = false;
@@ -71,24 +96,49 @@ export default function SignUpForm({
       setAgreeToTermsError("Bạn cần đồng ý với điều khoản.");
       setLoading(false);
       return;
-    }    
+    }
 
     if (hasError) {
       setLoading(false);
       return;
     }
 
-    // const success = await handleSignup(email, password, name);
-    // if (success) {
-    //   toast.success("Đăng ký thành công");
-    //   onSwitchMode?.(); // chuyển sang form đăng nhập
-    //   return;
-    // } else {
-    //   setEmailError("Email đã tồn tại");
-    //   setPasswordError("");
-    // }
+    setLoading(true);
+    try {
+      const reg = await register(email.trim(), password, name.trim());
+      const token = reg?.data?.Token ?? reg?.data?.token;
+      const refreshToken = reg?.data?.RefreshToken ?? reg?.data?.refreshToken;
 
-    // setLoading(false);
+      if (token) {
+        saveAuth(
+          token,
+          {
+            userId: 0,
+            email: email.trim(),
+            name: name.trim(),
+            phone: "",
+            roles: [],
+          },
+          refreshToken
+        );
+      } else {
+        const logged = await login(email.trim(), password);
+        saveAuth(logged.token!, logged.user, logged.refreshToken);
+      }
+      toast.success("Đăng ký thành công!");
+      onSuccess?.(); 
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error: unknown) {
+      const msg = getErrMsg(error);
+      if (/email/i.test(msg) && /(tồn tại|exist)/i.test(msg)) {
+        setEmailError("Email đã tồn tại.");
+      }
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
   const validatePassword = (value: string) => {
     setPasswordValidation({

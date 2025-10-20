@@ -1,5 +1,23 @@
-import type { ServiceID, ServiceItem, ServiceStatus } from "./service";
+// types/mockServiceApi.ts
+export type ServiceID = number;
+export type ServiceKind = "exam" | "lab" | "imaging" | "procedure";
+export type ServiceStatus = "active" | "inactive";
+export type Specimen = "blood" | "urine" | "swab" | "stool" | "other";
+export type Department = "Khám bệnh" | "XN Huyết học" | "XN Sinh hoá" | "CĐHA";
 
+/** Kiểu ServiceItem dành cho trang quản trị */
+export interface ServiceItem {
+  id: ServiceID;
+  code: string;
+  name: string;
+  kind: ServiceKind;
+  unit?: string | null;
+  price: number;
+  specimen?: Specimen | null; // chỉ dùng khi kind === "lab"
+  department?: Department | string | null;
+  status: ServiceStatus;
+  createdAt: string; // ISO string
+}
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -11,7 +29,7 @@ let ITEMS: ServiceItem[] = [
     name: "Khám nội tổng quát",
     kind: "exam",
     unit: "lượt",
-    price: 120000,
+    price: 120_000,
     department: "Khám bệnh",
     status: "active",
     createdAt: new Date().toISOString(),
@@ -22,7 +40,7 @@ let ITEMS: ServiceItem[] = [
     name: "Tổng phân tích tế bào máu (CBC)",
     kind: "lab",
     unit: "mẫu",
-    price: 90000,
+    price: 90_000,
     specimen: "blood",
     department: "XN Huyết học",
     status: "active",
@@ -34,7 +52,7 @@ let ITEMS: ServiceItem[] = [
     name: "Đường huyết (Glucose)",
     kind: "lab",
     unit: "mẫu",
-    price: 45000,
+    price: 45_000,
     specimen: "blood",
     department: "XN Sinh hoá",
     status: "active",
@@ -46,7 +64,7 @@ let ITEMS: ServiceItem[] = [
     name: "X-quang ngực thẳng",
     kind: "imaging",
     unit: "lần",
-    price: 150000,
+    price: 150_000,
     department: "CĐHA",
     status: "inactive",
     createdAt: new Date().toISOString(),
@@ -58,8 +76,11 @@ export async function apiListServices(): Promise<ServiceItem[]> {
   return [...ITEMS];
 }
 
+export type CreatePayload = Omit<ServiceItem, "id" | "createdAt">;
+export type UpdatePayload = Partial<Omit<ServiceItem, "id" | "createdAt">>;
+
 export async function apiCreateService(
-  payload: Omit<ServiceItem, "id" | "createdAt">
+  payload: CreatePayload
 ): Promise<ServiceItem> {
   await delay(200);
   const it: ServiceItem = {
@@ -73,7 +94,7 @@ export async function apiCreateService(
 
 export async function apiUpdateService(
   id: ServiceID,
-  payload: Partial<Omit<ServiceItem, "id" | "createdAt">>
+  payload: UpdatePayload
 ): Promise<ServiceItem> {
   await delay(200);
   const idx = ITEMS.findIndex((s) => s.id === id);

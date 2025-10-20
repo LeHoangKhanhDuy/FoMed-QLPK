@@ -8,9 +8,11 @@ import EditProfileModal from "./EditProfile";
 import {
   getProfile,
   readUserFromStorage,
+  uploadAvatar,
   USER_TOKEN_KEY,
 } from "../../services/auth";
 import type { AppUser } from "../../types/auth/login";
+import toast from "react-hot-toast";
 
 /* ==== Kiểu dữ liệu UI hiện tại ==== */
 export interface User {
@@ -19,7 +21,6 @@ export interface User {
   name: string;
   created_at: string;
   phone: string | number;
-  points: number;
   avatar: string;
 }
 
@@ -39,13 +40,19 @@ function mapToUserUI(appUser: AppUser): User {
     name: appUser.name || appUser.email,
     created_at: appUser.createdAt || "", // ✅
     phone: appUser.phone || "",
-    points: appUser.points ?? 0,
     avatar: appUser.avatarUrl ?? "",
   };
 }
+
+function fmtDate(input?: string) {
+  if (!input) return "—";
+  const ms = Date.parse(input); // parse robust hơn
+  if (Number.isNaN(ms)) return "—";
+  return new Date(ms).toLocaleString("vi-VN");
+}
+
 export default function UserInfo({
   user: userFromProps,
-  onChangeAvatar,
   showOnlineDot = true,
 }: Props) {
   const [user, setUser] = useState<User | null>(userFromProps ?? null);
@@ -56,10 +63,16 @@ export default function UserInfo({
 
   const openFilePicker = () => fileInputRef.current?.click();
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    onChangeAvatar?.(file);
+    try {
+      const url = await uploadAvatar(file);
+      toast.success("Tải ảnh thành công!");
+      console.log("URL ảnh:", url);
+    } catch (err: any) {
+      toast.error(err.message || "Không thể tải ảnh");
+    }
   };
 
   // Tự fetch user nếu parent không truyền vào
@@ -217,7 +230,7 @@ export default function UserInfo({
                 <div>
                   <p>Ngày tham gia</p>
                   <p className="text-lg font-semibold">
-                    {user.created_at ? new Date(user.created_at).toLocaleString("vi-VN") : "—"}
+                    {fmtDate(user.created_at)}
                   </p>
                 </div>
 

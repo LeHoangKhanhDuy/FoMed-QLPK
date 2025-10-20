@@ -6,7 +6,6 @@ export interface AppUser {
   roles: string[];
   createdAt?: string;
   avatarUrl?: string | null;
-  points?: number;
 }
 
 export interface LoginNormalized {
@@ -15,5 +14,5 @@ export interface LoginNormalized {
   message?: string;
   token?: string;
   refreshToken?: string;
-  user?: AppUser;
+  user: AppUser;
 }

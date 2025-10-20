@@ -1,89 +1,34 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import medicin from "../../assets/images/medicine.png";
-import prescription from "../../assets/images/prescription.png";
-import medical from "../../assets/images/medical.png";
-import injection from "../../assets/images/injection.png";
-import hospital from "../../assets/images/hospital.png";
+import toast from "react-hot-toast";
 import clinic from "../../assets/images/clinic.png";
-import doctor from "../../assets/images/doctor.png";
-import health from "../../assets/images/doctor-visit.png";
+import type { ServiceItem } from "../../types/service";
+import { getService } from "../../services/service";
+import { formatMinutes, formatVND } from "../../Utils/formatVND";
 
-type PackageItem = {
-  id: string;
-  label: string;
-  image: string;
-  onClick?: () => void;
-};
-
-const PACKAGES: PackageItem[] = [
-  {
-    id: "kham-da-day-dai-trang",
-    label: "Đặt khám dạ dày & đại tràng",
-    image: medical,
-  },
-  {
-    id: "noi-soi-da-day-khong-dau",
-    label: "Nội soi dạ dày không đau",
-    image: medicin,
-  },
-  {
-    id: "noi-soi-dai-trang-khong-dau",
-    label: "Nội soi đại tràng không đau",
-    image: prescription,
-  },
-  {
-    id: "noi-soi-da-day-dai-trang-khong-dau",
-    label: "Nội soi dạ dày & đại tràng không đau",
-    image: injection,
-  },
-  {
-    id: "tam-soat-ung-thu-da-day",
-    label: "Tầm soát ung thư dạ dày",
-    image: hospital,
-  },
-  {
-    id: "tam-soat-ung-thu-dai-trang",
-    label: "Tầm soát ung thư đại tràng",
-    image: clinic,
-  },
-  {
-    id: "tam-soat-ung-thu-da-day-dai-trang",
-    label: "Tầm soát ung thư dạ dày & đại tràng",
-    image: doctor,
-  },
-  {
-    id: "tieu-chung-viem-gan",
-    label: "Tiêm ngừa viêm gan",
-    image: health,
-  },
-  {
-    id: "goi-xet-nghiem",
-    label: "Gói xét nghiệm",
-    image: medical,
-  },
-  {
-    id: "dat-kham-ngoai-gio",
-    label: "Đặt khám ngoài giờ",
-    image: medicin,
-  },
-  {
-    id: "dat-kham-theo-bac-si",
-    label: "Đặt khám theo bác sĩ",
-    image: health,
-  },
-  {
-    id: "tu-van-chon-bac-si",
-    label: "Tư vấn chọn bác sĩ",
-    image: doctor,
-  },
-];
-
-export default function BookingPackages({
-  items = PACKAGES,
-}: {
-  items?: PackageItem[];
-}) {
+export default function BookingPackages() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<ServiceItem[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await getService({ page: 1, pageSize: 10 });
+        setItems(res.data.items ?? []);
+      } catch {
+        toast.error("Không tải được danh sách dịch vụ.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleClick = (serviceId: number) => {
+    navigate(`/booking-doctor?serviceId=${serviceId}`);
+  };
+
   return (
     <section className="w-full">
       <div className="max-w-7xl mx-auto px-4 xl:px-0 py-8 md:py-14">
@@ -91,34 +36,77 @@ export default function BookingPackages({
           Đặt gói khám bệnh
         </h2>
         <p className="text-lg text-center text-slate-600 mt-4">
-          Các gói khám bệnh hiện có tại FoMed
+          Các gói/dịch vụ hiện có tại FoMed
         </p>
 
-        {/* Grid 4 cột trên desktop */}
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => navigate("/booking-doctor")}
-              className="w-full bg-white rounded-xl p-3 md:p-5 shadow-md ring-1 ring-slate-100
-                   hover:ring-sky-400 hover:shadow-lg transition-all duration-300 cursor-pointer text-left"
-              aria-label={item.label}
-            >
-              <div className="flex items-center gap-2 md:gap-4">
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-sky-100 flex items-center justify-center ring-1 ring-sky-100">
-                  <img
-                    src={item.image}
-                    alt={item.label}
-                    className="w-7 h-7 md:w-8 md:h-8 object-contain"
-                  />
+          {loading &&
+            Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-full bg-white rounded-xl p-5 shadow-md ring-1 ring-slate-100 animate-pulse"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-slate-100" />
+                  <div className="h-5 w-40 bg-slate-100 rounded" />
                 </div>
-                <span className="text-left font-medium text-slate-900 leading-snug">
-                  {item.label}
-                </span>
               </div>
-            </button>
-          ))}
+            ))}
+
+          {!loading &&
+            items.map((s) => {
+              const img =
+                s.imageUrl?.trim() || s.category?.imageUrl?.trim() || clinic;
+              return (
+                <button
+                  key={s.serviceId}
+                  type="button"
+                  onClick={() => handleClick(s.serviceId)}
+                  className="w-full bg-white rounded-xl p-3 md:p-5 shadow-md ring-1 ring-slate-100
+                         hover:ring-sky-400 hover:shadow-lg transition-all duration-300 cursor-pointer text-left"
+                  aria-label={s.name}
+                >
+                  <div className="flex items-center gap-2 md:gap-4">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-sky-100 flex items-center justify-center ring-1 ring-sky-100">
+                      <img
+                        src={img}
+                        alt={s.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) =>
+                          ((e.currentTarget as HTMLImageElement).src = clinic)
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <span className="text-left font-medium text-slate-900 leading-snug">
+                        {s.name}
+                      </span>
+                      {typeof s.basePrice === "number" && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm text-slate-500">
+                            Giá từ:
+                          </span>
+                          <p className="text-red-500 font-semibold">
+                            {formatVND(s.basePrice)}
+                          </p>
+                        </div>
+                      )}
+                      {s.durationMin ? (
+                        <span className="text-xs text-slate-500">
+                          Thời lượng: {formatMinutes(s.durationMin)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+          {!loading && items.length === 0 && (
+            <div className="col-span-full text-center text-slate-500">
+              Chưa có dịch vụ nào.
+            </div>
+          )}
         </div>
       </div>
     </section>
