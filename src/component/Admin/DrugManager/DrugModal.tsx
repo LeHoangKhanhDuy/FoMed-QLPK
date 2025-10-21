@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Save, X } from "lucide-react";
-import type { DrugItem, DrugStatus } from "../../../types/drug/drug";
+import type { DrugItem } from "../../../types/drug/drug";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   initial?: Partial<DrugItem>;
-  onSubmit: (payload: Omit<DrugItem, "id" | "createdAt">) => Promise<void>;
+  // Trả về: KHÔNG có id, createdAt, status, isActive (status suy từ stock, isActive do Manager quyết)
+  onSubmit: (
+    payload: Omit<DrugItem, "id" | "createdAt" | "status" | "isActive">
+  ) => Promise<void>;
 };
 
 const UNIT_OPTIONS = ["viên", "gói", "ống", "chai", "vỉ", "ml", "hộp"] as const;
@@ -16,9 +19,12 @@ type Unit = (typeof UNIT_OPTIONS)[number];
 const normalizeUnit = (u?: string): Unit =>
   UNIT_OPTIONS.includes(u as Unit) ? (u as Unit) : "viên";
 
-type DrugForm = Omit<DrugItem, "id" | "createdAt" | "unit"> & { unit: Unit };
+type DrugForm = Omit<
+  DrugItem,
+  "id" | "createdAt" | "unit" | "status" | "isActive"
+> & { unit: Unit };
 
-type Field = "code" | "name" | "unit" | "price" | "stock" | "status";
+type Field = "code" | "name" | "unit" | "price" | "stock";
 type FieldErrors = Partial<Record<Field, string>>;
 
 export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
@@ -28,7 +34,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     unit: normalizeUnit(initial?.unit),
     price: initial?.price ?? 0,
     stock: initial?.stock ?? 0,
-    status: (initial?.status as DrugStatus) ?? "in stock",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
@@ -62,11 +67,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     if (!Number.isInteger(n)) return "Tồn kho phải là số nguyên";
     return "";
   };
-  const vStatus = (s: DrugStatus) => {
-    if (s !== "in stock" && s !== "out of stock")
-      return "Trạng thái không hợp lệ";
-    return "";
-  };
 
   const validateField = (field: Field, value: unknown): string => {
     switch (field) {
@@ -80,8 +80,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
         return vPrice(Number(value));
       case "stock":
         return vStock(Number(value));
-      case "status":
-        return vStatus(value as DrugStatus);
       default:
         return "";
     }
@@ -94,7 +92,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
       unit: validateField("unit", f.unit),
       price: validateField("price", f.price),
       stock: validateField("stock", f.stock),
-      status: validateField("status", f.status),
     };
     Object.keys(out).forEach((k) => {
       if (!out[k as Field]) delete out[k as Field];
@@ -113,11 +110,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     label: u,
   }));
 
-  const statusOptions: SelectOption<DrugStatus>[] = [
-    { value: "in stock", label: "Còn hàng" },
-    { value: "out of stock", label: "Hết hàng" },
-  ];
-
   // —— Effects ——
   useEffect(() => {
     if (!open) return;
@@ -127,7 +119,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
       unit: normalizeUnit(initial?.unit),
       price: initial?.price ?? 0,
       stock: initial?.stock ?? 0,
-      status: (initial?.status as DrugStatus) ?? "in stock",
     });
     setErrors({});
   }, [open, initial]);
@@ -162,18 +153,18 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    // Đồng bộ trạng thái theo tồn kho
-    const normalized: Omit<DrugItem, "id" | "createdAt"> = {
-      ...form,
-      status:
-        form.stock > 0
-          ? ("in stock" as DrugStatus)
-          : ("out of stock" as DrugStatus),
-    };
+    const payload: Omit<DrugItem, "id" | "createdAt" | "status" | "isActive"> =
+      {
+        code: form.code,
+        name: form.name,
+        unit: form.unit,
+        price: form.price,
+        stock: form.stock,
+      };
 
     setLoading(true);
     try {
-      await onSubmit(normalized);
+      await onSubmit(payload);
       onClose();
     } catch {
       setErrors((e) => ({ ...e, code: e.code ?? "Không lưu được thuốc" }));
@@ -182,11 +173,11 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     }
   };
 
+  // FIX: className string bị chèn `"+ "` dư thừa
   const ctrl = (field: Field) =>
-    `mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 " +
-      "text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500 ${
-        errors[field] ? "border-rose-400 focus:ring-rose-400" : ""
-      }`;
+    `mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500 ${
+      errors[field] ? "border-rose-400 focus:ring-rose-400" : ""
+    }`;
 
   if (!open) return null;
 
@@ -252,7 +243,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
             error={errors.unit}
           />
 
-          {/* Giá (text numeric để không rớt số 0 đầu khi nhập) */}
+          {/* Giá */}
           <label className="text-sm">
             <div className="flex items-center gap-1">
               <span className="block mb-1 text-slate-600">Giá (VNĐ)</span>
@@ -289,19 +280,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
               <p className="mt-1 text-xs text-rose-600">{errors.stock}</p>
             )}
           </label>
-
-          {/* Trạng thái (giữ value tiếng Anh, hiển thị TV). Sẽ được override khi lưu theo stock */}
-          <SelectMenu<DrugStatus>
-            label="Trạng thái"
-            required
-            value={form.status}
-            onChange={(v) =>
-              setField("status")((v as DrugStatus) || form.status)
-            }
-            options={statusOptions}
-            invalid={!!errors.status}
-            error={errors.status}
-          />
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-2">

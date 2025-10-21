@@ -230,11 +230,11 @@ export default function ServiceManager() {
                   <span
                     className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       s.isActive
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-green-200 text-green-600"
                         : "bg-slate-200 text-slate-600"
                     }`}
                   >
-                    {s.isActive ? "Đang hoạt động" : "Tạm khoá"}
+                    {s.isActive ? "Active" : "Block"}
                   </span>
                 </td>
                 <td className="px-3 py-2">
@@ -244,7 +244,7 @@ export default function ServiceManager() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                     <button
                       onClick={() => openEdit(s)}
-                      className="bg-warning-linear text-white cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px]"
+                      className="bg-primary-linear text-white cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px]"
                       title="Sửa"
                     >
                       <Pencil className="w-4 h-4" /> Sửa
@@ -254,8 +254,8 @@ export default function ServiceManager() {
                       onClick={() => toggleActive(s)}
                       className={`cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px] ${
                         s.isActive
-                          ? "bg-orange-100 text-orange-500 hover:bg-orange-100"
-                          : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                          ? "bg-warning-linear text-white"
+                          : "bg-success-linear text-white"
                       }`}
                       title={s.isActive ? "Khoá dịch vụ" : "Mở dịch vụ"}
                     >

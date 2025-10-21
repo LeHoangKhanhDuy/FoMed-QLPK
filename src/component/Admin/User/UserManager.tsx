@@ -50,8 +50,8 @@ export default function UserManager() {
 
   const statusBadge = (s: UserStatus) =>
     s === "active"
-      ? "bg-emerald-100 text-emerald-700"
-      : "bg-slate-200 text-slate-600";
+      ? "bg-green-200 text-green-600"
+      : "bg-red-200 text-red-600";
 
   const roleLabel: Record<AdminRole, string> = {
     ADMIN: "Quản trị viên",
@@ -162,8 +162,8 @@ export default function UserManager() {
               <tr key={u.id} className="text-center border-b last:border-none">
                 <td className="px-3 py-2 text-left font-medium">{u.id}</td>
                 <td className="px-3 py-2 text-left font-bold">{u.name}</td>
-                <td className="px-3 py-2 text-left">
-                  <div className="flex flex-wrap gap-1">
+                <td className="px-3 py-2 align-middle">
+                  <div className="w-full flex flex-wrap items-center justify-center gap-1">
                     {u.roles.map((r) => (
                       <span
                         key={r}
@@ -184,7 +184,7 @@ export default function UserManager() {
                       u.status
                     )}`}
                   >
-                    {u.status === "active" ? "Đang hoạt động" : "Tạm khoá"}
+                    {u.status === "active" ? "Active" : "Block"}
                   </span>
                 </td>
                 <td className="px-3 py-2">
@@ -204,11 +204,11 @@ export default function UserManager() {
                       }
                       className={`cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px] ${
                         u.status === "active"
-                          ? "bg-orange-100 text-orange-600 hover:bg-orange-100"
-                          : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                          ? "bg-warning-linear text-white"
+                          : "bg-success-linear text-white"
                       }`}
                     >
-                      <Power className="w-5  h-5"/>
+                      <Power className="w-5  h-5" />
                       {loadingId === u.id
                         ? "..."
                         : u.status === "active"

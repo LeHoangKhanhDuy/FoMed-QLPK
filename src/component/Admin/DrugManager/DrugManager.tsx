@@ -1,14 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Pill, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Pill,
+  Pencil,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import type { DrugItem } from "../../../types/drug/drug";
 import {
   apiCreateDrug,
   apiDeleteDrug,
   apiListDrugs,
+  apiToggleDrugActive,
   apiUpdateDrug,
-} from "../../../types/drug/mockDrugApi";
+} from "../../../services/drugApi";
 import DrugModal from "./DrugModal";
 import ConfirmModal from "../../../common/ConfirmModal";
+import toast from "react-hot-toast";
 
 export default function DrugManager() {
   const [items, setItems] = useState<DrugItem[]>([]);
@@ -23,8 +32,12 @@ export default function DrugManager() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+
   useEffect(() => {
-    apiListDrugs().then(setItems);
+    apiListDrugs()
+      .then(({ items }) => setItems(items))
+      .catch(() => toast.error("Không tải được danh sách thuốc"));
   }, []);
 
   const filtered = useMemo(() => {
@@ -57,13 +70,27 @@ export default function DrugManager() {
     setOpen(true);
   };
 
-  const submit = async (payload: Omit<DrugItem, "id" | "createdAt">) => {
-    if (editing) {
-      const upd = await apiUpdateDrug(editing.id, payload);
-      setItems((arr) => arr.map((x) => (x.id === upd.id ? upd : x)));
-    } else {
-      const created = await apiCreateDrug(payload);
-      setItems((arr) => [created, ...arr]);
+  // NHẬN payload từ Modal: KHÔNG có status/isActive
+  const submit = async (
+    payload: Omit<DrugItem, "id" | "createdAt" | "status" | "isActive">
+  ) => {
+    try {
+      if (editing) {
+        // Giữ nguyên isActive hiện tại khi cập nhật
+        const upd = await apiUpdateDrug(editing.id, {
+          ...payload,
+          isActive: editing.isActive,
+        });
+        setItems((arr) => arr.map((x) => (x.id === upd.id ? upd : x)));
+        toast.success("Đã cập nhật thuốc");
+      } else {
+        // Tạo mới mặc định hoạt động
+        const created = await apiCreateDrug({ ...payload, isActive: true });
+        setItems((arr) => [created, ...arr]);
+        toast.success("Đã thêm thuốc");
+      }
+    } catch {
+      toast.error("Lưu thuốc thất bại");
     }
   };
 
@@ -80,10 +107,34 @@ export default function DrugManager() {
       setItems((arr) => arr.filter((x) => x.id !== deletingId));
       setConfirmOpen(false);
       setDeletingId(null);
+      toast.success("Đã xoá thuốc");
+    } catch (e) {
+      toast.error((e as Error).message || "Xoá thuốc thất bại");
     } finally {
       setConfirmLoading(false);
     }
   };
+
+  const toggleActive = async (it: DrugItem) => {
+    setTogglingId(it.id);
+    try {
+      await apiToggleDrugActive(it.id, !it.isActive);
+      setItems((arr) =>
+        arr.map((x) => (x.id === it.id ? { ...x, isActive: !it.isActive } : x))
+      );
+      toast.success(!it.isActive ? "Đã bật hoạt động" : "Đã tắt hoạt động");
+    } catch {
+      toast.error("Đổi trạng thái hoạt động thất bại");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const inventoryBadge = (stock: number) =>
+    stock > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700";
+
+  const activeBadge = (active: boolean) =>
+    active ? "bg-green-200 text-green-600" : "bg-slate-200 text-slate-600";
 
   return (
     <section className="bg-white rounded-xl shadow-xs border p-4 sm:p-6">
@@ -124,6 +175,7 @@ export default function DrugManager() {
               <th className="px-3 py-2 text-left">Tên thuốc</th>
               <th className="px-3 py-2">Đơn vị</th>
               <th className="px-3 py-2">Giá</th>
+              <th className="px-3 py-2">Số lượng</th>
               <th className="px-3 py-2">Tồn kho</th>
               <th className="px-3 py-2">Trạng thái</th>
               <th className="px-3 py-2">Thao tác</th>
@@ -132,69 +184,101 @@ export default function DrugManager() {
           <tbody>
             {paged.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-slate-500">
+                <td colSpan={8} className="py-6 text-center text-slate-500">
                   Chưa có thuốc.
                 </td>
               </tr>
             )}
 
-            {paged.map((d) => (
-              <tr key={d.id} className="text-center border-b last:border-none">
-                <td className="px-3 py-2 text-left font-medium">{d.code}</td>
-                <td className="px-3 py-2 text-left font-bold">{d.name}</td>
-                <td className="px-3 py-2">{d.unit}</td>
-                <td className="px-3 py-2 text-red-500 font-semibold">
-                  {d.price.toLocaleString("vi-VN")} ₫
-                </td>
+            {paged.map((d) => {
+              const canDelete = !d.isActive; // hoặc chặt hơn: !d.isActive && d.stock === 0
+              return (
+                <tr
+                  key={d.id}
+                  className="text-center border-b last:border-none"
+                >
+                  <td className="px-3 py-2 text-left font-medium">{d.code}</td>
+                  <td className="px-3 py-2 text-left font-bold">{d.name}</td>
+                  <td className="px-3 py-2">{d.unit}</td>
+                  <td className="px-3 py-2 text-red-500 font-semibold">
+                    {d.price.toLocaleString("vi-VN")} ₫
+                  </td>
 
-                {/* Ô tồn kho: chỉ input số lượng */}
-                <td className="px-3 py-2">{d.stock.toLocaleString("vi-VN")}</td>
+                  <td className="px-3 py-2">
+                    {d.stock.toLocaleString("vi-VN")}
+                  </td>
 
-                {/* Trạng thái: luôn tính từ stock để hiển thị đúng */}
-                <td className="px-3 py-2">
-                  {d.stock > 0 ? (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                      Còn hàng
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                      Hết hàng
-                    </span>
-                  )}
-                </td>
-
-                <td className="py-2 pr-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
-                    <button
-                      onClick={() => openEdit(d)}
-                      className="bg-warning-linear text-white cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] border px-2 py-1"
-                      title="Sửa"
+                  {/* Trạng thái tồn kho theo stock */}
+                  <td className="px-3 py-2">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${inventoryBadge(
+                        d.stock
+                      )}`}
                     >
-                      <Pencil className="w-4 h-4" /> Sửa
-                    </button>
-                    <button
-                      onClick={() => askDelete(d.id)}
-                      className="cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] bg-error-linear text-white px-2 py-1"
-                      title="Xoá"
-                    >
-                      <Trash2 className="w-4 h-4" /> Xoá
-                    </button>
-                  </div>
-                  {/* Modal xác nhận dùng chung */}
-                  <ConfirmModal
-                    open={confirmOpen}
-                    onClose={() => setConfirmOpen(false)}
-                    onConfirm={doDelete}
-                    loading={confirmLoading}
-                    title="Xoá thuốc"
-                    description="Bạn có chắc muốn xoá thuốc này? Thao tác không thể hoàn tác."
-                    confirmText="Xoá"
-                    cancelText="Huỷ"
-                    danger
-                  />
-                </td>
-              </tr>
-            ))}
+                      {d.stock > 0 ? "Còn hàng" : "Hết hàng"}
+                    </span>
+                  </td>
+
+                  {/* Hoạt động / Không hoạt động */}
+                  <td className="px-3 py-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${activeBadge(
+                          d.isActive
+                        )}`}
+                      >
+                        {d.isActive ? "Active" : "Block"}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Thao tác */}
+                  <td className="py-2 pr-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
+                      <button
+                        disabled={togglingId === d.id}
+                        onClick={() => toggleActive(d)}
+                        className={`cursor-pointer inline-flex items-center rounded-[var(--rounded)] px-2 py-1 ${
+                          d.isActive
+                            ? "bg-warning-linear text-white"
+                            : "bg-success-linear text-white"
+                        }`}
+                        title={
+                          d.isActive ? "Tạm khóa" : "Đang hoạt động"
+                        }
+                      >
+                        {togglingId === d.id
+                          ? "Đang đổi…"
+                          : d.isActive
+                          ? "Khóa"
+                          : "Mở"}
+                      </button>
+                      <button
+                        onClick={() => openEdit(d)}
+                        className="bg-primary-linear text-white cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] px-2 py-1"
+                        title="Sửa"
+                      >
+                        <Pencil className="w-4 h-4" /> Sửa
+                      </button>
+                      <button
+                        onClick={() => canDelete && askDelete(d.id)}
+                        disabled={!canDelete}
+                        className={`cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] px-2 py-1 text-white ${
+                          canDelete
+                            ? "bg-error-linear"
+                            : "bg-slate-300 cursor-not-allowed"
+                        }`}
+                        title={
+                          canDelete ? "Xoá" : "Chỉ xoá khi KHÔNG hoạt động"
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" /> Xoá
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -222,11 +306,28 @@ export default function DrugManager() {
         </div>
       </div>
 
+      {/* DỜI ConfirmModal RA NGOÀI map để không render N cái cùng lúc */}
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={doDelete}
+        loading={confirmLoading}
+        title="Xoá thuốc"
+        description="Bạn có chắc muốn xoá thuốc này? Thao tác không thể hoàn tác."
+        confirmText="Xoá"
+        cancelText="Huỷ"
+        danger
+      />
+
       <DrugModal
         open={open}
         onClose={() => setOpen(false)}
         initial={editing ?? undefined}
-        onSubmit={submit}
+        // Modal trả về: { code, name, unit, price, stock }
+        onSubmit={async (payloadNoStatusNoActive) => {
+          await submit(payloadNoStatusNoActive);
+          setOpen(false);
+        }}
       />
     </section>
   );

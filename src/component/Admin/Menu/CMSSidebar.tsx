@@ -20,7 +20,7 @@ type Item = {
 const items: Item[] = [
   { name: "Thống kê", href: "/cms/dashboard", icon: LayoutDashboard },
   { name: "Tạo lịch khám", href: "/cms/create-appointments", icon: CalendarDays, badge: "12"},
-  { name: "Quản lý bệnh nhân", href: "/cms/patient-list", icon: Users },
+  { name: "Bệnh nhân hôm nay", href: "/cms/patient-list", icon: Users },
   { name: "Quản lý bác sĩ", href: "/cms/doctor-schedule", icon: Stethoscope },
   { name: "Quản lý thanh toán", href: "/cms/billing", icon: Wallet2 },
   { name: "Quản lý người dùng", href: "/cms/users-manager", icon: UserIcon },
