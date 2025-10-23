@@ -117,8 +117,8 @@ const Footer = () => {
           <div key={section.title}>
             <h3 className="text-lg font-bold">{section.title}</h3>
             <ul className="mt-2 space-y-1">
-              {section.links.map((link) => (
-                <li key={link.href}>
+              {section.links.map((link, index) => (
+                <li key={`aboutus-${section.title}-${index}`}>
                   <a href={link.href} className="hover:text-[var(--hover)]">
                     {link.label}
                   </a>
@@ -133,8 +133,8 @@ const Footer = () => {
           <div key={section.title}>
             <h3 className="text-lg font-bold">{section.title}</h3>
             <ul className="mt-2 space-y-1">
-              {section.links.map((link) => (
-                <li key={link.href}>
+              {section.links.map((link, index) => (
+                <li key={`footer-${section.title}-${index}`}>
                   <a href={link.href} className="hover:text-[var(--hover)]">
                     {link.label}
                   </a>
