@@ -3,7 +3,7 @@
 import type { CreateSpecialtyPayload, SpecialtiesListResponse, SpecialtyItem, UpdateSpecialtyPayload } from "../types/specialty/specialtyType";
 import { USER_TOKEN_KEY } from "./auth";
 
-const API_BASE = "/api/v1/specialties";
+const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "")}/api/v1/specialties`;
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem(USER_TOKEN_KEY);
