@@ -64,7 +64,7 @@ export interface Specialty {
   code: string | null;
 }
 
-const API_BASE = "/api/v1/doctors";
+const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "")}/api/v1/doctors`;
 
 function getAuthHeaders(): HeadersInit {
   return {
