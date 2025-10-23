@@ -7,7 +7,6 @@ type Props = {
   open: boolean;
   onClose: () => void;
   initial?: Partial<DrugItem>;
-  // Trả về: KHÔNG có id, createdAt, status, isActive (status suy từ stock, isActive do Manager quyết)
   onSubmit: (
     payload: Omit<DrugItem, "id" | "createdAt" | "status" | "isActive">
   ) => Promise<void>;
@@ -37,6 +36,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null); // Thêm state cho thông báo lỗi khi submit
 
   // —— Validators ——
   const vCode = (v: string) => {
@@ -121,6 +121,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
       stock: initial?.stock ?? 0,
     });
     setErrors({});
+    setSubmitError(null); // Reset thông báo lỗi khi mở modal
   }, [open, initial]);
 
   // —— Handlers ——
@@ -144,14 +145,19 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
   };
 
   const onChangeStock: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const n = Math.max(0, Math.floor(Number(e.target.value)));
+    const raw = e.target.value.replace(/^0+(?=\d)/, ""); // Loại bỏ số 0 ở đầu nhưng giữ số 0 đơn lẻ
+    const n = raw === "" ? 0 : Math.max(0, Math.floor(Number(raw)));
     setField("stock")(Number.isFinite(n) ? n : 0);
   };
 
   const submit = async () => {
     const errs = validateForm();
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    if (Object.keys(errs).length > 0) {
+      // Hiển thị thông báo lỗi tổng quát
+      setSubmitError("Vui lòng điền đầy đủ và chính xác các trường bắt buộc!");
+      return;
+    }
 
     const payload: Omit<DrugItem, "id" | "createdAt" | "status" | "isActive"> =
       {
@@ -185,6 +191,13 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
+        {/* Thông báo lỗi tổng quát */}
+        {submitError && (
+          <div className="mb-3 p-3 bg-rose-100 text-rose-600 text-sm rounded-[var(--rounded)]">
+            {submitError}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-xl uppercase">
             {initial?.id ? "Sửa thuốc" : "Thêm thuốc"}
@@ -269,9 +282,9 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
               <p className="text-red-500">*</p>
             </div>
             <input
-              type="number"
-              min={0}
-              value={form.stock}
+              type="text" // Đổi type thành text để giữ định dạng số 0
+              inputMode="numeric"
+              value={form.stock.toString()} // Chuyển thành string để giữ số 0
               onChange={onChangeStock}
               className={ctrl("stock")}
               placeholder="VD: 100"
@@ -291,8 +304,10 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
           </button>
           <button
             onClick={submit}
-            disabled={loading || !isValid}
-            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white inline-flex items-center gap-2"
+            disabled={loading}
+            className={`cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white inline-flex items-center gap-2 ${
+              loading || !isValid ? "opacity-50 cursor-not-allowed" : ""
+            }`}
             title={!isValid ? "Vui lòng sửa các lỗi trước khi lưu" : "Lưu"}
           >
             <Save className="w-4 h-4" /> Lưu

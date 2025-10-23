@@ -1,9 +1,10 @@
 type ServiceInfo = {
   name: string;
-  price: number; // Giá gốc
-  discountPrice?: number; // Giá sau giảm (nếu có)
+  price: number;
+  discountPrice?: number;
   specialty: string;
   verified?: boolean;
+  durationMin?: number | null;
 };
 
 interface Props {
@@ -11,6 +12,15 @@ interface Props {
 }
 
 export const ServiceInfoCard = ({ service }: Props) => {
+  // Format thời gian
+  const formatDuration = (minutes: number | null | undefined) => {
+    if (!minutes) return null;
+    if (minutes < 60) return `${minutes} phút`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours} giờ ${mins} phút` : `${hours} giờ`;
+  };
+
   return (
     <section className="md:col-span-1 md:self-start">
       <div className="sticky top-20 md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
@@ -48,12 +58,24 @@ export const ServiceInfoCard = ({ service }: Props) => {
                     </p>
                   </>
                 ) : (
-                  <p className="text-slate-700 font-semibold">
+                  <p className="text-red-500 font-bold text-lg">
                     {service.price.toLocaleString("vi-VN")} đ
                   </p>
                 )}
               </div>
             </div>
+
+            {/* Thời gian */}
+            {service.durationMin && (
+              <div>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Thời gian dự kiến
+                </p>
+                <p className="text-lg font-semibold">
+                  {formatDuration(service.durationMin)}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

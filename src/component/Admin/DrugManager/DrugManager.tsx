@@ -6,6 +6,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Power,
 } from "lucide-react";
 import type { DrugItem } from "../../../types/drug/drug";
 import {
@@ -227,7 +228,7 @@ export default function DrugManager() {
                           d.isActive
                         )}`}
                       >
-                        {d.isActive ? "Active" : "Block"}
+                        {d.isActive ? "Active" : "Disabled"}
                       </span>
                     </div>
                   </td>
@@ -238,32 +239,30 @@ export default function DrugManager() {
                       <button
                         disabled={togglingId === d.id}
                         onClick={() => toggleActive(d)}
-                        className={`cursor-pointer inline-flex items-center rounded-[var(--rounded)] px-2 py-1 ${
+                        className={`cursor-pointer inline-flex items-center rounded-[var(--rounded)] px-2 py-2 ${
                           d.isActive
                             ? "bg-warning-linear text-white"
                             : "bg-success-linear text-white"
                         }`}
-                        title={
-                          d.isActive ? "Tạm khóa" : "Đang hoạt động"
-                        }
+                        title={d.isActive ? "Tạm khóa" : "Đang hoạt động"}
                       >
-                        {togglingId === d.id
-                          ? "Đang đổi…"
-                          : d.isActive
-                          ? "Khóa"
-                          : "Mở"}
+                        {togglingId === d.id ? (
+                          "Đang đổi…"
+                        ) : (
+                          <Power className="w-5 h-5" />
+                        )}
                       </button>
                       <button
                         onClick={() => openEdit(d)}
-                        className="bg-primary-linear text-white cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] px-2 py-1"
+                        className="bg-primary-linear text-white cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] px-2 py-2"
                         title="Sửa"
                       >
-                        <Pencil className="w-4 h-4" /> Sửa
+                        <Pencil className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => canDelete && askDelete(d.id)}
                         disabled={!canDelete}
-                        className={`cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] px-2 py-1 text-white ${
+                        className={`cursor-pointer inline-flex items-center gap-1 rounded-[var(--rounded)] px-2 py-2 text-white ${
                           canDelete
                             ? "bg-error-linear"
                             : "bg-slate-300 cursor-not-allowed"
@@ -272,7 +271,7 @@ export default function DrugManager() {
                           canDelete ? "Xoá" : "Chỉ xoá khi KHÔNG hoạt động"
                         }
                       >
-                        <Trash2 className="w-4 h-4" /> Xoá
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </td>

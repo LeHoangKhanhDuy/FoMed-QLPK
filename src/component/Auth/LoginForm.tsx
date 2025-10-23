@@ -98,7 +98,11 @@ export default function LoginForm({
       else navigate("/", { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Đăng nhập thất bại";
-      toast.error(msg);
+      if (msg === "401") {
+        toast.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }

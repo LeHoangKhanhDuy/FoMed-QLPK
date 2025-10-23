@@ -1,89 +1,145 @@
+// src/components/Admin/Appointment/AppointmentCreate.tsx
 import { CalendarPlus, Hash, PhoneIcon, User2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   Appointment,
   AppointmentPayload,
-  AppointmentStatus,
 } from "../../../types/appointment/appointment";
 import { SelectMenu } from "../../ui/select-menu";
 import toast from "react-hot-toast";
 import { FormField } from "../../ui/form-field";
 import { Input } from "../../ui/input";
 import { DateInput, TimeInput } from "./DateTimeForm";
-import AppointmentList from "./AppointmentList";
 
-// ====== Demo data (thay bằng API thật) ======
-type Doctor = { id: number; name: string; specialty: string };
-type Service = { id: number; name: string };
+import { apiListDoctors, type BEDoctor } from "../../../services/doctorsApi";
+import {
+  apiListUsersByRoleDoctor,
+  type DoctorOption,
+} from "../../../services/userApi";
+import {
+  appointmentsList,
+  createAppointment,
+} from "../../../services/appointmentsApi";
+import { mapBEtoFE } from "../../../types/appointment/appointmentMapper";
+import { getService } from "../../../services/service";
+import {
+  apiUpdatePatient,
+  apiUpsertPatientByPhone,
+} from "../../../services/patientsApi";
 
-const FAKE_DOCTORS: Doctor[] = [
-  { id: 1, name: "BS. Nguyễn An", specialty: "Tim mạch" },
-  { id: 2, name: "BS. Trần Bình", specialty: "Cơ xương khớp" },
-];
-const FAKE_SERVICES: Service[] = [
-  { id: 1, name: "Khám tổng quát" },
-  { id: 2, name: "Khám tim mạch" },
-];
-
-let seedId = 1032;
-
-// ====== Helpers ======
+// ===== Helpers =====
 const isValidVNPhone = (s: string) => /^0\d{9}$/.test(s.trim());
 const cn = (...args: (string | false | undefined)[]) =>
   args.filter(Boolean).join(" ");
 
-// ====== Validate rules ======
+const getNowDefaults = () => {
+  const now = new Date();
+  return {
+    date: now.toISOString().slice(0, 10),
+    time: now.toTimeString().slice(0, 5),
+  };
+};
+
+type GenderCode = "M" | "F";
+type GenderOpt = "" | GenderCode;
+
+const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+
+const isPastOrToday = (yyyy_mm_dd: string) => {
+  const t = new Date(yyyy_mm_dd);
+  if (Number.isNaN(t.getTime())) return false;
+  const today = new Date();
+  t.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  return t <= today;
+};
+
+// ===== Validate =====
 type Errors = Partial<Record<keyof AppointmentPayload, string>>;
 type Touched = Partial<Record<keyof AppointmentPayload, boolean>>;
 
 function validate(form: AppointmentPayload): Errors {
   const err: Errors = {};
-
   if (!form.patientName.trim())
     err.patientName = "Vui lòng nhập tên bệnh nhân.";
   if (!form.patientPhone.trim())
     err.patientPhone = "Vui lòng nhập số điện thoại.";
   else if (!isValidVNPhone(form.patientPhone))
     err.patientPhone = "Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0).";
-
   if (!form.doctorId) err.doctorId = "Vui lòng chọn bác sĩ.";
   if (!form.serviceId) err.serviceId = "Vui lòng chọn dịch vụ.";
-
   if (!form.date) err.date = "Vui lòng chọn ngày.";
   if (!form.time) err.time = "Vui lòng chọn giờ.";
-
   if (!form.reason?.trim()) err.reason = "Vui lòng nhập lý do.";
   else if (form.reason.length > 255) err.reason = "Lý do tối đa 255 ký tự.";
 
-  // Ngày/Giờ phải ở tương lai
   if (form.date && form.time) {
-    const scheduledAt = new Date(`${form.date}T${form.time}:00`);
-    if (Number.isNaN(scheduledAt.getTime()))
-      err.time = "Ngày/Giờ không hợp lệ.";
-    else if (scheduledAt.getTime() < Date.now())
-      err.time = "Thời điểm hẹn phải ở tương lai.";
-  }
+    const [year, month, day] = form.date.split("-").map(Number);
+    const [hour, minute] = form.time.split(":").map(Number);
+    const scheduledAt = new Date(year, month - 1, day, hour, minute, 0);
 
+    if (Number.isNaN(scheduledAt.getTime())) {
+      err.time = "Ngày/Giờ không hợp lệ.";
+    } else {
+      const now = new Date();
+      if (scheduledAt.getTime() < now.getTime() - 2 * 60 * 1000) {
+        err.time = "Thời điểm hẹn phải ở tương lai.";
+      }
+    }
+  }
   return err;
 }
 
+interface ServiceOption {
+  serviceId: number;
+  name: string;
+}
+
+// ================= Component =================
 export default function AppointmentCreate() {
-  // Form state
+  const { date: defaultDate, time: defaultTime } = getNowDefaults();
   const [form, setForm] = useState<AppointmentPayload>({
     patientName: "",
     patientPhone: "",
     doctorId: "",
     serviceId: "",
-    date: "",
-    time: "",
+    date: defaultDate,
+    time: defaultTime,
     reason: "",
     source: "ONLINE",
     queueNo: undefined,
   });
 
-  // touched & errors
+  type PatientExtra = {
+    gender: GenderOpt;
+    dob: string;
+    address: string;
+    district: string;
+    city: string;
+    province: string;
+    nationalId: string;
+    email: string;
+  };
+
+  const [patientExtra, setPatientExtra] = useState<PatientExtra>({
+    gender: "",
+    dob: "",
+    address: "",
+    district: "",
+    city: "",
+    province: "",
+    nationalId: "",
+    email: "",
+  });
   const [touched, setTouched] = useState<Touched>({});
   const [errors, setErrors] = useState<Errors>({});
+  const [services, setServices] = useState<ServiceOption[]>([]);
+
+  const [doctors, setDoctors] = useState<BEDoctor[]>([]);
+  const [doctorUsers, setDoctorUsers] = useState<DoctorOption[]>([]);
+
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const markTouched = <K extends keyof AppointmentPayload>(k: K) =>
     setTouched((t) => ({ ...t, [k]: true }));
@@ -91,69 +147,162 @@ export default function AppointmentCreate() {
   const update = <K extends keyof AppointmentPayload>(
     k: K,
     v: AppointmentPayload[K]
-  ) => {
+  ) =>
     setForm((s) => {
       const next = { ...s, [k]: v };
-      // live-validate từng field
       setErrors(validate(next));
       return next;
     });
-  };
 
   const resetForm = () => {
+    const d = getNowDefaults();
     setForm({
       patientName: "",
       patientPhone: "",
       doctorId: "",
       serviceId: "",
-      date: "",
-      time: "",
+      date: d.date,
+      time: d.time,
       reason: "",
       source: "ONLINE",
       queueNo: undefined,
+    });
+    setPatientExtra({
+      gender: "",
+      dob: "",
+      address: "",
+      district: "",
+      city: "",
+      province: "",
+      nationalId: "",
+      email: "",
     });
     setTouched({});
     setErrors({});
   };
 
-  // Mock initial
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [submitting, setSubmitting] = useState(false);
+  // ⬇️ Load dữ liệu ban đầu
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiListDoctors({ page: 1, limit: 200 });
+        setDoctors(res.items ?? []);
+      } catch {
+        toast.error("Không tải được danh sách bác sĩ");
+      }
+
+      try {
+        const u = await apiListUsersByRoleDoctor({
+          page: 1,
+          limit: 200,
+          isActive: true,
+        });
+        setDoctorUsers(u.items ?? []);
+
+        if (!u.items?.length) {
+          console.warn(
+            "⚠️ Không có user role=DOCTOR. Kiểm tra roles ở BE hoặc dữ liệu mẫu."
+          );
+        }
+      } catch (err) {
+        console.error("❌ Error loading doctor users:", err);
+        toast.error("Không tải được danh sách người dùng (DOCTOR)");
+      }
+
+      try {
+        const sv = await getService({ page: 1, pageSize: 200, isActive: true });
+        setServices(
+          sv.data?.items?.map((x: ServiceOption) => ({
+            serviceId: x.serviceId,
+            name: x.name || `DV #${x.serviceId}`,
+          })) ?? []
+        );
+      } catch {
+        toast.error("Không tải được danh sách dịch vụ");
+      }
+    })();
+  }, []);
+
+  // ⬇️ Join logic: Ưu tiên lấy tên từ Users (role DOCTOR), fallback về Doctors
+  const doctorOptions = useMemo(() => {
+    // Nếu có dữ liệu từ Users (role DOCTOR), dùng luôn
+    if (doctorUsers.length > 0) {
+      return doctorUsers
+        .map((u) => ({
+          value: u.doctorId,
+          label: u.fullName || `BS #${u.doctorId}`,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, "vi"));
+    }
+
+    // Fallback: dùng bảng Doctors nếu không có Users
+    return doctors
+      .map((d) => ({
+        value: d.doctorId,
+        label: d.fullName || `BS #${d.doctorId}`,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "vi"));
+  }, [doctors, doctorUsers]);
+
+  const fetchList = useCallback(
+    async (date?: string, doctorId?: number) => {
+      const theDate = date || new Date().toISOString().slice(0, 10);
+      try {
+        const res = await appointmentsList({
+          date: theDate,
+          doctorId,
+          page: 1,
+          limit: 100,
+        });
+
+        const mapped = res.items.map(mapBEtoFE).map((it) => {
+          if (!it.doctorName && doctorId) {
+            const opt = doctorOptions.find((o) => o.value === Number(doctorId));
+            return { ...it, doctorName: opt?.label || it.doctorName };
+          }
+          return it;
+        });
+
+        setAppointments(mapped);
+      } catch (err) {
+        console.error("❌ Error fetching appointments:", err);
+        toast.error("Không tải được danh sách lịch");
+      }
+    },
+    [doctorOptions]
+  );
 
   useEffect(() => {
-    const initial: Appointment[] = [
-      {
-        id: 1001,
-        code: "AP-2025001",
-        patientName: "Nguyễn Văn A",
-        patientPhone: "0901234567",
-        doctorName: "BS. Nguyễn An",
-        serviceName: "Khám tổng quát",
-        date: "2025-09-10",
-        time: "09:00",
-        status: "waiting",
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: 1002,
-        code: "AP-2025002",
-        patientName: "Trần Thị B",
-        patientPhone: "0912345678",
-        doctorName: "BS. Trần Bình",
-        serviceName: "Khám tim mạch",
-        date: "2025-09-12",
-        time: "14:30",
-        status: "booked",
-        createdAt: new Date().toISOString(),
-      },
-    ];
-    setAppointments(initial);
-  }, []);
+    fetchList();
+  }, [fetchList]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const dId = typeof form.doctorId === "number" ? form.doctorId : undefined;
+      if (form.date || dId) fetchList(form.date || undefined, dId);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [form.date, form.doctorId, fetchList]);
 
   const handleCreate = async () => {
     const v = validate(form);
+    if (patientExtra.email && !isEmail(patientExtra.email)) {
+      toast.error("Email không hợp lệ.");
+      return;
+    }
+    if (patientExtra.dob && !isPastOrToday(patientExtra.dob)) {
+      toast.error("Ngày sinh phải bé hơn hoặc bằng hôm nay.");
+      return;
+    }
+    if (
+      patientExtra.nationalId &&
+      !/^\d{9}$|^\d{12}$/.test(patientExtra.nationalId)
+    ) {
+      toast.error("CMND/CCCD phải gồm 9 hoặc 12 chữ số.");
+      return;
+    }
+
     setErrors(v);
-    // mark tất cả field là touched để show lỗi
     setTouched({
       patientName: true,
       patientPhone: true,
@@ -163,39 +312,95 @@ export default function AppointmentCreate() {
       time: true,
       reason: true,
     });
-
-    if (Object.keys(v).length > 0) {
-      // scroll đến field đầu có lỗi (nếu cần)
-      const first = document.querySelector(
-        "[data-first-error='true']"
-      ) as HTMLElement | null;
-      first?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
+    if (Object.keys(v).length > 0) return;
 
     setSubmitting(true);
     try {
-      const doctor = FAKE_DOCTORS.find((d) => d.id === form.doctorId)!;
-      const service = FAKE_SERVICES.find((s) => s.id === form.serviceId)!;
-      const initialStatus: AppointmentStatus =
-        form.source === "ONLINE" ? "booked" : "waiting";
+      // 1) Upsert bệnh nhân (KHÔNG gửi patientCode)
+      const upsertPayload: {
+        fullName: string;
+        phone: string;
+        gender?: "M" | "F";
+        dateOfBirth?: string;
+        address?: string;
+        district?: string;
+        city?: string;
+        province?: string;
+        identityNo?: string;
+        email?: string;
+      } = {
+        fullName: form.patientName.trim(),
+        phone: form.patientPhone.trim(),
+      };
+      if (patientExtra.gender) upsertPayload.gender = patientExtra.gender;
+      if (patientExtra.dob) upsertPayload.dateOfBirth = patientExtra.dob;
+      if (patientExtra.address) upsertPayload.address = patientExtra.address;
+      if (patientExtra.district) upsertPayload.district = patientExtra.district;
+      if (patientExtra.city) upsertPayload.city = patientExtra.city;
+      if (patientExtra.province) upsertPayload.province = patientExtra.province;
+      if (patientExtra.nationalId)
+        upsertPayload.identityNo = patientExtra.nationalId;
+      if (patientExtra.email) upsertPayload.email = patientExtra.email;
 
-      const newAppt: Appointment = {
-        id: ++seedId,
-        code: `AP-${seedId}`,
-        patientName: form.patientName.trim(),
-        patientPhone: form.patientPhone.trim(),
-        doctorName: doctor.name,
-        serviceName: service?.name,
-        date: form.date,
-        time: form.time,
-        status: initialStatus,
-        createdAt: new Date().toISOString(),
+      const patientResult = await apiUpsertPatientByPhone(upsertPayload);
+
+      // 2) Nếu là bệnh nhân mới → bổ sung mã (gửi kèm fullName & phone để khớp type PatientPayload)
+      if (patientResult.isNew) {
+        const newPatientCode =
+          `BN${new Date().toISOString().slice(2, 10).replace(/-/g, "")}` +
+          `${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
+
+        await apiUpdatePatient(patientResult.patientId, {
+          fullName: form.patientName.trim(), // ✅ bắt buộc theo type
+          phone: form.patientPhone.trim(), // ✅ bắt buộc theo type
+          patientCode: newPatientCode, // ✅ mã bệnh nhân mới
+        });
+      }
+
+      // 3) Tạo lịch hẹn
+      const patientId = patientResult.patientId;
+      const timeWithSec =
+        form.time.length === 5 ? `${form.time}:00` : form.time;
+
+      const payload = {
+        patientId,
+        doctorId: Number(form.doctorId),
+        serviceId: form.serviceId ? Number(form.serviceId) : undefined,
+        visitDate: form.date,
+        visitTime: timeWithSec,
+        reason: form.reason?.trim() || null,
       };
 
-      setAppointments((lst) => [newAppt, ...lst]);
+      const created = await createAppointment(payload);
+
+      const mappedRaw = mapBEtoFE(created);
+      const picked = doctorOptions.find(
+        (o) => o.value === Number(form.doctorId)
+      );
+      const sv = services.find((s) => s.serviceId === Number(form.serviceId));
+
+      const mapped: Appointment = {
+        ...mappedRaw,
+        doctorName: mappedRaw.doctorName || picked?.label || "",
+        serviceName: mappedRaw.serviceName || sv?.name || undefined,
+      };
+
+      setAppointments((prev) => [mapped, ...prev]);
+
+      toast.success(
+        `Tạo lịch thành công${
+          patientResult.isNew ? " (đã tạo bệnh nhân mới)" : ""
+        } - Mã: ${created.code}`
+      );
+
       resetForm();
-      toast.success("Tạo lịch thành công!");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Không thể tạo lịch. Vui lòng thử lại.";
+      console.error("❌ Lỗi:", err);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -203,22 +408,14 @@ export default function AppointmentCreate() {
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
-    if (submitting) return; // chặn double-submit
-    handleCreate();
+    if (!submitting) handleCreate();
   };
 
-  const setStatus = (id: number, status: AppointmentStatus) =>
-    setAppointments((lst) =>
-      lst.map((it) => (it.id === id ? { ...it, status } : it))
-    );
+  const nextQueueNo = useMemo(
+    () => (appointments.length ? appointments.length + 1 : ""),
+    [appointments]
+  );
 
-  const nextQueueNo = useMemo(() => {
-    if (!form.date) return "";
-    const sameDay = appointments.filter((a) => a.date === form.date);
-    return sameDay.length + 1; // preview
-  }, [appointments, form.date]);
-
-  // helper đánh dấu field đầu có lỗi để scroll
   const firstErrorKey = (Object.keys(errors) as (keyof Errors)[]).find(
     (k) => errors[k]
   );
@@ -227,7 +424,6 @@ export default function AppointmentCreate() {
 
   return (
     <div className="space-y-6">
-      {/* Form tạo lịch */}
       <section className="bg-white rounded-xl shadow-xs border p-4 sm:p-6">
         <header className="flex items-center gap-2 mb-4">
           <CalendarPlus className="w-5 h-5 text-sky-500" />
@@ -236,7 +432,6 @@ export default function AppointmentCreate() {
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tên bệnh nhân */}
             <FormField
               label="Tên bệnh nhân"
               required
@@ -254,7 +449,6 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            {/* Số điện thoại */}
             <FormField
               label="Số điện thoại"
               required
@@ -275,41 +469,127 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            {/* Bác sĩ */}
-            <SelectMenu
+            {/* Giới tính */}
+            <div className="lg:col-span-1">
+              <SelectMenu<GenderOpt>
+                label="Giới tính"
+                value={patientExtra.gender}
+                onChange={(v) =>
+                  setPatientExtra((s) => ({
+                    ...s,
+                    gender: (v as GenderOpt) ?? "",
+                  }))
+                }
+                options={[
+                  { value: "M", label: "Nam" },
+                  { value: "F", label: "Nữ" },
+                ]}
+              />
+            </div>
+
+            {/* Ngày sinh */}
+            <FormField label="Ngày sinh" className="lg:col-span-1">
+              <input
+                type="date"
+                value={patientExtra.dob}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) =>
+                  setPatientExtra((s) => ({ ...s, dob: e.target.value }))
+                }
+                className="mt-1 block w-full h-12 rounded-[var(--rounded)] border border-slate-200 bg-white px-3 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </FormField>
+
+            {/* Địa chỉ */}
+            <FormField label="Địa chỉ" className="lg:col-span-1">
+              <Input
+                value={patientExtra.address}
+                onChange={(e) =>
+                  setPatientExtra((s) => ({ ...s, address: e.target.value }))
+                }
+                placeholder="Số nhà, đường…"
+              />
+            </FormField>
+
+            {/* Quận/Huyện */}
+            <FormField label="Phường/Xã" className="lg:col-span-1">
+              <Input
+                value={patientExtra.district}
+                onChange={(e) =>
+                  setPatientExtra((s) => ({ ...s, district: e.target.value }))
+                }
+                placeholder="VD: Phường Bến Thành"
+              />
+            </FormField>
+
+            {/* Thành phố */}
+            <FormField label="Tỉnh/Thành phố" className="lg:col-span-1">
+              <Input
+                value={patientExtra.city}
+                onChange={(e) =>
+                  setPatientExtra((s) => ({ ...s, city: e.target.value }))
+                }
+                placeholder="VD: TP.HCM"
+              />
+            </FormField>
+
+            {/* CCCD */}
+            <FormField label="CCCD" className="lg:col-span-1">
+              <Input
+                value={patientExtra.nationalId}
+                onChange={(e) =>
+                  setPatientExtra((s) => ({
+                    ...s,
+                    nationalId: e.target.value.replace(/\D/g, "").slice(0, 12),
+                  }))
+                }
+                placeholder="12 số"
+                inputMode="numeric"
+              />
+            </FormField>
+
+            {/* Email */}
+            <FormField label="Email" className="lg:col-span-1">
+              <Input
+                value={patientExtra.email}
+                onChange={(e) =>
+                  setPatientExtra((s) => ({ ...s, email: e.target.value }))
+                }
+                placeholder="example@mail.com"
+                type="email"
+                autoComplete="email"
+              />
+            </FormField>
+
+            <SelectMenu<number>
               label="Bác sĩ"
               required
-              value={form.doctorId}
-              options={FAKE_DOCTORS.map((d) => ({
-                value: d.id,
-                label: `${d.name} (${d.specialty})`,
-              }))}
-              onChange={(v) => {
-                update("doctorId", v as number | "");
-                setTouched((t) => ({ ...t, doctorId: true }));
+              value={
+                typeof form.doctorId === "number" ? form.doctorId : undefined
+              }
+              options={doctorOptions}
+              onChange={(val) => {
+                update("doctorId", Number(val));
+                markTouched("doctorId");
               }}
-              invalid={!!(touched.doctorId && errors.doctorId)}
-              error={touched.doctorId ? errors.doctorId : ""}
             />
 
-            {/* Dịch vụ */}
-            <SelectMenu
+            <SelectMenu<number>
               label="Dịch vụ"
               required
-              value={form.serviceId}
-              options={FAKE_SERVICES.map((s) => ({
-                value: s.id,
-                label: s.name,
+              value={
+                typeof form.serviceId === "number" ? form.serviceId : undefined
+              }
+              options={services.map((s) => ({
+                value: s.serviceId,
+                label: s.name || `DV #${s.serviceId}`,
               }))}
-              onChange={(v) => {
-                update("serviceId", v as number | "");
-                setTouched((t) => ({ ...t, serviceId: true }));
+              onChange={(val) => {
+                update("serviceId", Number(val));
+                markTouched("serviceId");
               }}
-              invalid={!!(touched.serviceId && errors.serviceId)}
-              error={touched.serviceId ? errors.serviceId : ""}
             />
 
-            {/* Số thứ tự (preview, không sửa) */}
             <div className="space-y-1.5">
               <label className="text-sm text-slate-600">
                 Số thứ tự (tự động)
@@ -327,17 +607,35 @@ export default function AppointmentCreate() {
               </div>
             </div>
 
-            {/* Ngày & Giờ */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormField label="Ngày khám">
-                <DateInput />
+              <FormField
+                label="Ngày khám"
+                required
+                error={touched.date ? errors.date : ""}
+              >
+                <DateInput
+                  value={form.date}
+                  onChange={(d: string) => {
+                    update("date", d);
+                    markTouched("date");
+                  }}
+                />
               </FormField>
-              <FormField label="Giờ khám">
-                <TimeInput />
+              <FormField
+                label="Giờ khám"
+                required
+                error={touched.time ? errors.time : ""}
+              >
+                <TimeInput
+                  value={form.time}
+                  onChange={(t: string) => {
+                    update("time", t);
+                    markTouched("time");
+                  }}
+                />
               </FormField>
             </div>
 
-            {/* Lý do */}
             <div className="md:col-span-2 space-y-2">
               <div className="flex items-center gap-1">
                 <label className="text-sm text-slate-600">Lý do</label>
@@ -369,8 +667,17 @@ export default function AppointmentCreate() {
               disabled={submitting}
               className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-primary-linear text-white px-4 py-2 disabled:opacity-60"
             >
-              <CalendarPlus className="w-4 h-4" />
-              Tạo lịch
+              {submitting ? (
+                <>
+                  <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-1"></span>
+                  Đang tạo...
+                </>
+              ) : (
+                <>
+                  <CalendarPlus className="w-4 h-4" />
+                  Tạo lịch
+                </>
+              )}
             </button>
             <button
               type="button"
@@ -382,13 +689,6 @@ export default function AppointmentCreate() {
           </div>
         </form>
       </section>
-
-      {/* Danh sách lịch chờ khám */}
-      <AppointmentList
-        items={appointments}
-        onSetStatus={setStatus}
-        onView={(id) => alert(`Xem chi tiết #${id}`)}
-      />
     </div>
   );
 }

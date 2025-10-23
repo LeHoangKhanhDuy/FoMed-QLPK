@@ -30,7 +30,7 @@ export type AppointmentPayload = {
 export type Appointment = {
   id: number;
   code: string;
-
+  patientId?: number;
   patientName: string;
   patientPhone: string;
 

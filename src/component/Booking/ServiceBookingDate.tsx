@@ -3,30 +3,29 @@ import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { ServiceInfoCard } from "./ServiceInfoCard";
 import { Link } from "react-router-dom";
 
-export type ServiceInfo = {
+type ServiceInfo = {
   name: string;
-  address: string;
+  price: number;
+  discountPrice?: number;
   specialty: string;
-  facilityName: string;
   verified?: boolean;
 };
 
-interface Props {
+interface BookingDateProps {
   service: ServiceInfo;
-  onSelect?: (dateOrDateTime: Date) => void;
-  /** callback khi chọn giờ (nếu truyền sẽ được ưu tiên gọi) */
+  doctorInfo: {
+    name: string;
+    experience: string;
+  };
+  serviceId: string;
+  doctorId: string;
   onSelectTime?: (dateTime: Date) => void;
+  onSelect?: (dateOrDateTime: Date) => void;
   minDate?: Date;
   defaultValue?: Date;
-  /** cấu hình slot */
-  startHour?: number; // default 6
-  endHour?: number; // default 18
-  stepMinutes?: number; // default 60
-
-  /** Resolver ngày lễ Âm/Dương: trả về tên ngày lễ nếu là ngày nghỉ, ngược lại null.
-   *  ƯU TIÊN: nếu truyền prop này, component sẽ dùng kèm với bộ Dương lịch mặc định bên dưới.
-   *  Ví dụ: return "Tết Âm lịch" cho mùng 1-6 Tết, "Giỗ Tổ Hùng Vương" cho 10/3 Âm, ...
-   */
+  startHour?: number;
+  endHour?: number;
+  stepMinutes?: number;
   holidayResolver?: (d: Date) => string | null;
 }
 
@@ -75,7 +74,7 @@ export default function BookingDate({
   endHour = 18,
   stepMinutes = 60,
   holidayResolver, // optional: để bạn map Tết Âm, Giỗ Tổ theo năm
-}: Props) {
+}: BookingDateProps) {
   const now = new Date();
   const today = startOfDay(new Date());
   const min = startOfDay(minDate ?? today);
@@ -223,9 +222,9 @@ export default function BookingDate({
           <Home size={18} />
         </Link>
         <span>›</span>
-        <span className="hover:underline cursor-pointer">
+        {/* <span className="hover:underline cursor-pointer">
           {service.facilityName}
-        </span>
+        </span> */}
         <span>›</span>
         <Link to="/booking-doctor" className="text-slate-700">
           Chọn bác sĩ
@@ -236,15 +235,7 @@ export default function BookingDate({
 
       <div className="grid md:grid-cols-3 gap-4 sm:gap-5">
         {/* LEFT: Thông tin dịch vụ */}
-        <ServiceInfoCard
-          service={{
-            name: "Gói khám sức khỏe tổng quát",
-            price: 200000,
-            discountPrice: 150000,
-            specialty: "Khoa Nội tổng quát",
-            verified: true,
-          }}
-        />
+        <ServiceInfoCard service={service} />
 
         {/* RIGHT: Lịch chọn ngày */}
         <section className="md:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">

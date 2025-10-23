@@ -20,7 +20,6 @@ import BookingSelectServicePage from "./pages/Booking/PackageSelectPage";
 import { DashboardPage } from "./pages/Admin/Dashboard/DashboardPage";
 import { AppointmentCreatePage } from "./pages/Admin/Appointment/AppointmentCreatePage";
 import { DoctorScheduleAdminPage } from "./pages/Admin/Doctor/DoctorScheduleAdminPage";
-import { PatientListTodayAdminPage } from "./pages/Admin/Patient/PatientListTodayPage";
 import { DoctorPatientListWorkspacePage } from "./pages/Admin/Patient/DoctorPatientWorkspacePage";
 import { UserManagerPage } from "./pages/Admin/User/UserManagerPage";
 import { ServiceManagerPage } from "./pages/Admin/ServiceManager/ServiceManagerPage";
@@ -30,6 +29,11 @@ import { BillingManagerPage } from "./pages/Admin/BillingMangerPage/BillingManag
 import { InvoicePaymentManagerPage } from "./pages/Admin/BillingMangerPage/InvoicePaymentManagerPage";
 import { InvoiceDetailPaymentPage } from "./pages/Admin/BillingMangerPage/InvoiceDetailPaymentPage";
 import RequireCMSRole from "./auth/RequireCMSRole";
+import { PatientManagerPage } from "./pages/Admin/Patient/PatientMangerPage";
+import AppointmentListPage from "./pages/Admin/Appointment/AppointmentListPage";
+import { DoctorManagerPage } from "./pages/Admin/Doctor/DoctorManagerPage";
+import { SpecialtyManagerPage } from "./pages/Admin/Specialty/SpecialtyManagerPage";
+import BookingReviewPage from "./pages/Booking/BookingReviewPage";
 
 function CmsGuard() {
   return (
@@ -54,6 +58,7 @@ function App() {
         <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
         <Route path="/booking-package" element={<BookingPackagePage />} />
         <Route path="/booking/select-service" element={<BookingSelectServicePage />}/>
+        <Route path="/booking-doctor/review" element={<BookingReviewPage />}/>
 
         {/* PATIENT PORTAL */}
         <Route path="/patient-portal-login" element={<PatientPortalPage />} />
@@ -79,14 +84,17 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="create-appointments" element={<AppointmentCreatePage />} />
           <Route path="doctor-schedule" element={<DoctorScheduleAdminPage />} />
-          <Route path="patient-list" element={<PatientListTodayAdminPage />} />
+          <Route path="patient-list-today" element={<AppointmentListPage />} />
           <Route path="patient-list/workspace" element={<DoctorPatientListWorkspacePage />} />
+          <Route path="patient-manager" element={<PatientManagerPage />} />
           <Route path="users-manager" element={<UserManagerPage />} />
           <Route path="service-manager" element={<ServiceManagerPage />} />
           <Route path="drug-manager" element={<DrugManagerPage />} />
           <Route path="billing" element={<BillingManagerPage />} />
           <Route path="billing/payment" element={<InvoicePaymentManagerPage />} />
           <Route path="billing/details" element={<InvoiceDetailPaymentPage />} />
+          <Route path="doctor-manager" element={<DoctorManagerPage />} />
+          <Route path="specialty-manager" element={<SpecialtyManagerPage />} />
         </Route>
 
         <Route path="/403" element={<div className="p-8 text-center">Không có quyền truy cập.</div>} />

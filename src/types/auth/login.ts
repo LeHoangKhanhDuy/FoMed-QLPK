@@ -5,7 +5,8 @@ export interface AppUser {
   phone: string;
   createdAt?: string;
   avatarUrl?: string | null;
-  roles: Array<"ADMIN" | "DOCTOR" | "EMPLOYEE" | "USER">;
+  gender?: string;
+  roles: Array<"ADMIN" | "DOCTOR" | "EMPLOYEE" | "PATIENT">;
 }
 
 export interface LoginNormalized {

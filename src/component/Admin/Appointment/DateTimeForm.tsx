@@ -1,42 +1,37 @@
-import { Calendar as CalendarIcon, Clock } from "lucide-react";
-import { Input } from "../../ui/input";
+// src/components/Admin/Appointment/DateTimeForm.tsx
 
-// util: format ngày yyyy-mm-dd
-function formatDateNow() {
-  const d = new Date();
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-}
-// util: format giờ hh:mm
-function formatTimeNow() {
-  const d = new Date();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
-}
+type DateProps = {
+  value?: string; // "YYYY-MM-DD"
+  onChange?: (v: string) => void;
+  disabled?: boolean;
+};
+type TimeProps = {
+  value?: string; // "HH:mm"
+  onChange?: (v: string) => void;
+  disabled?: boolean;
+};
 
-export function DateInput() {
+export function DateInput({ value, onChange, disabled }: DateProps) {
   return (
-    <Input
-      type="text" 
-      value={formatDateNow()} 
-      disabled 
-      rightIcon={<CalendarIcon className="h-5 w-5" />}
-      className="!bg-slate-50 cursor-not-allowed text-slate-700"
+    <input
+      type="date"
+      value={value ?? ""}
+      onChange={(e) => onChange?.(e.target.value)}
+      disabled={disabled}
+      className="mt-1 block w-full h-12 rounded-[var(--rounded)] border border-slate-200 px-4 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
     />
   );
 }
 
-export function TimeInput() {
+export function TimeInput({ value, onChange, disabled }: TimeProps) {
   return (
-    <Input
-      type="text"
-      value={formatTimeNow()}
-      disabled
-      rightIcon={<Clock className="h-5 w-5" />}
-      className="!bg-slate-50 cursor-not-allowed text-slate-700"
+    <input
+      type="time"
+      value={value ?? ""}
+      onChange={(e) => onChange?.(e.target.value)}
+      disabled={disabled}
+      step={60} // phút
+      className="mt-1 block w-full h-12 rounded-[var(--rounded)] border border-slate-200 px-4 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
     />
   );
 }

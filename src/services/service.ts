@@ -3,8 +3,6 @@
 import axios from "axios";
 import type {
   ServiceID,
-  CreateServicePayload,
-  UpdateServicePayload,
   ServiceStatus,
   ServiceItem,
   PagedResult,
@@ -21,7 +19,7 @@ type ServiceListRaw = {
   data: unknown[];
 };
 
-// ---- helper: nhận cả camelCase lẫn PascalCase
+
 // ---- helper: nhận cả camelCase lẫn PascalCase
 const normalizeServiceItem = (raw: unknown): ServiceItem => {
   if (typeof raw !== "object" || raw === null) {
@@ -119,20 +117,39 @@ export async function getService(params?: {
 
 /** ====== ADMIN (cần token/role ADMIN) ====== */
 /** Tạo dịch vụ */
-export async function createService(
-  payload: CreateServicePayload
-): Promise<{ serviceId: number }> {
-  const { data } = await axios.post(`/api/v1/services/add`, payload);
+export async function createService(payload: {
+  code?: string | null;
+  name: string;
+  description?: string | null;
+  basePrice: number;
+  durationMin?: number | null;
+  categoryId: number;
+  isActive: boolean;
+  imageUrl?: string | null;
+}): Promise<{ serviceId: number }> {
+  const { data } = await axios.post(`/api/v1/services/add`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
   return data?.data ?? data;
 }
 
 /** Cập nhật dịch vụ */
-
 export async function updateService(
   id: ServiceID,
-  payload: UpdateServicePayload
+  payload: {
+    code?: string | null;
+    name: string;
+    description?: string | null;
+    basePrice: number;
+    durationMin?: number | null;
+    categoryId: number;
+    isActive: boolean;
+    imageUrl?: string | null;
+  }
 ): Promise<void> {
-  await axios.put(`/api/v1/services/update/${id}`, payload);
+  await axios.put(`/api/v1/services/update/${id}`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /** Bật/tắt dịch vụ (map từ status kiểu union sang boolean isActive) */

@@ -6,6 +6,7 @@ import { SelectMenu } from "../../ui/select-menu";
 import { getAllUsers, setUserStatus } from "../../../services/userApi";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../../Utils/errorHepler";
+import MaskedPhone from "../../../common/MaskedPhone";
 
 type FilterRole = "all" | AdminRole;
 
@@ -139,8 +140,8 @@ export default function UserManager() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-center text-white">
-              <th className="px-3 py-2">ID</th>
-              <th className="px-3 py-2">Họ tên</th>
+              <th className="px-3 py-2 text-left">#</th>
+              <th className="px-3 py-2 text-left">Họ tên</th>
               <th className="px-3 py-2">Vai trò</th>
               <th className="px-3 py-2">SĐT</th>
               <th className="px-3 py-2">Email</th>
@@ -160,7 +161,9 @@ export default function UserManager() {
 
             {paged.map((u) => (
               <tr key={u.id} className="text-center border-b last:border-none">
-                <td className="px-3 py-2 text-left font-medium">{u.id}</td>
+                <td className="px-3 py-2 text-left font-medium">
+                  {(page - 1) * perPage + paged.indexOf(u) + 1}
+                </td>
                 <td className="px-3 py-2 text-left font-bold">{u.name}</td>
                 <td className="px-3 py-2 align-middle">
                   <div className="w-full flex flex-wrap items-center justify-center gap-1">
@@ -176,7 +179,9 @@ export default function UserManager() {
                     ))}
                   </div>
                 </td>
-                <td className="px-3 py-2">{u.phone ?? "-"}</td>
+                <td className="px-3 py-2">
+                  <MaskedPhone phone={u.phone} />
+                </td>
                 <td className="px-3 py-2">{u.email ?? "-"}</td>
                 <td className="px-3 py-2">
                   <span
@@ -202,20 +207,15 @@ export default function UserManager() {
                           u.status === "active" ? "inactive" : "active"
                         )
                       }
-                      className={`cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-1 min-w-[80px] ${
+                      className={`cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-2 ${
                         u.status === "active"
                           ? "bg-warning-linear text-white"
                           : "bg-success-linear text-white"
                       }`}
                     >
-                      <Power className="w-5  h-5" />
-                      {loadingId === u.id
-                        ? "..."
-                        : u.status === "active"
-                        ? "Khoá"
-                        : "Mở"}
+                      <Power className="w-5 h-5" />
+                      {loadingId === u.id ? "..." : u.status === "active"}
                     </button>
-                    {/* Nút mở modal chọn roles rồi gọi updateRoles(id, rolesMới) */}
                   </div>
                 </td>
               </tr>

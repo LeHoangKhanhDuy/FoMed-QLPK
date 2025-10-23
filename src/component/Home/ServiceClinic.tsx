@@ -1,142 +1,120 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ServiceClinicCard from "../Card/ServiceCard";
-import khamtq from "../../assets/images/khamtongquat.jpg";
-
-// Demo data dùng tạm cho cả 3 tab
-const CLINICS = [
-  {
-    id: 1,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám mắt tổng quát",
-    price: "300.000 đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám sức khỏe tổng quát",
-    price: "300.000  đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 3,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám mắt tổng quát",
-    price: "300.000 đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 4,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám sức khỏe tổng quát",
-    price: "300.000  đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 5,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám mắt tổng quát",
-    price: "300.000 đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 6,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám sức khỏe tổng quát",
-    price: "300.000  đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 7,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám mắt tổng quát",
-    price: "300.000 đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 8,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám sức khỏe tổng quát",
-    price: "300.000  đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 9,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám mắt tổng quát",
-    price: "300.000 đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 10,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "GGói khám sức khoẻ tổng quát tại nhà",
-    price: "300.000  đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 11,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám mắt tổng quát",
-    price: "300.000 đ",
-    logo: khamtq,
-    verified: true,
-  },
-  {
-    id: 12,
-    name: "TS.BS NGUYỄN KIM CHUNG",
-    services: "Gói khám sức khoẻ tổng quát tại nhà",
-    price: "300.000  đ",
-    logo: khamtq,
-    verified: true,
-  },
-];
+import defaultImage from "../../assets/images/khamtongquat.jpg";
+import type { ServiceItem } from "../../types/serviceType/service";
+import { getService } from "../../services/service";
+import SkeletonHomeService from "../../Utils/SkeletonHomeService";
 
 type TabKey = "goi" | "xetnghiem" | "tiemchung";
+
+interface ClinicDisplay {
+  id: number;
+  name: string;
+  services: string;
+  price: string;
+  logo?: string;
+  verified?: boolean;
+}
 
 export default function ServiceClinic() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("goi");
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Data theo tab (demo: chia tạm theo id)
+  // Lấy dữ liệu từ API
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        const res = await getService({
+          pageSize: 50,
+          isActive: true,
+        });
+        setServices(res.data.items);
+      } catch (error) {
+        console.error("Lỗi tải dịch vụ:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  // Nhóm dịch vụ theo tab
   const data = useMemo(() => {
-    switch (activeTab) {
-      case "goi": // Gói khám bệnh
-        return CLINICS.filter((x) => x.id % 3 === 1 || x.id % 3 === 0);
-      case "xetnghiem": // Xét nghiệm
-        return CLINICS.filter((x) => x.id % 3 === 2);
-      case "tiemchung": // Tiêm chủng
-        return CLINICS.filter((x) => x.id % 3 !== 2);
-      default:
-        return CLINICS;
+    if (loading || services.length === 0) return [];
+
+    const normalize = (str: string) => str.toLowerCase().trim();
+
+    const tabMap: Record<TabKey, (s: ServiceItem) => boolean> = {
+      goi: (s) => {
+        const cat = normalize(s.category?.name || "");
+        const name = normalize(s.name);
+        return (
+          cat.includes("khám") ||
+          cat.includes("gói") ||
+          name.includes("khám") ||
+          name.includes("tổng quát")
+        );
+      },
+      xetnghiem: (s) => {
+        const cat = normalize(s.category?.name || "");
+        const name = normalize(s.name);
+        return cat.includes("xét nghiệm") || name.includes("xét nghiệm");
+      },
+      tiemchung: (s) => {
+        const cat = normalize(s.category?.name || "");
+        const name = normalize(s.name);
+        return (
+          cat.includes("tiêm") ||
+          cat.includes("chủng") ||
+          name.includes("tiêm chủng")
+        );
+      },
+    };
+
+    const filtered = services.filter(tabMap[activeTab]);
+
+    // Chuyển thành định dạng hiển thị
+    return filtered.map(
+      (s): ClinicDisplay => ({
+        id: s.serviceId,
+        name: s.category?.name || "Dịch vụ y tế",
+        services: s.name,
+        price:
+          s.basePrice != null ? `${s.basePrice.toLocaleString()} đ` : "Liên hệ",
+        logo: s.imageUrl || s.category?.imageUrl || defaultImage, 
+        verified: s.isActive,
+      })
+    );
+  }, [services, activeTab, loading]);
+
+  // Reset scroll khi đổi tab
+  useEffect(() => {
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollTo({ left: 0, behavior: "auto" });
     }
   }, [activeTab]);
 
-  // Reset về đầu khi đổi tab
+  // Scroll tự động
   useEffect(() => {
-    if (scrollerRef.current)
-      scrollerRef.current.scrollTo({ left: 0, behavior: "auto" });
-  }, [activeTab]);
+    const timer = setInterval(() => {
+      scrollByOne("right");
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [data]);
 
   const scrollByOne = (dir: "left" | "right") => {
     const el = scrollerRef.current;
-    if (!el) return;
+    if (!el || data.length === 0) return;
 
     const firstSnap = el.querySelector<HTMLElement>(".snap-start");
     if (!firstSnap) return;
 
-    const GAP = 16; // gap-4
+    const GAP = 16;
     const cardWidth = firstSnap.offsetWidth + GAP;
     const maxScroll = el.scrollWidth - el.clientWidth;
 
@@ -155,13 +133,50 @@ export default function ServiceClinic() {
     }
   };
 
-  // Auto scroll mỗi 3 giây (giữ như cũ)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      scrollByOne("right");
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
+  // Hiển thị loading
+  if (loading) {
+    return (
+      <div className="w-full">
+        <section className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
+          <header className="flex items-center justify-center gap-3 mb-6">
+            <div className="h-8 w-64 bg-gray-200 rounded animate-shimmer" />
+          </header>
+
+          {/* Tabs skeleton */}
+          <div className="mb-4 flex items-center justify-center gap-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-10 w-28 bg-gray-200 rounded-[var(--rounded)] animate-shimmer"
+              />
+            ))}
+          </div>
+
+          <div className="relative">
+            {/* Nút điều hướng */}
+            <div className="hidden md:flex absolute -left-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
+            <div className="hidden md:flex absolute -right-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
+
+            {/* Carousel skeleton */}
+            <div className="flex overflow-x-auto gap-4 py-2">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="snap-start shrink-0 basis-[calc((100%-16px))] lg:basis-[calc((100%-48px)/4)]"
+                >
+                  <SkeletonHomeService />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-center">
+            <div className="h-6 w-24 bg-gray-200 rounded animate-shimmer" />
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -172,17 +187,16 @@ export default function ServiceClinic() {
           </h2>
         </header>
 
-        {/* Tabs category */}
+        {/* Tabs */}
         <div className="mb-4 flex items-center justify-center gap-3">
           <button
             type="button"
             onClick={() => setActiveTab("goi")}
-            className={[
-              "px-4 py-2 rounded-[var(--rounded)] text-sm font-semibold transition cursor-pointer",
+            className={`px-4 py-2 rounded-[var(--rounded)] text-sm font-semibold transition cursor-pointer ${
               activeTab === "goi"
                 ? "bg-sky-500 text-white shadow-[0_4px_10px_rgba(56,189,248,0.35)]"
-                : "text-sky-500 bg-white ring-1 ring-sky-200 hover:bg-sky-50",
-            ].join(" ")}
+                : "text-sky-500 bg-white ring-1 ring-sky-200 hover:bg-sky-50"
+            }`}
           >
             Khám bệnh
           </button>
@@ -190,12 +204,11 @@ export default function ServiceClinic() {
           <button
             type="button"
             onClick={() => setActiveTab("xetnghiem")}
-            className={[
-              "px-4 py-2 rounded-[var(--rounded)] text-sm font-semibold transition cursor-pointer",
+            className={`px-4 py-2 rounded-[var(--rounded)] text-sm font-semibold transition cursor-pointer ${
               activeTab === "xetnghiem"
                 ? "bg-sky-500 text-white shadow-[0_4px_10px_rgba(56,189,248,0.35)]"
-                : "text-sky-500 bg-white ring-1 ring-sky-200 hover:bg-sky-50",
-            ].join(" ")}
+                : "text-sky-500 bg-white ring-1 ring-sky-200 hover:bg-sky-50"
+            }`}
           >
             Xét nghiệm
           </button>
@@ -203,19 +216,18 @@ export default function ServiceClinic() {
           <button
             type="button"
             onClick={() => setActiveTab("tiemchung")}
-            className={[
-              "px-4 py-2 rounded-[var(--rounded)] text-sm font-semibold transition cursor-pointer",
+            className={`px-4 py-2 rounded-[var(--rounded)] text-sm font-semibold transition cursor-pointer ${
               activeTab === "tiemchung"
                 ? "bg-sky-500 text-white shadow-[0_4px_10px_rgba(56,189,248,0.35)]"
-                : "text-sky-500 bg-white ring-1 ring-sky-200 hover:bg-sky-50",
-            ].join(" ")}
+                : "text-sky-500 bg-white ring-1 ring-sky-200 hover:bg-sky-50"
+            }`}
           >
             Tiêm chủng
           </button>
         </div>
 
         <div className="relative">
-          {/* Nút điều hướng (ẩn mobile) */}
+          {/* Nút điều hướng */}
           <button
             aria-label="Trước"
             onClick={() => scrollByOne("left")}
@@ -231,26 +243,34 @@ export default function ServiceClinic() {
             <ChevronRight />
           </button>
 
-          {/* Carousel (giữ desktop format như cũ) */}
+          {/* Carousel */}
           <div
             ref={scrollerRef}
             className="flex overflow-x-auto gap-4 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2"
           >
-            {data.map((c) => (
-              <div
-                key={c.id}
-                className="snap-start shrink-0 basis-[calc((100%-16px))] lg:basis-[calc((100%-48px)/4)]"
-              >
-                <ServiceClinicCard
-                  name={c.name}
-                  services={c.services}
-                  price={c.price}
-                  logo={c.logo}
-                />
+            {data.length > 0 ? (
+              data.map((c) => (
+                <div
+                  key={c.id}
+                  className="snap-start shrink-0 basis-[calc((100%-16px))] lg:basis-[calc((100%-48px)/4)]"
+                >
+                  <ServiceClinicCard
+                    name={c.name}
+                    services={c.services}
+                    price={c.price}
+                    logo={c.logo}
+                    verified={c.verified}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="w-full text-center py-8 text-gray-500">
+                Không có dịch vụ nào trong danh mục này.
               </div>
-            ))}
+            )}
           </div>
         </div>
+
         <div className="mt-4 flex justify-center">
           <button className="rounded-[var(--rounded)] text-sky-400 hover:text-sky-500 text-md px-2 py-1 cursor-pointer">
             Xem thêm

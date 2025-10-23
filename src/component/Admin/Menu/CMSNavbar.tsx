@@ -1,5 +1,5 @@
 import { Search, Bell, User2, Menu } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import logo from "../../../assets/images/FoCode Logo.png";
 
 type Tab = { label: string; to: string };
@@ -9,18 +9,7 @@ type Props = {
   onSearch?: (q: string) => void;
 };
 
-const defaultTabs: Tab[] = [
-  { label: "Dashboard", to: "/csm" },
-  { label: "Pages", to: "/csm/pages" },
-  { label: "Posts", to: "/csm/posts" },
-  { label: "Files", to: "/csm/files" },
-];
-
-export default function CMSNavbar({
-  tabs = defaultTabs,
-  onToggleSidebar,
-  onSearch,
-}: Props) {
+export default function CMSNavbar({ onToggleSidebar, onSearch }: Props) {
   return (
     <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur border-b">
       <div className="h-16 max-w-screen-2xl mx-auto flex items-center justify-between px-3 sm:px-6">
@@ -70,23 +59,6 @@ export default function CMSNavbar({
 
           {/* Tabs + actions */}
           <nav className="ml-auto flex items-center gap-1">
-            {tabs.map((t) => (
-              <NavLink
-                key={t.to}
-                to={t.to}
-                className={({ isActive }) =>
-                  [
-                    "px-3 py-2 rounded-lg text-sm cursor-pointer transition",
-                    isActive
-                      ? "text-blue-600 font-medium"
-                      : "text-gray-600 hover:text-gray-900",
-                  ].join(" ")
-                }
-              >
-                {t.label}
-              </NavLink>
-            ))}
-
             <button
               className="ml-1 p-2 rounded-full hover:bg-gray-50 cursor-pointer"
               aria-label="Notifications"

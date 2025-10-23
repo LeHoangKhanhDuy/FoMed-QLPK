@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
-  ClipboardList,
+  UserCog,
   Pencil,
   Trash2,
   Power,
@@ -9,26 +9,13 @@ import {
   ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { formatVND } from "../../../Utils/formatVND";
-
-import type {
-  ServiceItem,
-  CreateServicePayload,
-  ServiceStatus,
-} from "../../../types/serviceType/service";
-
-import ServiceModal from "./ServiceModal";
 import ConfirmModal from "../../../common/ConfirmModal";
-import {
-  createService,
-  deleteService,
-  getService,
-  toggleService,
-  updateService,
-} from "../../../services/service";
+import { apiActivateDoctor, apiCreateDoctor, apiDeactivateDoctor, apiGetDoctors, apiUpdateDoctor, type CreateDoctorPayload, type DoctorItem, type UpdateDoctorPayload } from "../../../services/doctorMApi";
+import DoctorModal from "./DoctorModal";
 
-export default function ServiceManager() {
-  const [items, setItems] = useState<ServiceItem[]>([]);
+// ===================== MAIN COMPONENT =====================
+export default function DoctorManager() {
+  const [items, setItems] = useState<DoctorItem[]>([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
 
@@ -37,7 +24,7 @@ export default function ServiceManager() {
   const last = Math.max(1, Math.ceil(total / pageSize));
 
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<ServiceItem | null>(null);
+  const [editing, setEditing] = useState<DoctorItem | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -50,16 +37,16 @@ export default function ServiceManager() {
   const fetchData = async (opts?: { keepPage?: boolean }) => {
     try {
       setLoading(true);
-      const res = await getService({
+      const res = await apiGetDoctors({
         page: opts?.keepPage ? page : 1,
-        pageSize,
-        keyword: query.trim() || undefined,
+        limit: pageSize,
+        search: query.trim() || undefined,
       });
-      setItems(res.data.items);
-      setTotal(res.data.total);
-      if (!opts?.keepPage) setPage(res.data.page);
+      setItems(res.items);
+      setTotal(res.total);
+      if (!opts?.keepPage) setPage(res.page);
     } catch {
-      toast.error("Không tải được danh sách dịch vụ");
+      toast.error("Không tải được danh sách bác sĩ");
     } finally {
       setLoading(false);
     }
@@ -96,39 +83,27 @@ export default function ServiceManager() {
     setEditing(null);
     setOpen(true);
   };
-  const openEdit = (it: ServiceItem) => {
+
+  const openEdit = (it: DoctorItem) => {
     setEditing(it);
     setOpen(true);
   };
 
-  const submit = async (payload: CreateServicePayload) => {
+  const submit = async (payload: CreateDoctorPayload | UpdateDoctorPayload) => {
     try {
       setLoading(true);
-
-      // Chuẩn hóa payload dạng JSON
-      const jsonPayload = {
-        code: payload.code?.trim() || null,
-        name: payload.name.trim(),
-        description: payload.description?.trim() || null,
-        basePrice: Number(payload.basePrice ?? 0),
-        durationMin: payload.durationMin ? Number(payload.durationMin) : null,
-        categoryId: Number(payload.categoryId ?? 0),
-        isActive: Boolean(payload.isActive),
-        imageUrl: payload.imageUrl?.trim() || null, // Gửi imageUrl nếu có
-      };
-
       if (editing) {
-        await updateService(editing.serviceId, jsonPayload); // Gửi JSON thay vì FormData
-        toast.success("Đã cập nhật dịch vụ");
+        await apiUpdateDoctor(editing.doctorId, payload as UpdateDoctorPayload);
+        toast.success("Đã cập nhật hồ sơ bác sĩ");
       } else {
-        await createService(jsonPayload); // Gửi JSON thay vì FormData
-        toast.success("Đã tạo dịch vụ");
+        await apiCreateDoctor(payload as CreateDoctorPayload);
+        toast.success("Đã tạo hồ sơ bác sĩ");
       }
-
       setOpen(false);
       await fetchData();
-    } catch {
-      toast.error("Không lưu được dịch vụ");
+    } catch (e) {
+      const error = e as Error;
+      toast.error(error.message || "Không lưu được hồ sơ bác sĩ");
     } finally {
       setLoading(false);
     }
@@ -143,32 +118,38 @@ export default function ServiceManager() {
     if (!deletingId) return;
     setConfirmLoading(true);
     try {
-      await deleteService(deletingId);
+      await apiDeactivateDoctor(deletingId);
       setConfirmOpen(false);
       setDeletingId(null);
-      toast.success("Đã xoá dịch vụ");
+      toast.success("Đã vô hiệu hóa bác sĩ");
       await fetchData({ keepPage: true });
     } catch (e) {
       const error = e as Error;
-      toast.error(error?.message || "Không xoá được dịch vụ");
+      toast.error(error.message || "Không vô hiệu hóa được bác sĩ");
     } finally {
       setConfirmLoading(false);
     }
   };
 
-  const toggleActive = async (it: ServiceItem) => {
+  const toggleActive = async (it: DoctorItem) => {
     try {
-      const next: ServiceStatus = it.isActive ? "inactive" : "active";
-      await toggleService(it.serviceId, next);
+      if (it.isActive) {
+        await apiDeactivateDoctor(it.doctorId);
+      } else {
+        await apiActivateDoctor(it.doctorId);
+      }
       // cập nhật nhanh UI
       setItems((arr) =>
         arr.map((x) =>
-          x.serviceId === it.serviceId ? { ...x, isActive: !x.isActive } : x
+          x.doctorId === it.doctorId ? { ...x, isActive: !x.isActive } : x
         )
       );
-      toast.success(next === "active" ? "Đã mở dịch vụ" : "Đã khoá dịch vụ");
-    } catch {
-      toast.error("Không thay đổi được trạng thái");
+      toast.success(
+        it.isActive ? "Đã vô hiệu hóa bác sĩ" : "Đã kích hoạt bác sĩ"
+      );
+    } catch (e) {
+      const error = e as Error;
+      toast.error(error.message || "Không thay đổi được trạng thái");
     }
   };
 
@@ -179,9 +160,9 @@ export default function ServiceManager() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-sky-400" />
-          <h2 className="font-bold">Quản lý danh mục dịch vụ</h2>
-          <span className="text-sm text-slate-500">({total} dịch vụ)</span>
+          <UserCog className="w-5 h-5 text-sky-400" />
+          <h2 className="font-bold">Quản lý bác sĩ</h2>
+          <span className="text-sm text-slate-500">({total} bác sĩ)</span>
         </div>
 
         <div className="space-y-1 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -190,7 +171,7 @@ export default function ServiceManager() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Tìm mã, tên, mô tả…"
+              placeholder="Tìm tên, email, SĐT..."
               className="mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 pl-9 pr-3 py-3 text-[16px] leading-6 text-left shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
@@ -198,7 +179,7 @@ export default function ServiceManager() {
             onClick={openCreate}
             className="mt-1 cursor-pointer h-12 rounded-[var(--rounded)] bg-primary-linear text-white px-4 text-sm font-medium"
           >
-            + Thêm dịch vụ
+            + Thêm bác sĩ
           </button>
         </div>
       </header>
@@ -208,21 +189,22 @@ export default function ServiceManager() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-white">
-              <th className="px-3 py-2 text-left">Mã</th>
-              <th className="px-3 py-2 text-left">Tên dịch vụ</th>
-              <th className="px-3 py-2 text-center">Mô tả</th>
-              <th className="px-3 py-2 text-center">Ảnh</th>
-              <th className="px-3 py-2">Đơn giá</th>
-              <th className="px-3 py-2">Thời gian (phút)</th>
-              <th className="px-3 py-2">Trạng thái</th>
-              <th className="px-3 py-2">Chuyên mục</th>
+              <th className="px-3 py-2 text-left">Họ tên</th>
+              <th className="px-3 py-2 text-left">Email</th>
+              <th className="px-3 py-2 text-left">SĐT</th>
+              <th className="px-3 py-2 text-center">Học hàm</th>
+              <th className="px-3 py-2 text-center">Chuyên khoa</th>
+              <th className="px-3 py-2 text-center">Phòng khám</th>
+              <th className="px-3 py-2 text-center">Kinh nghiệm</th>
+              <th className="px-3 py-2 text-center">Đánh giá</th>
+              <th className="px-3 py-2 text-center">Trạng thái</th>
               <th className="px-3 py-2">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={10} className="py-6 text-center text-slate-500">
                   Đang tải dữ liệu…
                 </td>
               </tr>
@@ -230,63 +212,56 @@ export default function ServiceManager() {
 
             {!loading && showing.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={10} className="py-6 text-center text-slate-500">
                   Không có dữ liệu
                 </td>
               </tr>
             )}
 
             {!loading &&
-              showing.map((s) => (
+              showing.map((doc) => (
                 <tr
-                  key={s.serviceId}
+                  key={doc.doctorId}
                   className="text-center border-b last:border-none"
                 >
-                  <td className="px-3 py-2 text-left font-medium">
-                    {s.code ?? "-"}
+                  <td className="px-3 py-2 text-left font-bold">
+                    {doc.fullName}
                   </td>
-                  <td className="px-3 py-2 text-left font-bold">{s.name}</td>
-                  <td className="px-3 py-2 text-left">
-                    <div
-                      className="max-w-[400px] overflow-hidden text-ellipsis whitespace-normal line-clamp-2 text-sm text-slate-700"
-                      title={s.description || undefined}
-                    >
-                      {s.description || "-"}
+                  <td className="px-3 py-2 text-left">{doc.email || "-"}</td>
+                  <td className="px-3 py-2 text-left">{doc.phone || "-"}</td>
+                  <td className="px-3 py-2">{doc.title || "-"}</td>
+                  <td className="px-3 py-2">
+                    {doc.primarySpecialtyName || "-"}
+                  </td>
+                  <td className="px-3 py-2">{doc.roomName || "-"}</td>
+                  <td className="px-3 py-2">
+                    {doc.experienceYears ? `${doc.experienceYears} năm` : "-"}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col items-center">
+                      <span className="font-semibold text-yellow-600">
+                        {doc.ratingAvg.toFixed(1)} ⭐
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        ({doc.ratingCount} đánh giá)
+                      </span>
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    {s.imageUrl ? (
-                      <img
-                        src={s.imageUrl}
-                        alt={s.name}
-                        className="w-12 h-12 object-cover rounded-md"
-                      />
-                    ) : (
-                      <span>Chưa có ảnh</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-red-500 font-semibold">
-                    {formatVND(Number(s.basePrice ?? 0))}
-                  </td>
-                  <td className="px-3 py-2">{s.durationMin ?? "-"}</td>
-                  <td className="px-3 py-2">
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        s.isActive
+                        doc.isActive
                           ? "bg-green-200 text-green-700"
                           : "bg-slate-200 text-slate-700"
                       }`}
                     >
-                      {s.isActive ? "Active" : "Disabled"}
+                      {doc.isActive ? "Active" : "Disabled"}
                     </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    {s.category?.name ?? s.category?.categoryId ?? "-"}
                   </td>
                   <td className="py-2 pr-3">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                       <button
-                        onClick={() => openEdit(s)}
+                        onClick={() => openEdit(doc)}
                         className="bg-primary-linear text-white cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-2"
                         title="Sửa"
                       >
@@ -294,19 +269,19 @@ export default function ServiceManager() {
                       </button>
 
                       <button
-                        onClick={() => toggleActive(s)}
+                        onClick={() => toggleActive(doc)}
                         className={`cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-2 ${
-                          s.isActive
+                          doc.isActive
                             ? "bg-warning-linear text-white"
                             : "bg-success-linear text-white"
                         }`}
-                        title={s.isActive ? "Khoá dịch vụ" : "Mở dịch vụ"}
+                        title={doc.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
                       >
                         <Power className="w-5 h-5" />
                       </button>
 
                       <button
-                        onClick={() => askDelete(s.serviceId)}
+                        onClick={() => askDelete(doc.doctorId)}
                         className="cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] bg-error-linear text-white px-2 py-2"
                         title="Xoá"
                       >
@@ -344,22 +319,22 @@ export default function ServiceManager() {
       </div>
 
       {/* Modal */}
-      <ServiceModal
+      <DoctorModal
         open={open}
         onClose={() => setOpen(false)}
         initial={editing ?? undefined}
         onSubmit={submit}
       />
 
-      {/* Single confirm modal (đặt ngoài map) */}
+      {/* Confirm modal */}
       <ConfirmModal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={doDelete}
         loading={confirmLoading}
-        title="Xoá dịch vụ"
-        description="Bạn có chắc muốn xoá dịch vụ này?"
-        confirmText="Xoá"
+        title="Vô hiệu hóa bác sĩ"
+        description="Bạn có chắc muốn vô hiệu hóa hồ sơ bác sĩ này?"
+        confirmText="Xác nhận"
         cancelText="Huỷ"
         danger
       />

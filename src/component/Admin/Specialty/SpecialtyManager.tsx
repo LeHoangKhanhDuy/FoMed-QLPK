@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
-  ClipboardList,
+  Stethoscope,
   Pencil,
   Trash2,
   Power,
@@ -9,26 +9,15 @@ import {
   ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { formatVND } from "../../../Utils/formatVND";
-
-import type {
-  ServiceItem,
-  CreateServicePayload,
-  ServiceStatus,
-} from "../../../types/serviceType/service";
-
-import ServiceModal from "./ServiceModal";
 import ConfirmModal from "../../../common/ConfirmModal";
-import {
-  createService,
-  deleteService,
-  getService,
-  toggleService,
-  updateService,
-} from "../../../services/service";
+import type { CreateSpecialtyPayload, SpecialtyItem, UpdateSpecialtyPayload } from "../../../types/specialty/specialtyType";
+import { apiActivateSpecialty, apiCreateSpecialty, apiDeactivateSpecialty, apiGetSpecialties, apiUpdateSpecialty } from "../../../services/specialtyApi";
+import SpecialtyModal from "./SpecialtyModal";
 
-export default function ServiceManager() {
-  const [items, setItems] = useState<ServiceItem[]>([]);
+
+// ===================== MAIN COMPONENT =====================
+export default function SpecialtyManager() {
+  const [items, setItems] = useState<SpecialtyItem[]>([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
 
@@ -37,7 +26,7 @@ export default function ServiceManager() {
   const last = Math.max(1, Math.ceil(total / pageSize));
 
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<ServiceItem | null>(null);
+  const [editing, setEditing] = useState<SpecialtyItem | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -50,16 +39,16 @@ export default function ServiceManager() {
   const fetchData = async (opts?: { keepPage?: boolean }) => {
     try {
       setLoading(true);
-      const res = await getService({
+      const res = await apiGetSpecialties({
         page: opts?.keepPage ? page : 1,
-        pageSize,
-        keyword: query.trim() || undefined,
+        limit: pageSize,
+        search: query.trim() || undefined,
       });
-      setItems(res.data.items);
-      setTotal(res.data.total);
-      if (!opts?.keepPage) setPage(res.data.page);
+      setItems(res.items);
+      setTotal(res.total);
+      if (!opts?.keepPage) setPage(res.page);
     } catch {
-      toast.error("Không tải được danh sách dịch vụ");
+      toast.error("Không tải được danh sách chuyên khoa");
     } finally {
       setLoading(false);
     }
@@ -96,39 +85,32 @@ export default function ServiceManager() {
     setEditing(null);
     setOpen(true);
   };
-  const openEdit = (it: ServiceItem) => {
+
+  const openEdit = (it: SpecialtyItem) => {
     setEditing(it);
     setOpen(true);
   };
 
-  const submit = async (payload: CreateServicePayload) => {
+  const submit = async (
+    payload: CreateSpecialtyPayload | UpdateSpecialtyPayload
+  ) => {
     try {
       setLoading(true);
-
-      // Chuẩn hóa payload dạng JSON
-      const jsonPayload = {
-        code: payload.code?.trim() || null,
-        name: payload.name.trim(),
-        description: payload.description?.trim() || null,
-        basePrice: Number(payload.basePrice ?? 0),
-        durationMin: payload.durationMin ? Number(payload.durationMin) : null,
-        categoryId: Number(payload.categoryId ?? 0),
-        isActive: Boolean(payload.isActive),
-        imageUrl: payload.imageUrl?.trim() || null, // Gửi imageUrl nếu có
-      };
-
       if (editing) {
-        await updateService(editing.serviceId, jsonPayload); // Gửi JSON thay vì FormData
-        toast.success("Đã cập nhật dịch vụ");
+        await apiUpdateSpecialty(
+          editing.specialtyId,
+          payload as UpdateSpecialtyPayload
+        );
+        toast.success("Đã cập nhật chuyên khoa");
       } else {
-        await createService(jsonPayload); // Gửi JSON thay vì FormData
-        toast.success("Đã tạo dịch vụ");
+        await apiCreateSpecialty(payload as CreateSpecialtyPayload);
+        toast.success("Đã tạo chuyên khoa");
       }
-
       setOpen(false);
       await fetchData();
-    } catch {
-      toast.error("Không lưu được dịch vụ");
+    } catch (e) {
+      const error = e as Error;
+      toast.error(error.message || "Không lưu được chuyên khoa");
     } finally {
       setLoading(false);
     }
@@ -143,32 +125,38 @@ export default function ServiceManager() {
     if (!deletingId) return;
     setConfirmLoading(true);
     try {
-      await deleteService(deletingId);
+      await apiDeactivateSpecialty(deletingId);
       setConfirmOpen(false);
       setDeletingId(null);
-      toast.success("Đã xoá dịch vụ");
+      toast.success("Đã vô hiệu hóa chuyên khoa");
       await fetchData({ keepPage: true });
     } catch (e) {
       const error = e as Error;
-      toast.error(error?.message || "Không xoá được dịch vụ");
+      toast.error(error.message || "Không vô hiệu hóa được chuyên khoa");
     } finally {
       setConfirmLoading(false);
     }
   };
 
-  const toggleActive = async (it: ServiceItem) => {
+  const toggleActive = async (it: SpecialtyItem) => {
     try {
-      const next: ServiceStatus = it.isActive ? "inactive" : "active";
-      await toggleService(it.serviceId, next);
+      if (it.isActive) {
+        await apiDeactivateSpecialty(it.specialtyId);
+      } else {
+        await apiActivateSpecialty(it.specialtyId);
+      }
       // cập nhật nhanh UI
       setItems((arr) =>
         arr.map((x) =>
-          x.serviceId === it.serviceId ? { ...x, isActive: !x.isActive } : x
+          x.specialtyId === it.specialtyId ? { ...x, isActive: !x.isActive } : x
         )
       );
-      toast.success(next === "active" ? "Đã mở dịch vụ" : "Đã khoá dịch vụ");
-    } catch {
-      toast.error("Không thay đổi được trạng thái");
+      toast.success(
+        it.isActive ? "Đã vô hiệu hóa chuyên khoa" : "Đã kích hoạt chuyên khoa"
+      );
+    } catch (e) {
+      const error = e as Error;
+      toast.error(error.message || "Không thay đổi được trạng thái");
     }
   };
 
@@ -179,9 +167,9 @@ export default function ServiceManager() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-sky-400" />
-          <h2 className="font-bold">Quản lý danh mục dịch vụ</h2>
-          <span className="text-sm text-slate-500">({total} dịch vụ)</span>
+          <Stethoscope className="w-5 h-5 text-sky-400" />
+          <h2 className="font-bold">Quản lý chuyên khoa</h2>
+          <span className="text-sm text-slate-500">({total} chuyên khoa)</span>
         </div>
 
         <div className="space-y-1 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -190,7 +178,7 @@ export default function ServiceManager() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Tìm mã, tên, mô tả…"
+              placeholder="Tìm tên, mã chuyên khoa..."
               className="mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 pl-9 pr-3 py-3 text-[16px] leading-6 text-left shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
@@ -198,7 +186,7 @@ export default function ServiceManager() {
             onClick={openCreate}
             className="mt-1 cursor-pointer h-12 rounded-[var(--rounded)] bg-primary-linear text-white px-4 text-sm font-medium"
           >
-            + Thêm dịch vụ
+            + Thêm chuyên khoa
           </button>
         </div>
       </header>
@@ -209,20 +197,17 @@ export default function ServiceManager() {
           <thead>
             <tr className="bg-sky-400 text-white">
               <th className="px-3 py-2 text-left">Mã</th>
-              <th className="px-3 py-2 text-left">Tên dịch vụ</th>
-              <th className="px-3 py-2 text-center">Mô tả</th>
-              <th className="px-3 py-2 text-center">Ảnh</th>
-              <th className="px-3 py-2">Đơn giá</th>
-              <th className="px-3 py-2">Thời gian (phút)</th>
-              <th className="px-3 py-2">Trạng thái</th>
-              <th className="px-3 py-2">Chuyên mục</th>
-              <th className="px-3 py-2">Thao tác</th>
+              <th className="px-3 py-2 text-left">Tên chuyên khoa</th>
+              <th className="px-3 py-2 text-left">Mô tả</th>
+              <th className="px-3 py-2 text-center">Số bác sĩ</th>
+              <th className="px-3 py-2 text-center">Trạng thái</th>
+              <th className="px-3 py-2 text-center">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={6} className="py-6 text-center text-slate-500">
                   Đang tải dữ liệu…
                 </td>
               </tr>
@@ -230,63 +215,49 @@ export default function ServiceManager() {
 
             {!loading && showing.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={6} className="py-6 text-center text-slate-500">
                   Không có dữ liệu
                 </td>
               </tr>
             )}
 
             {!loading &&
-              showing.map((s) => (
+              showing.map((spec) => (
                 <tr
-                  key={s.serviceId}
+                  key={spec.specialtyId}
                   className="text-center border-b last:border-none"
                 >
-                  <td className="px-3 py-2 text-left font-medium">
-                    {s.code ?? "-"}
-                  </td>
-                  <td className="px-3 py-2 text-left font-bold">{s.name}</td>
                   <td className="px-3 py-2 text-left">
-                    <div
-                      className="max-w-[400px] overflow-hidden text-ellipsis whitespace-normal line-clamp-2 text-sm text-slate-700"
-                      title={s.description || undefined}
-                    >
-                      {s.description || "-"}
-                    </div>
+                    {spec.code || "-"}
                   </td>
-                  <td className="px-3 py-2">
-                    {s.imageUrl ? (
-                      <img
-                        src={s.imageUrl}
-                        alt={s.name}
-                        className="w-12 h-12 object-cover rounded-md"
-                      />
+                  <td className="px-3 py-2 text-left font-bold">{spec.name}</td>
+                  <td className="px-3 py-2 text-left text-slate-600">
+                    {spec.description ? (
+                      <span className="line-clamp-2">{spec.description}</span>
                     ) : (
-                      <span>Chưa có ảnh</span>
+                      "-"
                     )}
                   </td>
-                  <td className="px-3 py-2 text-red-500 font-semibold">
-                    {formatVND(Number(s.basePrice ?? 0))}
+                  <td className="px-3 py-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      {spec.doctorCount || 0} bác sĩ
+                    </span>
                   </td>
-                  <td className="px-3 py-2">{s.durationMin ?? "-"}</td>
                   <td className="px-3 py-2">
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        s.isActive
+                        spec.isActive
                           ? "bg-green-200 text-green-700"
                           : "bg-slate-200 text-slate-700"
                       }`}
                     >
-                      {s.isActive ? "Active" : "Disabled"}
+                      {spec.isActive ? "Active" : "Disabled"}
                     </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    {s.category?.name ?? s.category?.categoryId ?? "-"}
                   </td>
                   <td className="py-2 pr-3">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                       <button
-                        onClick={() => openEdit(s)}
+                        onClick={() => openEdit(spec)}
                         className="bg-primary-linear text-white cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-2"
                         title="Sửa"
                       >
@@ -294,19 +265,19 @@ export default function ServiceManager() {
                       </button>
 
                       <button
-                        onClick={() => toggleActive(s)}
+                        onClick={() => toggleActive(spec)}
                         className={`cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-2 ${
-                          s.isActive
+                          spec.isActive
                             ? "bg-warning-linear text-white"
                             : "bg-success-linear text-white"
                         }`}
-                        title={s.isActive ? "Khoá dịch vụ" : "Mở dịch vụ"}
+                        title={spec.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
                       >
                         <Power className="w-5 h-5" />
                       </button>
 
                       <button
-                        onClick={() => askDelete(s.serviceId)}
+                        onClick={() => askDelete(spec.specialtyId)}
                         className="cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] bg-error-linear text-white px-2 py-2"
                         title="Xoá"
                       >
@@ -344,22 +315,22 @@ export default function ServiceManager() {
       </div>
 
       {/* Modal */}
-      <ServiceModal
+      <SpecialtyModal
         open={open}
         onClose={() => setOpen(false)}
         initial={editing ?? undefined}
         onSubmit={submit}
       />
 
-      {/* Single confirm modal (đặt ngoài map) */}
+      {/* Confirm modal */}
       <ConfirmModal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={doDelete}
         loading={confirmLoading}
-        title="Xoá dịch vụ"
-        description="Bạn có chắc muốn xoá dịch vụ này?"
-        confirmText="Xoá"
+        title="Vô hiệu hóa chuyên khoa"
+        description="Bạn có chắc muốn vô hiệu hóa chuyên khoa này?"
+        confirmText="Xác nhận"
         cancelText="Huỷ"
         danger
       />

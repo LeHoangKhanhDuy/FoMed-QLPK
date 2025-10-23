@@ -7,29 +7,65 @@ import {
   UserIcon,
   Pill,
   Wallet2,
+  BookUser,
+  ClipboardPlus,
+  ShieldPlus,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { appointmentsList } from "../../../services/appointmentsApi";
+import toast from "react-hot-toast";
 
 type Item = {
   name: string;
   href: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  badge?: string;
+  badge?: string | number;
 };
-
-const items: Item[] = [
-  { name: "Thống kê", href: "/cms/dashboard", icon: LayoutDashboard },
-  { name: "Tạo lịch khám", href: "/cms/create-appointments", icon: CalendarDays, badge: "12"},
-  { name: "Bệnh nhân hôm nay", href: "/cms/patient-list", icon: Users },
-  { name: "Quản lý bác sĩ", href: "/cms/doctor-schedule", icon: Stethoscope },
-  { name: "Quản lý thanh toán", href: "/cms/billing", icon: Wallet2 },
-  { name: "Quản lý người dùng", href: "/cms/users-manager", icon: UserIcon },
-  { name: "Quản lý dịch vụ", href: "/cms/service-manager", icon: ClipboardList },
-  { name: "Quản lý thuốc", href: "/cms/drug-manager", icon: Pill }
-];
 
 export default function CMSSidebar() {
   const { pathname } = useLocation();
+  const [todayCount, setTodayCount] = useState<number>(0);
+  // Gọi API khi sidebar mount để đếm số lịch hôm nay
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    appointmentsList({ date: today, page: 1, limit: 200 })
+      .then((res) => {
+        const waiting = res.items?.filter(
+          (x) => x.status === "waiting" || x.status === "booked"
+        ).length;
+        setTodayCount(waiting ?? 0);
+      })
+      .catch(() => toast.error("Không tải được số lượng lịch hôm nay"));
+  }, []);
+
+  const items: Item[] = [
+    { name: "Thống kê", href: "/cms/dashboard", icon: LayoutDashboard },
+    {
+      name: "Tạo lịch khám",
+      href: "/cms/create-appointments",
+      icon: CalendarDays,
+    },
+    {
+      name: "Chờ khám",
+      href: "/cms/patient-list-today",
+      icon: Users,
+      badge: todayCount > 0 ? todayCount : undefined,
+    },
+    { name: "Lịch làm việc", href: "/cms/doctor-schedule", icon: Stethoscope },
+    { name: "Quản lý thanh toán", href: "/cms/billing", icon: Wallet2 },
+    { name: "Quản lý bác sĩ", href: "/cms/doctor-manager", icon: ClipboardPlus },
+    { name: "Quản lý chuyên khoa", href: "/cms/specialty-manager", icon: ShieldPlus },
+    { name: "Quản lý bệnh nhân", href: "/cms/patient-manager", icon: BookUser },
+    { name: "Quản lý người dùng", href: "/cms/users-manager", icon: UserIcon },
+    {
+      name: "Quản lý dịch vụ",
+      href: "/cms/service-manager",
+      icon: ClipboardList,
+    },
+    { name: "Quản lý thuốc", href: "/cms/drug-manager", icon: Pill },
+  ];
 
   return (
     <aside

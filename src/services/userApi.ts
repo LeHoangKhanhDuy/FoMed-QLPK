@@ -3,6 +3,7 @@ import { authHttp } from "../services/http";
 
 import type { AdminRole, User } from "../types/user/user";
 import { normalizeApiDate } from "../Utils/datetime";
+import { getErrorMessage } from "../Utils/errorHepler";
 
 /** Raw item BE trả về (nhiều tên field khác nhau) */
 interface RawUser {
@@ -42,6 +43,11 @@ interface ListResp {
     items?: RawUser[];
   };
 }
+
+export type DoctorOption = {
+  doctorId: number;
+  fullName: string;
+};
 
 const firstOrNull = (v: unknown): string | null =>
   typeof v === "string" ? v : null;
@@ -99,6 +105,54 @@ export async function getAllUsers(params?: {
     limit: payload?.limit ?? limit,
     items,
   };
+}
+
+export async function apiListUsersByRoleDoctor(params?: {
+  page?: number;
+  limit?: number;
+  isActive?: boolean; // mặc định: chỉ lấy active
+}): Promise<{
+  page: number;
+  limit: number;
+  total: number;
+  items: DoctorOption[];
+}> {
+  const { page = 1, limit = 200, isActive = true } = params ?? {};
+  try {
+    // Gọi đúng endpoint users, filter role=DOCTOR
+    const { data } = await authHttp.get<ListResp>("/api/v1/admin/users", {
+      params: { page, limit, role: "DOCTOR", isActive },
+    });
+
+    const payload = data?.data ?? {};
+    const normalized: User[] = (payload.items ?? []).map(normalizeUser);
+
+    // Lọc đúng role + trạng thái (nếu truyền)
+    const filtered = normalized.filter((u) => {
+      const hasRole = Array.isArray(u.roles) && u.roles.includes("DOCTOR");
+      const statusOk =
+        isActive == null
+          ? true
+          : isActive
+          ? u.status === "active"
+          : u.status !== "active";
+      return hasRole && statusOk;
+    });
+
+    const items: DoctorOption[] = filtered.map((u) => ({
+      doctorId: u.id, // dùng userId làm doctorId (đổi nếu BE yêu cầu khác)
+      fullName: u.name || `BS #${u.id}`,
+    }));
+
+    return {
+      page: payload.page ?? page,
+      limit: payload.limit ?? limit,
+      total: payload.total ?? items.length,
+      items,
+    };
+  } catch (e) {
+    throw new Error(getErrorMessage(e, "Không tải được danh sách bác sĩ"));
+  }
 }
 
 export async function updateUserRoles(id: number, roles: AdminRole[]) {
