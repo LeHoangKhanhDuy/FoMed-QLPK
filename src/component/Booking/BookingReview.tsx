@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
   Home,
-  Clock,
   User,
   Package,
   CheckIcon,
@@ -13,6 +12,7 @@ import toast from "react-hot-toast";
 import { getService } from "../../services/service";
 import { apiGetDoctorDetail, type DoctorItem } from "../../services/doctorMApi";
 import { createAppointment } from "../../services/appointmentsApi";
+import { apiUpsertPatientByPhone } from "../../services/patientsApi";
 
 export const BookingReview = () => {
   const [searchParams] = useSearchParams();
@@ -41,6 +41,11 @@ export const BookingReview = () => {
     };
     date: string;
     time: string;
+    user: {
+      name: string;
+      email: string;
+      phone: string;
+    };
   } | null>(null);
 
   useEffect(() => {
@@ -76,6 +81,9 @@ export const BookingReview = () => {
           Number(doctorId)
         );
 
+        // 3. Lấy thông tin user đang đăng nhập
+        const currentUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
+
         setBookingInfo({
           service: {
             id: service.serviceId,
@@ -93,6 +101,11 @@ export const BookingReview = () => {
           },
           date: visitDate,
           time: visitTime.substring(0, 5),
+          user: {
+            name: currentUser.name || "Chưa xác định",
+            email: currentUser.email || "Chưa xác định",
+            phone: currentUser.phone || "Chưa xác định",
+          },
         });
       } catch (error) {
         console.error("Error:", error);
@@ -112,15 +125,46 @@ export const BookingReview = () => {
     try {
       setSubmitting(true);
 
-      // TODO: Lấy patientId từ user đang đăng nhập (localStorage/context)
-      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const patientId = currentUser.patientId || currentUser.userId || 1;
+      // Lấy thông tin user đang đăng nhập từ localStorage
+      const currentUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      
+      // Kiểm tra authentication
+      const token = localStorage.getItem("userToken");
+      if (!token) {
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
+        navigate("/login");
+        return;
+      }
+
+      if (!currentUser.userId) {
+        toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!");
+        navigate("/login");
+        return;
+      }
+
+      const patientId = currentUser.userId; // Sử dụng userId thay vì patientId
+
+      // Tạo hoặc lấy patient record trước khi tạo appointment
+      let actualPatientId = patientId;
+      try {
+        const patientResult = await apiUpsertPatientByPhone({
+          fullName: currentUser.name,
+          phone: currentUser.phone,
+          email: currentUser.email,
+          gender: "O", // Default gender
+        });
+        actualPatientId = patientResult.patientId;
+      } catch (patientError) {
+        console.error("Error creating/getting patient:", patientError);
+        // Fallback: sử dụng userId nếu không thể tạo patient
+        actualPatientId = patientId;
+      }
 
       // Gọi API tạo appointment
       const appointmentData = {
-        patientId: patientId,
+        patientId: actualPatientId,
         doctorId: bookingInfo.doctor.id,
-        serviceId: bookingInfo.service.id,
+        serviceId: bookingInfo.service.id, // Thêm lại serviceId
         visitDate: bookingInfo.date,
         visitTime: bookingInfo.time + ":00", // Convert HH:mm to HH:mm:ss
         reason: `Đặt khám ${bookingInfo.service.name}`,
@@ -139,6 +183,13 @@ export const BookingReview = () => {
       // Proper error type handling
       if (error instanceof Error) {
         console.error("Booking error:", error);
+        
+        // Log chi tiết response nếu có
+        if ('response' in error && error.response) {
+          console.error("Error response:", (error as any).response.data);
+          console.error("Error status:", (error as any).response.status);
+        }
+        
         toast.error(error.message || "Đặt lịch thất bại. Vui lòng thử lại!");
       } else {
         console.error("Unknown error:", error);
@@ -221,6 +272,52 @@ export const BookingReview = () => {
 
       {/* Review Info */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        {/* User Info */}
+        <div className="p-6 border-b border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex items-start gap-3 mb-4">
+            <User className="w-6 h-6 text-sky-400 flex-shrink-0" />
+            <div className="space-y-2">
+              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                Họ tên:{" "}
+                <p className="font-bold text-sky-500">
+                  {bookingInfo.user.name}
+                </p>
+              </h3>
+
+              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                Email:{" "}
+                <p className="font-bold text-sky-500">
+                  {bookingInfo.user.email}
+                </p>
+              </h3>
+
+              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                Số điện thoại:{" "}
+                <p className="font-bold text-sky-500">
+                  {bookingInfo.user.phone}
+                </p>
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 mb-4">
+            <CalendarDays className="w-6 h-6 text-sky-400 flex-shrink-0" />
+            <div className="space-y-2">
+              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                Ngày khám:{" "}
+                <p className="font-bold text-sky-500">
+                  {formatDate(bookingInfo.date)}
+                </p>
+              </h3>
+
+              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                Giờ khám:{" "}
+                <p className="font-bold text-sky-500">{bookingInfo.time}</p>
+              </h3>
+            </div>
+          </div>
+        </div>
+
         {/* Service and Doctor Info in One Row */}
         <div className="p-6 border-b border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Service Info */}
@@ -286,29 +383,6 @@ export const BookingReview = () => {
                 <p className="font-bold text-sky-500">
                   {bookingInfo.doctor.room}
                 </p>
-              </h3>
-            </div>
-          </div>
-        </div>
-
-        {/* Date & Time */}
-        <div className="p-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="flex items-start gap-3">
-              <CalendarDays className="w-6 h-6 text-sky-400 flex-shrink-0" />
-              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
-                Ngày khám:{" "}
-                <p className="font-bold text-sky-500">
-                  {formatDate(bookingInfo.date)}
-                </p>
-              </h3>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Clock className="w-6 h-6 text-sky-400 flex-shrink-0" />
-              <h3 className="flex items-center gap-2 font-semibold text-slate-900">
-                Giờ khám:{" "}
-                <p className="font-bold text-sky-500">{bookingInfo.time}</p>
               </h3>
             </div>
           </div>
