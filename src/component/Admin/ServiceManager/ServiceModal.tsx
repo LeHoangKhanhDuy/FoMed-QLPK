@@ -1,47 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Save, X } from "lucide-react";
 import type {
+  CreateServicePayload,
   ServiceItem,
-  ServiceKind,
-  ServiceStatus,
-  Specimen,
-  Department,
-} from "../../../types/mockServiceApi";
+} from "../../../types/serviceType/service";
+import { apiListServiceCategories, type ServiceCategory } from "../../../services/serviceCate";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   initial?: Partial<ServiceItem>;
-  onSubmit: (payload: Omit<ServiceItem, "id" | "createdAt">) => Promise<void>;
+  onSubmit: (payload: CreateServicePayload) => Promise<void>;
 };
-
-const kindMenuOptions: SelectOption<ServiceKind>[] = [
-  { value: "exam", label: "Khám" },
-  { value: "lab", label: "Xét nghiệm" },
-  { value: "imaging", label: "Chẩn đoán hình ảnh" },
-  { value: "procedure", label: "Thủ thuật" },
-];
-
-const specimenOptions: SelectOption<Specimen>[] = [
-  { value: "blood", label: "Máu" },
-  { value: "urine", label: "Nước tiểu" },
-  { value: "swab", label: "Dịch tỵ hầu" },
-  { value: "stool", label: "Phân" },
-  { value: "other", label: "Khác" },
-];
-
-const statusOptions: SelectOption<ServiceStatus>[] = [
-  { value: "active", label: "Đang hoạt động" },
-  { value: "inactive", label: "Tạm khoá" },
-];
-
-const departmentOptions: SelectOption<Department>[] = [
-  { value: "Khám bệnh", label: "Khám bệnh" },
-  { value: "XN Huyết học", label: "XN Huyết học" },
-  { value: "XN Sinh hoá", label: "XN Sinh hoá" },
-  { value: "CĐHA", label: "CĐHA" },
-];
 
 export default function ServiceModal({
   open,
@@ -49,45 +20,80 @@ export default function ServiceModal({
   initial,
   onSubmit,
 }: Props) {
-  const [form, setForm] = useState<Omit<ServiceItem, "id" | "createdAt">>({
-    code: initial?.code ?? "",
+  const [form, setForm] = useState<CreateServicePayload>({
+    code: initial?.code ?? null,
     name: initial?.name ?? "",
-    kind: (initial?.kind as ServiceKind) ?? "exam",
-    unit: initial?.unit ?? "lượt",
-    price: initial?.price ?? 0,
-    specimen: initial?.specimen ?? null,
-    department: (initial?.department as Department) ?? "Khám bệnh",
-    status: (initial?.status as ServiceStatus) ?? "active",
+    description: initial?.description ?? null,
+    basePrice: initial?.basePrice ?? null, // cho phép null
+    durationMin: initial?.durationMin ?? null,
+    categoryId: initial?.category?.categoryId ?? null,
+    isActive: initial?.isActive ?? true,
+    imageUrl: initial?.imageUrl ?? null,
   });
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // NEW: danh mục
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [loadingCate, setLoadingCate] = useState(false);
+
   useEffect(() => {
     if (!open) return;
+
+    // reset form theo initial mỗi lần mở
     setForm({
       code: initial?.code ?? "",
       name: initial?.name ?? "",
-      kind: (initial?.kind as ServiceKind) ?? "exam",
-      unit: initial?.unit ?? "lượt",
-      price: initial?.price ?? 0,
-      specimen: (initial?.specimen as Specimen) ?? null,
-      department: (initial?.department as Department) ?? "Khám bệnh",
-      status: (initial?.status as ServiceStatus) ?? "active",
+      description: initial?.description ?? "",
+      basePrice: initial?.basePrice ?? 0,
+      durationMin: initial?.durationMin ?? null,
+      categoryId: initial?.category?.categoryId ?? null,
+      isActive: initial?.isActive ?? true,
     });
     setErr(null);
+
+    // tải danh mục (mặc định lấy danh mục đang hoạt động)
+    setLoadingCate(true);
+    apiListServiceCategories({ isActive: true, limit: 200 })
+      .then((res) => setCategories(res.items))
+      .catch(() => setCategories([]))
+      .finally(() => setLoadingCate(false));
   }, [open, initial]);
 
   const ctrl =
-    "mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 " +
-    "text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500";
+    "mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500";
+
+  const cateOptions: SelectOption<number>[] = useMemo(
+    () =>
+      categories.map((c) => ({
+        value: c.categoryId, // Đảm bảo categoryId là duy nhất
+        label: c.name || `#${c.categoryId}`,
+      })),
+    [categories]
+  );
 
   const submit = async () => {
-    if (!form.code.trim() || !form.name.trim())
-      return setErr("Vui lòng nhập mã và tên dịch vụ");
-    if (form.price < 0) return setErr("Đơn giá không hợp lệ");
+    // Validate tối thiểu
+    if (!form.name?.trim()) return setErr("Vui lòng nhập tên dịch vụ");
+    if (form.basePrice !== null && Number(form.basePrice) < 0)
+      return setErr("Đơn giá không hợp lệ");
+    if (form.durationMin !== null && Number(form.durationMin) < 0)
+      return setErr("Thời lượng không hợp lệ");
+    if (form.categoryId === null || form.categoryId === undefined)
+      return setErr("Vui lòng chọn loại dịch vụ");
+
     setLoading(true);
     try {
-      await onSubmit(form);
+      await onSubmit({
+        code: form.code?.trim() || null,
+        name: form.name.trim(),
+        description: form.description?.trim() || null,
+        basePrice: form.basePrice, // đã là number | null
+        durationMin: form.durationMin,
+        categoryId: form.categoryId, // number | null
+        isActive: form.isActive,
+        imageUrl: form.imageUrl?.trim() || null,
+      });
       onClose();
     } catch {
       setErr("Không lưu được dịch vụ");
@@ -97,13 +103,14 @@ export default function ServiceModal({
   };
 
   if (!open) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-xl uppercase">
-            {initial?.id ? "Sửa dịch vụ" : "Thêm dịch vụ"}
+            {initial?.serviceId ? "Sửa dịch vụ" : "Thêm dịch vụ"}
           </h3>
           <button
             onClick={onClose}
@@ -116,16 +123,14 @@ export default function ServiceModal({
         {err && <p className="mb-3 text-sm text-rose-600">{err}</p>}
 
         <div className="grid grid-cols-2 gap-3">
+          {/* Mã & Tên */}
           <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Mã dịch vụ</span>
-              <span className="text-red-500">*</span>
-            </div>
+            <span className="block mb-1 text-slate-600">Mã dịch vụ</span>
             <input
-              value={form.code}
+              value={form.code ?? ""}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
               className={ctrl}
-              placeholder="VD: TQ001"
+              placeholder="VD: KTQ"
             />
           </label>
 
@@ -138,89 +143,86 @@ export default function ServiceModal({
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className={ctrl}
-              placeholder="VD: Khám tổng quát"
+              placeholder="VD: Khám Tổng quát"
             />
           </label>
 
-          <SelectMenu<ServiceKind>
-            label="Nhóm"
-            required
-            value={form.kind}
-            onChange={(v) =>
-              setForm((f) => ({ ...f, kind: (v as ServiceKind) || f.kind }))
-            }
-            options={kindMenuOptions}
-          />
-
-          <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Đơn vị tính</span>
-              <span className="text-red-500">*</span>
-            </div>
-            <input
-              value={form.unit ?? ""}
-              onChange={(e) => setForm({ ...form, unit: e.target.value })}
-              className={ctrl}
-              placeholder="VD: lượt, mẫu, lần"
-            />
-          </label>
-
-          {form.kind === "lab" && (
-            <SelectMenu<Specimen>
-              label="Loại mẫu (XN)"
-              required
-              value={(form.specimen as Specimen) ?? "blood"}
-              onChange={(v) =>
-                setForm((f) => ({
-                  ...f,
-                  specimen: (v as Specimen) || f.specimen,
-                }))
+          {/* Mô tả */}
+          <label className="text-sm col-span-2">
+            <span className="block mb-1 text-slate-600">Mô tả</span>
+            <textarea
+              value={form.description ?? ""}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
               }
-              options={specimenOptions}
+              className={ctrl}
+              rows={3}
+              placeholder="Mô tả ngắn…"
             />
-          )}
+          </label>
 
-          <SelectMenu<Department>
-            label="Khoa/Phòng"
-            required
-            value={(form.department as Department) ?? "Khám bệnh"}
-            onChange={(v) =>
-              setForm((f) => ({
-                ...f,
-                department: (v as Department) || f.department,
-              }))
-            }
-            options={departmentOptions}
-          />
-
+          {/* Giá & Thời lượng */}
           <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-2 text-slate-600">Đơn giá (VNĐ)</span>
-              <span className="text-red-500">*</span>
-            </div>
+            <span className="block mb-2 text-slate-600">Đơn giá (VNĐ)</span>
             <input
               type="number"
               min={0}
-              value={form.price}
+              value={form.basePrice ?? ""} // hiển thị rỗng nếu null
               onChange={(e) =>
-                setForm({ ...form, price: Number(e.target.value) })
+                setForm({
+                  ...form,
+                  basePrice:
+                    e.target.value === "" ? null : Number(e.target.value),
+                })
               }
               className={ctrl}
+              placeholder="VD: 500000"
             />
           </label>
 
-          <SelectMenu<ServiceStatus>
-            label="Trạng thái"
-            required
-            value={form.status}
+          <label className="text-sm">
+            <span className="block mb-2 text-slate-600">Thời lượng (phút)</span>
+            <input
+              type="number"
+              min={0}
+              value={form.durationMin ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  durationMin:
+                    e.target.value === "" ? null : Number(e.target.value),
+                })
+              }
+              className={ctrl}
+              placeholder="VD: 60"
+            />
+          </label>
+
+          {/* Loại dịch vụ */}
+          <SelectMenu<number>
+            label="Loại dịch vụ"
+            value={form.categoryId ?? ""}
+            options={cateOptions}
+            placeholder={loadingCate ? "Đang tải..." : "Chọn loại dịch vụ"}
             onChange={(v) =>
-              setForm((f) => ({
-                ...f,
-                status: (v as ServiceStatus) || f.status,
-              }))
+              setForm({
+                ...form,
+                categoryId: v === "" ? null : Number(v),
+              })
             }
-            options={statusOptions}
+            className="col-span-2 sm:col-span-1"
           />
+
+          {/* (Nếu muốn bật/tắt hoạt động, bạn có thể mở lại checkbox dưới đây) */}
+          {/* <label className="text-sm flex items-center gap-2 col-span-2">
+            <input
+              type="checkbox"
+              checked={!!form.isActive}
+              onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+              className="cursor-pointer h-4 w-4"
+            />
+            <span>Đang hoạt động</span>
+          </label> */}
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-2">
@@ -233,7 +235,7 @@ export default function ServiceModal({
           <button
             onClick={submit}
             disabled={loading}
-            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white inline-flex items-center gap-2"
+            className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white inline-flex items-center gap-2 disabled:opacity-60"
           >
             <Save className="w-4 h-4" /> Lưu
           </button>

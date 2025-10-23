@@ -1,6 +1,7 @@
 // services/auth.ts
 import axios, { isAxiosError } from "axios";
 import type { AppUser, LoginNormalized } from "../types/auth/login";
+import { getErrorMessage } from "../Utils/errorHepler";
 
 /* ============ CONFIG ============ */
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
@@ -93,17 +94,21 @@ interface LoginResponseData {
   Phone?: string;
   roles?: string[];
   Roles?: string[];
+  userId?: number;
+  UserId?: number;
 }
 
 interface BeLoginResponse {
-  status?: boolean;
   Status?: boolean;
-  statusCode?: number;
+  status?: boolean;
   StatusCode?: number;
-  message?: string;
+  statusCode?: number;
   Message?: string;
-  data?: LoginResponseData;
+  message?: string;
   Data?: LoginResponseData;
+  data?: LoginResponseData;
+  Errors?: Record<string, string[]>;
+  errors?: Record<string, string[]>;
 }
 
 interface ProfileResponseData {
@@ -125,38 +130,26 @@ interface ProfileResponseData {
 }
 
 interface BeProfileResponse {
-  message: string;
+  message?: string;
+  Message?: string;
   data?: ProfileResponseData;
+  Data?: ProfileResponseData;
 }
 
 /* ============ MAPPERS ============ */
-function mapUserFromLogin(
-  responseData: LoginResponseData | undefined
-): AppUser {
-  if (!responseData) {
-    return {
-      userId: 0,
-      email: "",
-      name: "",
-      phone: "",
-      roles: [],
-    };
+function mapUserFromLogin(d?: LoginResponseData): AppUser {
+  if (!d) {
+    return { userId: 0, email: "", name: "", phone: "", roles: [] };
   }
-
   return {
-    userId: 0, // Login không trả userId
-    email: responseData.email || responseData.Email || "",
-    name:
-      responseData.fullName ||
-      responseData.FullName ||
-      responseData.email ||
-      responseData.Email ||
-      "",
-    phone: responseData.phone || responseData.Phone || "",
-    roles: Array.isArray(responseData.roles)
-      ? responseData.roles
-      : Array.isArray(responseData.Roles)
-      ? responseData.Roles
+    userId: d.userId ?? d.UserId ?? 0,
+    email: d.email || d.Email || "",
+    name: d.fullName || d.FullName || d.email || d.Email || "",
+    phone: d.phone || d.Phone || "",
+    roles: Array.isArray(d.roles)
+      ? (d.roles as AppUser["roles"])
+      : Array.isArray(d.Roles)
+      ? (d.Roles as AppUser["roles"])
       : [],
   };
 }
@@ -207,9 +200,6 @@ export async function register(email: string, password: string, name: string) {
     FullName: name.trim(),
     Email: email.trim(),
     Password: password,
-    Phone: null as string | null, 
-    Gender: null as string | null, 
-    DateOfBirth: null as string | null, 
   };
 
   try {
@@ -220,7 +210,6 @@ export async function register(email: string, password: string, name: string) {
     return data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      // gom message & ModelState errors
       const data = error.response?.data as
         | { message?: string; errors?: Record<string, string[]> }
         | undefined;
@@ -238,32 +227,52 @@ export async function register(email: string, password: string, name: string) {
   }
 }
 
-
 export async function login(
   email: string,
   password: string
 ): Promise<LoginNormalized> {
-  // Xóa auth headers trước khi login
+  // Xoá header cũ (nếu có)
   delete publicHttp.defaults.headers.common.Authorization;
   delete authHttp.defaults.headers.common.Authorization;
 
-  const { data } = await publicHttp.post<BeLoginResponse>(
-    "/api/v1/accounts/login-with-email",
-    { email, password }
-  );
+  try {
+    const { data } = await publicHttp.post<BeLoginResponse>(
+      "/api/v1/accounts/login-with-email",
+      { email, password }
+    );
+    const normalized = normalizeLogin(data);
 
-  const normalized = normalizeLogin(data);
+    if (!normalized.status) {
+      // BE có thể trả Message cụ thể cho 401/403/423
+      throw new Error(normalized.message || "Đăng nhập thất bại");
+    }
+    if (!normalized.token) {
+      throw new Error("Không nhận được token từ server");
+    }
+    return normalized;
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+      const be = error.response?.data as BeLoginResponse | undefined;
 
-  // Kiểm tra response
-  if (!normalized.status) {
-    throw new Error(normalized.message || "Đăng nhập thất bại");
+      // Ưu tiên Message từ BE
+      const beMsg = be?.Message ?? be?.message;
+
+      // Map status thường gặp để UX rõ ràng (nếu BE không có Message)
+      const fallback =
+        status === 401
+          ? "Email hoặc mật khẩu không đúng."
+          : status === 403
+          ? "Tài khoản đã bị vô hiệu hoá."
+          : status === 423
+          ? "Tài khoản đang bị khoá."
+          : "Đăng nhập thất bại.";
+
+      throw new Error(beMsg || fallback);
+    }
+
+    throw new Error(getErrorMessage(error, "Đăng nhập thất bại."));
   }
-
-  if (!normalized.token) {
-    throw new Error("Không nhận được token từ server");
-  }
-
-  return normalized;
 }
 
 export async function getProfile(token: string): Promise<AppUser> {

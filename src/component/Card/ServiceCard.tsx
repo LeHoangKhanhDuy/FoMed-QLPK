@@ -1,17 +1,19 @@
 import { Star } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
+import defaultImage from "../../assets/images/khamtongquat.jpg";
 
 export interface ServiceClinicCardProps {
   name: string;
   services?: string;
   price: string;
-  logo: string;
+  logo?: string; // ✅ Optional
   rating?: number;
+  verified?: boolean; // ✅ Thêm verified
   actionLabel?: string;
   className?: string;
   onBook?: () => void;
-  linkTo?: string; // <-- thêm props đường dẫn
+  linkTo?: string;
 }
 
 const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
@@ -25,7 +27,6 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
   className = "",
   linkTo = "/booking-doctor", // <-- default route
 }) => {
-
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating); // số sao đầy
@@ -55,7 +56,7 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
 
     return stars;
   };
-  
+
   return (
     <Link
       to={linkTo}
@@ -65,11 +66,21 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
         className,
       ].join(" ")}
     >
-      <div className="h-38 rounded-t-xl overflow-hidden flex items-center justify-center">
-        <img src={logo} alt={name} className="w-full h-full object-cover" />
+      {/* Ảnh */}
+      <div className="h-38 rounded-t-xl overflow-hidden flex items-center justify-center bg-gray-50">
+        <img
+          src={logo || defaultImage} // Fallback ở đây nữa cho an toàn
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.src = defaultImage; // Thay bằng ảnh mặc định nếu lỗi
+          }}
+        />
       </div>
 
       <div className="p-4 flex flex-col gap-4">
+        {/* Tên dịch vụ */}
         <div>
           <h3 className="text-xl font-semibold leading-6">
             <span className="block min-h-[48px]">
@@ -78,7 +89,7 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
           </h3>
         </div>
 
-        {/* Hiển thị rating */}
+        {/* Rating */}
         <div className="flex items-center gap-1">
           {renderStars(rating)}
           <span className="ml-1 text-sm text-gray-500">
@@ -86,6 +97,7 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
           </span>
         </div>
 
+        {/* Giá */}
         <div className="text-red-500">
           <span className="text-lg font-bold">{price}</span>
         </div>
@@ -94,7 +106,10 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
       <div className="p-4 pt-0 mt-auto">
         <button
           type="button"
-          onClick={onBook}
+          onClick={(e) => {
+            e.preventDefault(); // Ngăn Link navigate
+            onBook?.();
+          }}
           className="w-full cursor-pointer rounded-xl bg-primary-linear text-white font-semibold py-3 active:scale-[0.98] transition"
         >
           {actionLabel}

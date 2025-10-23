@@ -35,7 +35,6 @@ import {
 } from "../../services/auth";
 import toast from "react-hot-toast";
 
-
 const USER_INFO_KEY = "userInfo";
 
 const readUserFromStorage = (): AppUser | null => {
@@ -72,6 +71,13 @@ export default function Navbar() {
   const handleAuthSuccess = (u: AppUser) => {
     setUser(u);
     setLoginOpen(false);
+
+    // Lấy URL lưu trong localStorage và điều hướng đến đó
+    const redirectUrl = localStorage.getItem("redirectAfterLogin");
+    if (redirectUrl) {
+      navigate(redirectUrl);
+      localStorage.removeItem("redirectAfterLogin"); // Xóa URL sau khi đã sử dụng
+    }
   };
 
   // đồng bộ khi modal đóng (backup)
@@ -116,6 +122,25 @@ export default function Navbar() {
       console.error("Logout error:", error);
       toast.error("Đăng xuất thất bại");
     }
+  };
+
+  const handleBookingClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    // Kiểm tra đăng nhập
+    const user = localStorage.getItem("userInfo");
+    const token = localStorage.getItem("userToken");
+
+    if (!user || !token) {
+      toast.error("Vui lòng đăng nhập để đặt lịch khám!");
+      // Lưu URL hiện tại để redirect sau khi đăng nhập
+      localStorage.setItem("redirectAfterLogin", "/booking-package");
+      setLoginOpen(true); // Hiển thị modal đăng nhập
+      return;
+    }
+
+    // Nếu đã đăng nhập, cho phép vào trang đặt lịch
+    navigate("/booking-package");
   };
 
   const displayName = user?.name?.trim() || user?.email || "User";
@@ -497,12 +522,12 @@ export default function Navbar() {
               </Link>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
-              <Link
-                to="/booking-package"
-                className="bg-primary-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition duration-200 active:scale-95 cursor-pointer"
+              <button
+                onClick={handleBookingClick}
+                className="bg-primary-linear text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition duration-200 active:scale-95 cursor-pointer hover:opacity-90"
               >
                 <ClipboardClock className="size-5" /> Đặt lịch
-              </Link>
+              </button>
               <Link
                 to="/patient-portal-login"
                 className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition duration-200 active:scale-95 cursor-pointer"

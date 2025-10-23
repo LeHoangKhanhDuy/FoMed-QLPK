@@ -1,10 +1,8 @@
 
-export type ID = number;
-
 export type Sex = "Nam" | "Nữ" | "Khác";
 
 export interface Patient {
-  id: ID;
+  id: number;
   code: string; // mã hồ sơ/đăng ký
   name: string;
   sex: Sex;
@@ -16,43 +14,60 @@ export interface Patient {
 }
 
 export interface DiagnosisPayload {
-  patientId: ID;
+  appointmentId: number;
+  patientId: number;
   symptoms: string;
   diagnosis: string;
-  note?: string;
+  note?: string | null;
 }
 
 export interface LabItem {
-  id: ID;
+  id: number;
   name: string;
   code: string;
-  sample?: "blood" | "urine" | "swab" | "other";
+  // sample?: "blood" | "urine" | "swab" | "other";
+  sample?: string | null;
 }
 
 export interface LabOrderPayload {
-  patientId: ID;
-  items: ID[]; // danh sách id xét nghiệm
-  note?: string;
+  appointmentId: number;
+  patientId: number;
+  items: number[]; // danh sách id xét nghiệm
+  note?: string | null;
   priority?: "normal" | "urgent";
 }
 
 export interface Drug {
-  id: ID;
+  id: number;
   name: string;
   unit: string; // viên, ống, ml...
   maxPerDay?: number;
 }
 
 export interface PrescriptionLine {
-  drugId: ID;
+  drugId: number;
   dose: string; // "1 viên"
   frequency: string; // "2 lần/ngày"
   duration: string; // "5 ngày"
-  note?: string;
+  note?: string | null;
 }
 
 export interface PrescriptionPayload {
-  patientId: ID;
+  appointmentId: number;
+  patientId: number;
   lines: PrescriptionLine[];
-  advice?: string; // dặn dò
+  advice?: string | null; // dặn dò
 }
+
+export type WorkspaceCatalogs = {
+  labTests: LabItem[];
+  medicines: Array<{ id: number; name: string; unit?: string | null }>;
+};
+
+export type StartEncounterPayload = {
+  appointmentId: number;
+};
+
+export type CompleteEncounterPayload = {
+  appointmentId: number;
+};

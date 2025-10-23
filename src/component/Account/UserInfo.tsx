@@ -22,6 +22,8 @@ export interface User {
   created_at: string;
   phone: string | number;
   avatar: string;
+  roles?: string[]; // 👈 thêm
+  gender?: "M" | "F" | "";
 }
 
 type Props = {
@@ -33,14 +35,43 @@ type Props = {
   showOnlineDot?: boolean;
 };
 
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: "Quản trị viên",
+  DOCTOR: "Bác sĩ",
+  EMPLOYEE: "Nhân viên",
+  PATIENT: "Bệnh nhân",
+};
+
+const ROLE_BADGE: Record<string, string> = {
+  ADMIN: "bg-sky-100 text-sky-700",
+  DOCTOR: "bg-violet-100 text-violet-700",
+  EMPLOYEE: "bg-amber-100 text-amber-700",
+  PATIENT: "bg-slate-100 text-slate-700",
+};
+
 function mapToUserUI(appUser: AppUser): User {
+  const toMF = (g?: unknown): "M" | "F" | "" => {
+    const s = String(g ?? "")
+      .trim()
+      .toLowerCase();
+    if (s === "male" || s === "m") return "M";
+    if (s === "female" || s === "f") return "F";
+    return "";
+  };
+
+  const roles = Array.isArray(appUser.roles)
+    ? appUser.roles.map((r) => String(r).toUpperCase())
+    : [];
+
   return {
     id: appUser.userId,
     email: appUser.email,
     name: appUser.name || appUser.email,
-    created_at: appUser.createdAt || "", // ✅
+    created_at: appUser.createdAt || "",
     phone: appUser.phone || "",
     avatar: appUser.avatarUrl ?? "",
+    roles,
+    gender: toMF(appUser.gender), // ✅ không cần any nữa
   };
 }
 
@@ -232,6 +263,26 @@ export default function UserInfo({
                   <p className="text-lg font-semibold">
                     {fmtDate(user.created_at)}
                   </p>
+                </div>
+
+                <div>
+                  <p>Vai trò</p>
+                  {user.roles && user.roles.length > 0 ? (
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {user.roles.map((r) => (
+                        <span
+                          key={r}
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            ROLE_BADGE[r] ?? "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {ROLE_LABEL[r] ?? r}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-lg font-semibold">—</p>
+                  )}
                 </div>
 
                 <div className="mt-4">

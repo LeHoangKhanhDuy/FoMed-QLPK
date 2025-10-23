@@ -1,13 +1,15 @@
 export type DrugID = number;
 export type DrugStatus = "in stock" | "out of stock";
 
+/** Mô hình chuẩn hoá cho FE */
 export interface DrugItem {
   id: DrugID;
-  code: string; // mã thuốc (tùy chọn)
-  name: string; // tên thuốc
-  unit: string; // viên, ống, gói, ml...
-  price: number; // đơn giá (VNĐ)
-  stock: number; // tồn kho hiện tại
+  code: string;
+  name: string;
+  unit: string;
+  price: number;
+  stock: number;
   status: DrugStatus;
-  createdAt: string; // ISO
+  isActive: boolean;
+  createdAt: string | null;
 }

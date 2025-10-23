@@ -8,9 +8,9 @@ import { Home } from "lucide-react";
 
 type ServiceInfo = {
   name: string;
-  address: string;
+  price: number;
+  discountPrice?: number;
   specialty: string;
-  facilityName: string;
   verified?: boolean;
 };
 
@@ -42,7 +42,6 @@ export default function ServiceBookingDoctor({
   const startIndex = (currentPage - 1) * perPage;
   const currentDoctors = doctors.slice(startIndex, startIndex + perPage);
 
-  // nếu danh sách thay đổi (lọc, tìm kiếm), đảm bảo currentPage không vượt quá totalPages
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [totalPages, currentPage]);
@@ -50,11 +49,8 @@ export default function ServiceBookingDoctor({
   const handlePageChange = (page: number) => {
     const next = Math.min(totalPages, Math.max(1, page));
     setCurrentPage(next);
-    // nếu muốn cuộn lên top list:
-    // document.querySelector("#doctor-list-top")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // tạo dãy trang kiểu "1 … (c-1) c (c+1) … N"
   const pageItems = useMemo<(number | "...")[]>(() => {
     const items: (number | "...")[] = [];
     const push = (v: number | "...") => items.push(v);
@@ -84,26 +80,16 @@ export default function ServiceBookingDoctor({
           <Home size={18} />
         </Link>
         <span>›</span>
-        <span className="hover:underline cursor-pointer">
-          {service.facilityName}
-        </span>
-        <span>›</span>
-        <Link to="/booking-doctor" className="text-sky-400">
-          Chọn bác sĩ
+        <Link to="/booking-packages" className="hover:underline cursor-pointer">
+          Đặt gói khám
         </Link>
+        <span>›</span>
+        <span className="text-sky-400">Chọn bác sĩ</span>
       </nav>
 
       <div className="grid md:grid-cols-3 gap-4 sm:gap-5 items-start">
         {/* LEFT: Thông tin dịch vụ */}
-        <ServiceInfoCard
-          service={{
-            name: "Gói khám sức khỏe tổng quát",
-            price: 200000,
-            discountPrice: 150000,
-            specialty: "Khoa Nội tổng quát",
-            verified: true,
-          }}
-        />
+        <ServiceInfoCard service={service} />
 
         {/* RIGHT: Chọn bác sĩ */}
         <section className="md:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -116,158 +102,170 @@ export default function ServiceBookingDoctor({
             </h2>
           </header>
 
-          {/* MOBILE */}
-          <div className="md:hidden space-y-3">
-            {currentDoctors.map((d, idx) => (
-              <div key={d.id} className="bg-white border-b p-4">
-                <div className="flex items-center justify-between gap-3  mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="text-md text-slate-500">
-                      #{startIndex + idx + 1}
-                    </div>
-                    <p className="flex items-center gap-2 mt-0.5 text-lg font-semibold text-slate-900">
-                      {d.name}
-                      {d.verified && (
-                        <img
-                          src={check}
-                          alt="Đã xác minh"
-                          className="w-4 h-4"
-                        />
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <img src={hospital} alt="" className="w-5 h-5" />
-                  <div className="text-sm leading-5">
-                    Kinh nghiệm: {d.experience}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <img src={schedule} alt="" className="w-5 h-5" />
-                  {d.note && <p className="text-sm leading-5">{d.note}</p>}
-                </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => onDetail?.(d.id)}
-                    className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm hover:bg-slate-50 cursor-pointer"
-                  >
-                    Chi tiết
-                  </button>
-                  <Link
-                    to="/booking-doctor/booking-date"
-                    onClick={() => onBook?.(d.id)}
-                    className="px-3 py-2 rounded-lg bg-primary-linear text-center text-white text-sm hover:bg-sky-700 shadow-sm cursor-pointer"
-                  >
-                    Đặt khám
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* DESKTOP */}
-          <div className="overflow-x-auto hidden md:block">
-            <table className="min-w-full text-sm text-gray-700">
-              <thead className="bg-gray-100 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">#</th>
-                  <th className="px-4 py-3 text-left font-medium">
-                    Tên bác sĩ
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium">
-                    Kinh nghiệm
-                  </th>
-                  <th className="flex justify-center px-4 py-3 text-center font-medium">
-                    Chức năng
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {currentDoctors.map((d, idx) => (
-                  <tr key={d.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-slate-600">
-                      {startIndex + idx + 1}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <p className="text-lg font-bold">{d.name}</p>
-                        {d.verified && (
-                          <img
-                            src={check}
-                            alt="Đã xác minh"
-                            className="w-4 h-4"
-                          />
-                        )}
-                      </div>
-                      {d.note && (
-                        <p className="text-sm text-slate-600 mt-1">{d.note}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-semibold">{d.experience}</div>
-                    </td>
-                    <td className="py-3 text-center">
-                      <div className="flex flex-col md:flex-row gap-2 justify-center">
-                        <Link
-                          to="/user/doctor"
-                          //onClick={() => onDetail?.(d.id)}
-                          className="px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm cursor-pointer"
-                        >
-                          Chi tiết
-                        </Link>
-                        <Link
-                          to="/booking-doctor/booking-date"
-                          onClick={() => onBook?.(d.id)}
-                          className="px-3 py-2 rounded-lg bg-primary-linear text-white hover:bg-sky-700 shadow-sm text-sm cursor-pointer"
-                        >
-                          Đặt khám
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination: nút tròn như ảnh */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between py-4">
-              <p className="font-semibold px-4 text-black">
-                Trang{" "}
-                <span className="font-semibold text-black">{currentPage}</span>{" "}
-                - <span className="font-semibold text-black">{totalPages}</span>
-              </p>
-
-              <div className="flex items-center px-4 xl:px-10 gap-2">
-                {pageItems.map((it, idx) =>
-                  it === "..." ? (
-                    <span
-                      key={`e-${idx}`}
-                      className="px-2 text-slate-400 select-none"
-                    >
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={it}
-                      onClick={() => handlePageChange(it as number)}
-                      aria-current={it === currentPage ? "page" : undefined}
-                      className={[
-                        "w-8 h-8 rounded-full border flex items-center justify-center text-sm transition cursor-pointer",
-                        it === currentPage
-                          ? "bg-sky-400 text-white"
-                          : "bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:text-sky-600",
-                      ].join(" ")}
-                    >
-                      {it}
-                    </button>
-                  )
-                )}
-              </div>
+          {doctors.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              Hiện chưa có bác sĩ nào khả dụng cho dịch vụ này.
             </div>
+          ) : (
+            <>
+              {/* MOBILE */}
+              <div className="md:hidden space-y-3">
+                {currentDoctors.map((d, idx) => (
+                  <div key={d.id} className="bg-white border-b p-4">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="text-md text-slate-500">
+                          #{startIndex + idx + 1}
+                        </div>
+                        <p className="flex items-center gap-2 mt-0.5 text-lg font-semibold text-slate-900">
+                          {d.name}
+                          {d.verified && (
+                            <img
+                              src={check}
+                              alt="Đã xác minh"
+                              className="w-4 h-4"
+                            />
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <img src={hospital} alt="" className="w-5 h-5" />
+                      <div className="text-sm leading-5">{d.experience}</div>
+                    </div>
+                    {d.note && (
+                      <div className="flex items-center gap-2">
+                        <img src={schedule} alt="" className="w-5 h-5" />
+                        <p className="text-sm leading-5">{d.note}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => onDetail?.(d.id)}
+                        className="px-3 py-2 rounded-[var(--rounded)] border border-slate-200 bg-white text-slate-700 text-sm hover:bg-slate-50 cursor-pointer"
+                      >
+                        Chi tiết
+                      </button>
+                      <button
+                        onClick={() => onBook?.(d.id)}
+                        className="px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-center text-white text-sm hover:bg-sky-700 shadow-sm cursor-pointer"
+                      >
+                        Đặt khám
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* DESKTOP */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="min-w-full text-sm text-gray-700">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">#</th>
+                      <th className="px-4 py-3 text-left font-medium">
+                        Tên bác sĩ
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium">
+                        Kinh nghiệm
+                      </th>
+                      <th className="flex justify-center px-4 py-3 text-center font-medium">
+                        Chức năng
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {currentDoctors.map((d, idx) => (
+                      <tr key={d.id}>
+                        <td className="px-4 py-3 text-slate-600">
+                          {startIndex + idx + 1}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <p className="text-lg font-bold">{d.name}</p>
+                            {d.verified && (
+                              <img
+                                src={check}
+                                alt="Đã xác minh"
+                                className="w-4 h-4"
+                              />
+                            )}
+                          </div>
+                          {d.note && (
+                            <p className="text-sm text-slate-600 mt-1">
+                              {d.note}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold">{d.experience}</div>
+                        </td>
+                        <td className="py-3 text-center">
+                          <div className="flex flex-col md:flex-row gap-2 justify-center">
+                            <button
+                              onClick={() => onDetail?.(d.id)}
+                              className="px-3 py-2 rounded-[var(--rounded)] border border-slate-200 hover:bg-slate-100 text-slate-700 text-sm cursor-pointer"
+                            >
+                              Chi tiết
+                            </button>
+                            <button
+                              onClick={() => onBook?.(d.id)}
+                              className="px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white text-sm cursor-pointer"
+                            >
+                              Đặt khám
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between py-4">
+                  <p className="font-semibold px-4 text-black">
+                    Trang{" "}
+                    <span className="font-semibold text-black">
+                      {currentPage}
+                    </span>{" "}
+                    -{" "}
+                    <span className="font-semibold text-black">
+                      {totalPages}
+                    </span>
+                  </p>
+
+                  <div className="flex items-center px-4 xl:px-10 gap-2">
+                    {pageItems.map((it, idx) =>
+                      it === "..." ? (
+                        <span
+                          key={`e-${idx}`}
+                          className="px-2 text-slate-400 select-none"
+                        >
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={it}
+                          onClick={() => handlePageChange(it as number)}
+                          aria-current={it === currentPage ? "page" : undefined}
+                          className={[
+                            "w-8 h-8 rounded-full border flex items-center justify-center text-sm transition cursor-pointer",
+                            it === currentPage
+                              ? "bg-sky-400 text-white"
+                              : "bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:text-sky-600",
+                          ].join(" ")}
+                        >
+                          {it}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
