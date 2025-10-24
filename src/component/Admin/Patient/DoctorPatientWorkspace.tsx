@@ -52,7 +52,14 @@ export default function DoctorPatientWorkspace() {
 
   const [labTests, setLabTests] = useState<LabItem[]>([]);
   const [medicines, setMedicines] = useState<
-    Array<{ id: number; name: string; unit?: string | null }>
+    Array<{ 
+      id: number; 
+      name: string; 
+      unit?: string | null;
+      isActive?: boolean;
+      stock?: number;
+      status?: string;
+    }>
   >([]);
 
   const [dx, setDx] = useState<DiagnosisPayload>({
@@ -210,6 +217,14 @@ export default function DoctorPatientWorkspace() {
         lines: rxLines,
         advice: rxAdvice || undefined,
       };
+      
+      console.log("=== SAVE PRESCRIPTION DEBUG ===");
+      console.log("Appointment ID:", appointmentId);
+      console.log("Patient ID:", patientId);
+      console.log("RX Lines:", rxLines);
+      console.log("RX Advice:", rxAdvice);
+      console.log("Payload:", payload);
+      
       await apiSubmitPrescription(payload);
       await apiCompleteEncounter({ appointmentId });
       openSuccess(
@@ -481,10 +496,28 @@ export default function DoctorPatientWorkspace() {
                                 )
                               );
                             }}
-                            options={medicines.map((d) => ({
-                              value: d.id,
-                              label: `${d.name}${d.unit ? ` (${d.unit})` : ""}`,
-                            }))}
+                            options={medicines.map((d) => {
+                              let statusText = "";
+                              let statusColor = "";
+                              
+                              if (d.isActive === false) {
+                                statusText = " (Vô hiệu hóa)";
+                                statusColor = "text-red-500";
+                              } else if (d.stock === 0) {
+                                statusText = " (Hết hàng)";
+                                statusColor = "text-orange-500";
+                              } else if (d.stock && d.stock > 0) {
+                                statusText = " (Còn hàng)";
+                                statusColor = "text-green-500";
+                              }
+                              
+                              return {
+                                value: d.id,
+                                label: `${d.name}${d.unit ? ` (${d.unit})` : ""}${statusText}`,
+                                disabled: d.isActive === false || d.stock === 0,
+                                statusColor,
+                              };
+                            })}
                           />
                         </div>
                       )}

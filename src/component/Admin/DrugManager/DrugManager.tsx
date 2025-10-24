@@ -84,6 +84,17 @@ export default function DrugManager() {
         });
         setItems((arr) => arr.map((x) => (x.id === upd.id ? upd : x)));
         toast.success("Đã cập nhật thuốc");
+        
+        // Refresh danh sách để đảm bảo đồng bộ với server
+        console.log("=== REFRESHING DRUG LIST AFTER UPDATE ===");
+        try {
+          const { items: freshItems } = await apiListDrugs();
+          setItems(freshItems);
+          console.log("✅ Drug list refreshed from server");
+        } catch (refreshError) {
+          console.log("⚠️ Failed to refresh drug list:", refreshError);
+          // Không cần báo lỗi vì đã update local state
+        }
       } else {
         // Tạo mới mặc định hoạt động
         const created = await apiCreateDrug({ ...payload, isActive: true });

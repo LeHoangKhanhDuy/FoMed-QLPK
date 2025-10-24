@@ -172,14 +172,45 @@ export async function apiUpdateDrug(
     stock: payload.stock,
     isActive: payload.isActive,
   };
-  await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
-
-  return {
-    id,
-    ...payload,
-    status: payload.stock > 0 ? "in stock" : "out of stock",
-    createdAt: null,
-  };
+  
+  console.log("=== DRUG UPDATE DEBUG ===");
+  console.log("Updated drug ID:", id);
+  console.log("Update payload:", body);
+  
+  try {
+    // Gửi request update và nhận response từ server
+    const response = await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
+    console.log("✅ Update response from server:", response.data);
+    
+    // Backend trả về dữ liệu trong response.data.data
+    const responseData = response.data?.data;
+    if (responseData) {
+      console.log("✅ Using data from update response:", responseData);
+      return {
+        id: responseData.id || id,
+        code: responseData.code || payload.code,
+        name: responseData.name || payload.name,
+        unit: responseData.unit || payload.unit,
+        price: responseData.basePrice || payload.price,
+        stock: payload.stock, // Stock không có trong response, dùng từ payload
+        isActive: responseData.isActive !== undefined ? responseData.isActive : payload.isActive,
+        status: payload.stock > 0 ? "in stock" : "out of stock",
+        createdAt: null,
+      };
+    }
+    
+    // Fallback nếu response không có data
+    console.log("⚠️ No data in response, using fallback");
+    return {
+      id,
+      ...payload,
+      status: payload.stock > 0 ? "in stock" : "out of stock",
+      createdAt: null,
+    };
+  } catch (error) {
+    console.log("❌ Update failed:", error);
+    throw error;
+  }
 }
 
 /* ===== BẬT/TẮT HOẠT ĐỘNG ===== */

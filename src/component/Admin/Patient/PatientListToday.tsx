@@ -126,6 +126,29 @@ function normalizeItem(x: unknown): Row {
     "-"
   );
 
+  // Format số điện thoại đúng cách
+  const formatPhone = (phoneValue: string | number | null): string => {
+    if (!phoneValue || phoneValue === "-") return "-";
+    
+    const phoneStr = String(phoneValue).replace(/\D/g, ""); // Chỉ giữ số
+    if (phoneStr.length === 0) return "-";
+    
+    // Format số điện thoại Việt Nam
+    if (phoneStr.length === 10 && phoneStr.startsWith("0")) {
+      return phoneStr.replace(/(\d{4})(\d{3})(\d{3})/, "$1 $2 $3");
+    }
+    
+    // Format số điện thoại quốc tế
+    if (phoneStr.length === 11 && phoneStr.startsWith("84")) {
+      return phoneStr.replace(/(\d{2})(\d{4})(\d{3})(\d{3})/, "+$1 $2 $3 $4");
+    }
+    
+    // Trả về nguyên gốc nếu không match format nào
+    return String(phoneValue);
+  };
+
+  const formattedPhone = formatPhone(phone);
+
   const doctorName =
     asStr(getVal(r, ["doctorName", "DoctorName"])) ||
     (asNum(getVal(r, ["doctorId", "DoctorId"]))
@@ -155,7 +178,7 @@ function normalizeItem(x: unknown): Row {
     id,
     code,
     name,
-    phone,
+    phone: formattedPhone,
     doctorName,
     serviceName,
     visitDate,

@@ -6,6 +6,8 @@ type Allowed = string | number;
 export type SelectOption<T extends Allowed> = {
   value: T;
   label: string;
+  disabled?: boolean;
+  statusColor?: string;
 };
 
 type SelectValue<T extends Allowed> = T | ""; // cho phép rỗng khi chưa chọn
@@ -105,17 +107,21 @@ export function SelectMenu<T extends Allowed>({
             {options.map((o) => {
               const selected = o.value === safeValue;
               return (
-                <Menu.Item key={String(o.value)}>
+                <Menu.Item key={String(o.value)} disabled={o.disabled}>
                   {({ active }) => (
                     <button
                       type="button"
-                      onClick={() => onChange(o.value as SelectValue<T>)}
+                      onClick={() => !o.disabled && onChange(o.value as SelectValue<T>)}
+                      disabled={o.disabled}
                       className={cx(
-                        "w-full px-4 py-3 text-left text-[16px] leading-6 flex items-center justify-between cursor-pointer",
-                        active && "bg-slate-50"
+                        "w-full px-4 py-3 text-left text-[16px] leading-6 flex items-center justify-between",
+                        o.disabled 
+                          ? "cursor-not-allowed opacity-50 bg-gray-100" 
+                          : "cursor-pointer",
+                        active && !o.disabled && "bg-slate-50"
                       )}
                     >
-                      <span className="truncate">{o.label}</span>
+                      <span className={cx("truncate", o.statusColor)}>{o.label}</span>
                       {selected && (
                         <Check className="h-5 w-5 text-green-500 shrink-0" />
                       )}

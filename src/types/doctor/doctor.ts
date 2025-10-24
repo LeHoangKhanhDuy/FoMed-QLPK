@@ -61,7 +61,14 @@ export interface PrescriptionPayload {
 
 export type WorkspaceCatalogs = {
   labTests: LabItem[];
-  medicines: Array<{ id: number; name: string; unit?: string | null }>;
+  medicines: Array<{ 
+    id: number; 
+    name: string; 
+    unit?: string | null;
+    isActive?: boolean;
+    stock?: number;
+    status?: string;
+  }>;
 };
 
 export type StartEncounterPayload = {

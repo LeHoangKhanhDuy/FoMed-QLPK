@@ -71,7 +71,7 @@ export default function BookingDate({
   minDate,
   defaultValue,
   startHour = 6,
-  endHour = 18,
+  endHour = 23,
   stepMinutes = 60,
   holidayResolver, // optional: để bạn map Tết Âm, Giỗ Tổ theo năm
 }: BookingDateProps) {
