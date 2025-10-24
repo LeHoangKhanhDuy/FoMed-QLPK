@@ -34,6 +34,12 @@ import AppointmentListPage from "./pages/Admin/Appointment/AppointmentListPage";
 import { DoctorManagerPage } from "./pages/Admin/Doctor/DoctorManagerPage";
 import { SpecialtyManagerPage } from "./pages/Admin/Specialty/SpecialtyManagerPage";
 import BookingReviewPage from "./pages/Booking/BookingReviewPage";
+import {
+  NotFoundPage,
+  ForbiddenPage,
+  ServerErrorPage,
+  MaintenancePage,
+} from "./pages/Error";
 
 function CmsGuard() {
   return (
@@ -97,7 +103,11 @@ function App() {
           <Route path="specialty-manager" element={<SpecialtyManagerPage />} />
         </Route>
 
-        <Route path="/403" element={<div className="p-8 text-center">Không có quyền truy cập.</div>} />
+        {/* ERROR PAGES */}
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/500" element={<ServerErrorPage />} />
+        <Route path="/maintenance" element={<MaintenancePage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       <Toaster

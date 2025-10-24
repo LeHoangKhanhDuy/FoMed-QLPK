@@ -431,7 +431,7 @@ export default function AppointmentCreate() {
         </header>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <FormField
               label="Tên bệnh nhân"
               required
@@ -469,10 +469,8 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            {/* Giới tính */}
-            <div className="lg:col-span-1">
+            <FormField label="Giới tính">
               <SelectMenu<GenderOpt>
-                label="Giới tính"
                 value={patientExtra.gender}
                 onChange={(v) =>
                   setPatientExtra((s) => ({
@@ -485,10 +483,9 @@ export default function AppointmentCreate() {
                   { value: "F", label: "Nữ" },
                 ]}
               />
-            </div>
+            </FormField>
 
-            {/* Ngày sinh */}
-            <FormField label="Ngày sinh" className="lg:col-span-1">
+            <FormField label="Ngày sinh">
               <input
                 type="date"
                 value={patientExtra.dob}
@@ -496,12 +493,11 @@ export default function AppointmentCreate() {
                 onChange={(e) =>
                   setPatientExtra((s) => ({ ...s, dob: e.target.value }))
                 }
-                className="mt-1 block w-full h-12 rounded-[var(--rounded)] border border-slate-200 bg-white px-3 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
+                className="block w-full h-12 rounded-[var(--rounded)] border border-slate-200 bg-white/90 px-4 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
               />
             </FormField>
 
-            {/* Địa chỉ */}
-            <FormField label="Địa chỉ" className="lg:col-span-1">
+            <FormField label="Địa chỉ">
               <Input
                 value={patientExtra.address}
                 onChange={(e) =>
@@ -511,8 +507,7 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            {/* Quận/Huyện */}
-            <FormField label="Phường/Xã" className="lg:col-span-1">
+            <FormField label="Phường/Xã">
               <Input
                 value={patientExtra.district}
                 onChange={(e) =>
@@ -522,8 +517,7 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            {/* Thành phố */}
-            <FormField label="Tỉnh/Thành phố" className="lg:col-span-1">
+            <FormField label="Tỉnh/Thành phố">
               <Input
                 value={patientExtra.city}
                 onChange={(e) =>
@@ -533,8 +527,7 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            {/* CCCD */}
-            <FormField label="CCCD" className="lg:col-span-1">
+            <FormField label="CCCD">
               <Input
                 value={patientExtra.nationalId}
                 onChange={(e) =>
@@ -548,8 +541,7 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            {/* Email */}
-            <FormField label="Email" className="lg:col-span-1">
+            <FormField label="Email">
               <Input
                 value={patientExtra.email}
                 onChange={(e) =>
@@ -561,39 +553,46 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            <SelectMenu<number>
+            <FormField
               label="Bác sĩ"
               required
-              value={
-                typeof form.doctorId === "number" ? form.doctorId : undefined
-              }
-              options={doctorOptions}
-              onChange={(val) => {
-                update("doctorId", Number(val));
-                markTouched("doctorId");
-              }}
-            />
+              error={touched.doctorId ? errors.doctorId : ""}
+            >
+              <SelectMenu<number>
+                value={
+                  typeof form.doctorId === "number" ? form.doctorId : undefined
+                }
+                options={doctorOptions}
+                onChange={(val) => {
+                  update("doctorId", Number(val));
+                  markTouched("doctorId");
+                }}
+                invalid={!!(touched.doctorId && errors.doctorId)}
+              />
+            </FormField>
 
-            <SelectMenu<number>
+            <FormField
               label="Dịch vụ"
               required
-              value={
-                typeof form.serviceId === "number" ? form.serviceId : undefined
-              }
-              options={services.map((s) => ({
-                value: s.serviceId,
-                label: s.name || `DV #${s.serviceId}`,
-              }))}
-              onChange={(val) => {
-                update("serviceId", Number(val));
-                markTouched("serviceId");
-              }}
-            />
+              error={touched.serviceId ? errors.serviceId : ""}
+            >
+              <SelectMenu<number>
+                value={
+                  typeof form.serviceId === "number" ? form.serviceId : undefined
+                }
+                options={services.map((s) => ({
+                  value: s.serviceId,
+                  label: s.name || `DV #${s.serviceId}`,
+                }))}
+                onChange={(val) => {
+                  update("serviceId", Number(val));
+                  markTouched("serviceId");
+                }}
+                invalid={!!(touched.serviceId && errors.serviceId)}
+              />
+            </FormField>
 
-            <div className="space-y-1.5">
-              <label className="text-sm text-slate-600">
-                Số thứ tự (tự động)
-              </label>
+            <FormField label="Số thứ tự (tự động)">
               <div className="relative">
                 <input
                   value={nextQueueNo || ""}
@@ -601,46 +600,47 @@ export default function AppointmentCreate() {
                   disabled
                   placeholder="-"
                   title="Số sẽ được hệ thống cấp tự động khi tạo/check-in"
-                  className="mt-1 block w-full h-12 rounded-[var(--rounded)] border border-slate-200 bg-slate-50 px-4 pr-10 text-[16px] leading-6 text-slate-700 shadow-xs outline-none cursor-not-allowed"
+                  className="block w-full h-12 rounded-[var(--rounded)] border border-slate-200 bg-slate-50 px-4 pr-10 text-[16px] leading-6 text-slate-700 shadow-xs outline-none cursor-not-allowed"
                 />
                 <Hash className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               </div>
-            </div>
+            </FormField>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormField
-                label="Ngày khám"
-                required
-                error={touched.date ? errors.date : ""}
-              >
-                <DateInput
-                  value={form.date}
-                  onChange={(d: string) => {
-                    update("date", d);
-                    markTouched("date");
-                  }}
-                />
-              </FormField>
-              <FormField
-                label="Giờ khám"
-                required
-                error={touched.time ? errors.time : ""}
-              >
-                <TimeInput
-                  value={form.time}
-                  onChange={(t: string) => {
-                    update("time", t);
-                    markTouched("time");
-                  }}
-                />
-              </FormField>
-            </div>
+            <FormField
+              label="Ngày khám"
+              required
+              error={touched.date ? errors.date : ""}
+            >
+              <DateInput
+                value={form.date}
+                onChange={(d: string) => {
+                  update("date", d);
+                  markTouched("date");
+                }}
+              />
+            </FormField>
+            
+            <FormField
+              label="Giờ khám"
+              required
+              error={touched.time ? errors.time : ""}
+            >
+              <TimeInput
+                value={form.time}
+                onChange={(t: string) => {
+                  update("time", t);
+                  markTouched("time");
+                }}
+              />
+            </FormField>
+          </div>
 
-            <div className="md:col-span-2 space-y-2">
-              <div className="flex items-center gap-1">
-                <label className="text-sm text-slate-600">Lý do</label>
-                <p className="text-red-500">*</p>
-              </div>
+          <FormField
+              label="Lý do"
+              required
+              error={touched.reason ? errors.reason : ""}
+              className="md:col-span-2"
+            >
               <textarea
                 {...markFirstAttr("reason")}
                 value={form.reason ?? ""}
@@ -649,17 +649,13 @@ export default function AppointmentCreate() {
                 rows={3}
                 placeholder="Triệu chứng, yêu cầu đặc biệt..."
                 className={cn(
-                  "mt-2 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2",
+                  "w-full rounded-[var(--rounded)] border px-3 py-2 text-[16px] outline-none focus:ring-2 shadow-xs",
                   touched.reason && errors.reason
                     ? "border-red-400 focus:ring-red-300"
                     : "border-slate-200 focus:ring-sky-400"
                 )}
               />
-              {touched.reason && errors.reason && (
-                <p className="text-xs text-red-500">{errors.reason}</p>
-              )}
-            </div>
-          </div>
+            </FormField>
 
           <div className="mt-4 flex justify-center md:justify-start gap-3">
             <button

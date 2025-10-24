@@ -40,17 +40,57 @@ function isUser(v: unknown): v is User {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Khôi phục user từ localStorage khi app khởi động
   useEffect(() => {
-    const raw = localStorage.getItem(AUTH_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if (isUser(parsed)) setUser(parsed);
-      else localStorage.removeItem(AUTH_KEY);
-    } catch {
-      localStorage.removeItem(AUTH_KEY);
+    // Khôi phục từ auth_user trước
+    const authRaw = localStorage.getItem(AUTH_KEY);
+    if (authRaw) {
+      try {
+        const parsed = JSON.parse(authRaw);
+        if (isUser(parsed)) {
+          setUser(parsed);
+          setIsInitialized(true);
+          return;
+        } else {
+          console.warn("⚠️ Invalid auth_user format, removing...");
+          localStorage.removeItem(AUTH_KEY);
+        }
+      } catch (e) {
+        console.error("❌ Error parsing auth_user:", e);
+        localStorage.removeItem(AUTH_KEY);
+      }
     }
+
+    // Nếu không có auth_user, thử rebuild từ userInfo + userToken
+    const userToken = localStorage.getItem("userToken");
+    const userInfoRaw = localStorage.getItem("userInfo");
+    
+    if (userToken && userInfoRaw) {
+      try {
+        const userInfo = JSON.parse(userInfoRaw);
+        const rebuiltUser: User = {
+          id: userInfo.userId || 0,
+          email: userInfo.email || "",
+          roles: (userInfo.roles || []).map((r: string) => r.toUpperCase() as Role),
+          token: userToken,
+          name: userInfo.name || null,
+        };
+        
+        if (rebuiltUser.id && rebuiltUser.email && rebuiltUser.token) {
+          setUser(rebuiltUser);
+          // Lưu vào auth_user để lần sau không phải rebuild
+          localStorage.setItem(AUTH_KEY, JSON.stringify(rebuiltUser));
+        } else {
+          console.warn("⚠️ Incomplete user data, cannot rebuild");
+        }
+      } catch (e) {
+        console.error("❌ Error rebuilding user:", e);
+      }
+    }
+    
+    setIsInitialized(true);
   }, []);
 
   const login = (u: User) => {
@@ -61,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("userInfo");
   };
 
   const hasRole = useCallback(
@@ -76,6 +118,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({ user, login, logout, hasRole }),
     [user, hasRole]
   );
+
+  // Đợi initialization xong mới render children
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
