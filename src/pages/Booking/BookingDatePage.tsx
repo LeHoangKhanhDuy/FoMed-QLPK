@@ -162,7 +162,7 @@ export const BookingDatePage = () => {
           onSelectTime={handleSelectDateTime}
           minDate={new Date()}
           startHour={6}
-          endHour={18}
+          endHour={23}
           stepMinutes={60}
         />
         <Footer />

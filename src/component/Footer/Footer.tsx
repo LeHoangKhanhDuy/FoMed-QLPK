@@ -147,8 +147,8 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-bold">Hướng dẫn sử dụng</h3>
           <ul className="mt-2 space-y-1 ">
-            {support.map((sp) => (
-              <li key={sp.href}>
+            {support.map((sp, index) => (
+              <li key={`support-${index}`}>
                 <a href={sp.href} className="hover:text-[var(--hover)]">
                   {sp.label}
                 </a>

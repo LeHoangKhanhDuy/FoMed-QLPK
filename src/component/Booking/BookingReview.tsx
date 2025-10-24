@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import { getService } from "../../services/service";
 import { apiGetDoctorDetail, type DoctorItem } from "../../services/doctorMApi";
 import { createAppointment } from "../../services/appointmentsApi";
-import { apiUpsertPatientByPhone } from "../../services/patientsApi";
+import { publicHttp } from "../../services/http";
 
 export const BookingReview = () => {
   const [searchParams] = useSearchParams();
@@ -142,22 +142,86 @@ export const BookingReview = () => {
         return;
       }
 
-      const patientId = currentUser.userId; // Sử dụng userId thay vì patientId
+      // Debug: Log dữ liệu để kiểm tra
+      console.log("=== DEBUG BOOKING ===");
+      console.log("Current user:", currentUser);
+      console.log("User ID:", currentUser.userId);
+      console.log("User name:", currentUser.name);
+      console.log("User phone:", currentUser.phone);
+      console.log("User email:", currentUser.email);
+      console.log("Auth token:", localStorage.getItem("userToken"));
 
-      // Tạo hoặc lấy patient record trước khi tạo appointment
-      let actualPatientId = patientId;
+      // Thử tạo patient record qua API public trước
+      let actualPatientId = currentUser.userId;
+      
+      console.log("=== PATIENT CREATION STRATEGY ===");
+      console.log("Attempting to create patient via public API for userId:", actualPatientId);
+      
       try {
-        const patientResult = await apiUpsertPatientByPhone({
+        // Thử gọi API public để tạo patient
+        const patientPayload = {
           fullName: currentUser.name,
           phone: currentUser.phone,
           email: currentUser.email,
-          gender: "O", // Default gender
-        });
-        actualPatientId = patientResult.patientId;
-      } catch (patientError) {
-        console.error("Error creating/getting patient:", patientError);
-        // Fallback: sử dụng userId nếu không thể tạo patient
-        actualPatientId = patientId;
+          gender: "O",
+          dateOfBirth: null,
+          address: null,
+          district: null,
+          city: null,
+          province: null,
+          identityNo: null,
+          insuranceNo: null,
+          note: null,
+          allergyText: null,
+          patientCode: null,
+        };
+        
+        console.log("Trying public API with payload:", patientPayload);
+        const response = await publicHttp.post("/api/v1/patients/create", patientPayload);
+        actualPatientId = response.data.data.patientId;
+        console.log("✅ Patient created via public API:", response.data);
+        console.log("New patient ID:", actualPatientId);
+      } catch (publicError) {
+        console.log("❌ Public API failed, trying auth API...");
+        
+        try {
+          // Thử gọi API auth (có thể user có quyền)
+          const patientPayload = {
+            fullName: currentUser.name,
+            phone: currentUser.phone,
+            email: currentUser.email,
+            gender: "O" as const,
+            dateOfBirth: null,
+            address: null,
+            district: null,
+            city: null,
+            province: null,
+            identityNo: null,
+            insuranceNo: null,
+            note: null,
+            allergyText: null,
+            patientCode: null,
+          };
+          
+          const response = await publicHttp.post("/api/v1/patients/create", patientPayload, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem("userToken")}`
+            }
+          });
+          actualPatientId = response.data.data.patientId;
+          console.log("✅ Patient created via auth API:", response.data);
+          console.log("New patient ID:", actualPatientId);
+        } catch (authError) {
+          console.log("❌ Both APIs failed, using userId as fallback");
+          console.log("Error details:", {
+            publicError: (publicError as any)?.response?.data,
+            authError: (authError as any)?.response?.data
+          });
+          
+          // Fallback: sử dụng userId
+          actualPatientId = currentUser.userId;
+          console.log("Using fallback userId as patientId:", actualPatientId);
+        }
       }
 
       // Gọi API tạo appointment
@@ -169,6 +233,12 @@ export const BookingReview = () => {
         visitTime: bookingInfo.time + ":00", // Convert HH:mm to HH:mm:ss
         reason: `Đặt khám ${bookingInfo.service.name}`,
       };
+
+      console.log("=== CREATE APPOINTMENT ===");
+      console.log("Appointment data:", appointmentData);
+      console.log("Visit date format:", bookingInfo.date);
+      console.log("Visit time format:", bookingInfo.time);
+      console.log("Final visit time:", bookingInfo.time + ":00");
 
       await createAppointment(appointmentData);
 

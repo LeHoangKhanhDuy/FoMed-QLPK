@@ -21,11 +21,20 @@ type Item = {
   href: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   badge?: string | number;
+  category?: string; // Phân loại menu
+  roles?: string[]; // Roles được phép truy cập
+  readOnly?: string[]; // Roles chỉ được xem, không sửa
+  disabled?: boolean; // Menu bị vô hiệu hóa
 };
 
 export default function CMSSidebar() {
   const { pathname } = useLocation();
   const [todayCount, setTodayCount] = useState<number>(0);
+  
+  // Lấy thông tin user từ localStorage
+  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+  const userRoles: string[] = userInfo.roles || [];
+  
   // Gọi API khi sidebar mount để đếm số lịch hôm nay
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -41,31 +50,109 @@ export default function CMSSidebar() {
   }, []);
 
   const items: Item[] = [
-    { name: "Thống kê", href: "/cms/dashboard", icon: LayoutDashboard },
+    // === THỐNG KÊ - TẤT CẢ ĐỀU THẤY ===
+    { 
+      name: "Dashboard", 
+      href: "/cms/dashboard", 
+      icon: LayoutDashboard,
+      category: "Thống kê",
+      roles: ["ADMIN", "DOCTOR", "EMPLOYEE"],
+    },
+    
+    // === LỊCH KHÁM - EMPLOYEE VÀ ADMIN ===
     {
       name: "Tạo lịch khám",
       href: "/cms/create-appointments",
       icon: CalendarDays,
+      category: "Lịch khám bệnh",
+      roles: ["ADMIN", "EMPLOYEE"],
     },
     {
       name: "Chờ khám",
       href: "/cms/patient-list-today",
       icon: Users,
       badge: todayCount > 0 ? todayCount : undefined,
+      category: "Lịch khám bệnh",
+      roles: ["ADMIN", "DOCTOR"],
     },
-    { name: "Lịch làm việc", href: "/cms/doctor-schedule", icon: Stethoscope },
-    { name: "Quản lý thanh toán", href: "/cms/billing", icon: Wallet2 },
-    { name: "Quản lý bác sĩ", href: "/cms/doctor-manager", icon: ClipboardPlus },
-    { name: "Quản lý chuyên khoa", href: "/cms/specialty-manager", icon: ShieldPlus },
-    { name: "Quản lý bệnh nhân", href: "/cms/patient-manager", icon: BookUser },
-    { name: "Quản lý người dùng", href: "/cms/users-manager", icon: UserIcon },
+    
+    // === LỊCH LÀM VIỆC - DOCTOR XEM, EMPLOYEE VÀ ADMIN SỬA ===
+    { 
+      name: "Lịch làm việc", 
+      href: "/cms/doctor-schedule", 
+      icon: Stethoscope,
+      category: "Lịch làm việc",
+      roles: ["ADMIN", "DOCTOR", "EMPLOYEE"],
+      readOnly: ["DOCTOR"], // DOCTOR chỉ xem, không sửa
+    },
+    
+    // === QUẢN LÝ - CHỈ ADMIN ===
+    { 
+      name: "Quản lý thanh toán", 
+      href: "/cms/billing", 
+      icon: Wallet2,
+      category: "Quản lý",
+      roles: ["ADMIN"],
+    },
+    { 
+      name: "Quản lý bác sĩ", 
+      href: "/cms/doctor-manager", 
+      icon: ClipboardPlus,
+      category: "Quản lý",
+      roles: ["ADMIN"],
+    },
+    { 
+      name: "Quản lý chuyên khoa", 
+      href: "/cms/specialty-manager", 
+      icon: ShieldPlus,
+      category: "Quản lý",
+      roles: ["ADMIN"],
+    },
+    { 
+      name: "Quản lý bệnh nhân", 
+      href: "/cms/patient-manager", 
+      icon: BookUser,
+      category: "Quản lý",
+      roles: ["ADMIN"],
+    },
+    { 
+      name: "Quản lý người dùng", 
+      href: "/cms/users-manager", 
+      icon: UserIcon,
+      category: "Quản lý",
+      roles: ["ADMIN"],
+    },
     {
       name: "Quản lý dịch vụ",
       href: "/cms/service-manager",
       icon: ClipboardList,
+      category: "Quản lý",
+      roles: ["ADMIN"],
     },
-    { name: "Quản lý thuốc", href: "/cms/drug-manager", icon: Pill },
+    { 
+      name: "Quản lý thuốc", 
+      href: "/cms/drug-manager", 
+      icon: Pill,
+      category: "Quản lý",
+      roles: ["ADMIN"],
+    },
   ];
+  
+  // Kiểm tra user có quyền truy cập menu không
+  const hasAccess = (item: Item): boolean => {
+    if (!item.roles) return true; // Không giới hạn roles
+    return item.roles.some(role => userRoles.includes(role));
+  };
+
+  // Gom các menu theo category
+  const groupedItems = items.reduce((acc, item) => {
+    const category = item.category || "Khác";
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, Item[]>);
 
   return (
     <aside
@@ -74,40 +161,83 @@ export default function CMSSidebar() {
         "w-72 sm:w-64 sm:left-0 sm:pt-16 sm:pb-4 overflow-y-auto",
       ].join(" ")}
     >
-      <nav className="px-3 py-4 space-y-1">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const active =
-            pathname === item.href ||
-            (item.href !== "/csm" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={[
-                "group flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer",
-                active
-                  ? "bg-sky-100 text-sky-500 font-medium"
-                  : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
-              ].join(" ")}
-            >
-              <span className="inline-flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-white p-2">
-                <Icon
-                  className={[
-                    "w-5 h-5",
-                    active ? "text-sky-500" : "text-gray-500",
-                  ].join(" ")}
-                />
-              </span>
-              <span className="flex-1">{item.name}</span>
-              {item.badge && (
-                <span className="text-xs px-2 py-1 rounded-full bg-red-50 text-red-600">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="px-3 py-4 space-y-4">
+        {Object.entries(groupedItems).map(([category, categoryItems]) => (
+          <div key={category}>
+            {/* Category header */}
+            <div className="px-3 mb-2">
+              <h3 className="text-sm font-bold text-black uppercase tracking-wider">
+                {category}
+              </h3>
+            </div>
+            
+            {/* Category items */}
+            <div className="space-y-1">
+              {categoryItems.map((item) => {
+                const Icon = item.icon;
+                const active =
+                  pathname === item.href ||
+                  (item.href !== "/cms" && pathname.startsWith(item.href));
+                const canAccess = hasAccess(item);
+                const isDisabled = !canAccess;
+                
+                // Nếu không có quyền, hiển thị mờ và không thể click
+                if (isDisabled) {
+                  return (
+                    <div
+                      key={item.href}
+                      className={[
+                        "group flex items-center gap-3 px-3 py-2 rounded-xl",
+                        "opacity-40 cursor-not-allowed",
+                        "text-gray-400",
+                      ].join(" ")}
+                      title="Bạn không có quyền truy cập"
+                    >
+                      <span className="inline-flex items-center justify-center rounded-lg bg-gray-100 p-2">
+                        <Icon className="w-5 h-5 text-gray-400" />
+                      </span>
+                      <span className="flex-1">{item.name}</span>
+                      {item.badge && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-400">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
+                
+                // Có quyền truy cập
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={[
+                      "group flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer",
+                      active
+                        ? "bg-sky-100 text-sky-500 font-medium"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900",
+                    ].join(" ")}
+                  >
+                    <span className="inline-flex items-center justify-center rounded-lg bg-gray-100 group-hover:bg-white p-2">
+                      <Icon
+                        className={[
+                          "w-5 h-5",
+                          active ? "text-sky-500" : "text-gray-500",
+                        ].join(" ")}
+                      />
+                    </span>
+                    <span className="flex-1">{item.name}</span>
+                    {item.badge && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-red-50 text-red-600">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
     </aside>
   );
