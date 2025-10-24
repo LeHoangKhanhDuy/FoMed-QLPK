@@ -175,6 +175,10 @@ body {
   background: linear-gradient(180deg, #ffffff3d, #fff0), #ff2056;
 }
 
+.bg-maintenance-linear {
+  background: linear-gradient(180deg, #ffffff3d, #fff0), #ff6900;
+}
+
 .bg-primary-linear:hover,
 .bg-warning-linear:hover,
 .bg-success-linear:hover,
