@@ -36,13 +36,13 @@ export default function BookingPackages() {
     <section className="w-full">
       <div className="max-w-7xl mx-auto px-4 xl:px-0 py-8 md:py-14">
         <h2 className="text-3xl md:text-5xl font-bold text-sky-400 text-center">
-          Đặt gói khám bệnh
+          Đặt lịch khám bệnh
         </h2>
         <p className="text-lg text-center text-slate-600 mt-4">
           Các gói/dịch vụ hiện có tại FoMed
         </p>
 
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           {loading &&
             Array.from({ length: 8 }).map((_, i) => (
               <div
@@ -70,11 +70,11 @@ export default function BookingPackages() {
                   aria-label={s.name}
                 >
                   <div className="flex items-center gap-2 md:gap-4">
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-sky-100 flex items-center justify-center ring-1 ring-sky-100">
+                    <div className="w-12 h-12 md:w-40 md:h-20 rounded-md bg-sky-100 flex items-center justify-center ring-1 ring-sky-100">
                       <img
                         src={img}
                         alt={s.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full rounded-md object-cover"
                         onError={(e) =>
                           ((e.currentTarget as HTMLImageElement).src = clinic)
                         }
@@ -96,7 +96,7 @@ export default function BookingPackages() {
                       )}
                       {s.durationMin ? (
                         <span className="text-xs text-slate-500">
-                          Thời lượng: {formatMinutes(s.durationMin)}
+                          Thời gian khám: {formatMinutes(s.durationMin)}
                         </span>
                       ) : null}
                     </div>

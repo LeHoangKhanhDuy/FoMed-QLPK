@@ -15,6 +15,7 @@ interface BookingDateProps {
   service: ServiceInfo;
   doctorInfo: {
     name: string;
+    specialty: string;
     experience: string;
   };
   serviceId: string;
@@ -66,6 +67,7 @@ function getSolarHolidayName(d: Date): string | null {
 
 export default function BookingDate({
   service,
+  doctorInfo,
   onSelect,
   onSelectTime,
   minDate,
@@ -235,7 +237,13 @@ export default function BookingDate({
 
       <div className="grid md:grid-cols-3 gap-4 sm:gap-5">
         {/* LEFT: Thông tin dịch vụ */}
-        <ServiceInfoCard service={service} />
+        <ServiceInfoCard 
+          service={service} 
+          selectedDoctor={doctorInfo ? {
+            name: doctorInfo.name,
+            specialty: doctorInfo.specialty
+          } : undefined}
+        />
 
         {/* RIGHT: Lịch chọn ngày */}
         <section className="md:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">

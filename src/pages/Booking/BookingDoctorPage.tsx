@@ -25,6 +25,7 @@ type Doctor = {
   name: string;
   note?: string;
   experience: string;
+  specialty: string;
   verified?: boolean;
 };
 
@@ -36,6 +37,7 @@ export const BookingDoctorPage = () => {
   const [loading, setLoading] = useState(true);
   const [serviceInfo, setServiceInfo] = useState<ServiceInfo | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,6 +91,7 @@ export const BookingDoctorPage = () => {
             experience: d.experienceYears
               ? `+${d.experienceYears} năm kinh nghiệm`
               : "Kinh nghiệm chuyên môn",
+            specialty: d.primarySpecialtyName || "Chuyên khoa tổng hợp",
             verified: d.isActive,
           })
         );
@@ -104,6 +107,10 @@ export const BookingDoctorPage = () => {
 
     fetchData();
   }, [serviceId]);
+
+  const handleSelectDoctor = (doctor: Doctor) => {
+    setSelectedDoctorId(doctor.id);
+  };
 
   const handleBookDoctor = (doctorId: number) => {
     // Chuyển sang trang chọn ngày với serviceId và doctorId
@@ -172,7 +179,9 @@ export const BookingDoctorPage = () => {
         <ServiceBookingDoctor
           service={serviceInfo}
           doctors={doctors}
+          selectedDoctorId={selectedDoctorId}
           onDetail={(id) => navigate(`/user/doctor/${id}`)}
+          onSelectDoctor={handleSelectDoctor}
           onBook={handleBookDoctor}
         />
         <Footer />

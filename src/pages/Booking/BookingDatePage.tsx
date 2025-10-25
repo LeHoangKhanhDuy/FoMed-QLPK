@@ -29,6 +29,7 @@ export const BookingDatePage = () => {
 
   const [doctorInfo, setDoctorInfo] = useState<{
     name: string;
+    specialty: string;
     experience: string;
   } | null>(null);
 
@@ -75,6 +76,7 @@ export const BookingDatePage = () => {
 
         setDoctorInfo({
           name: doctor.fullName || "Bác sĩ",
+          specialty: doctor.primarySpecialtyName || "Chuyên khoa tổng hợp",
           experience: doctor.experienceYears
             ? `${doctor.experienceYears} năm kinh nghiệm`
             : "Kinh nghiệm chuyên môn",

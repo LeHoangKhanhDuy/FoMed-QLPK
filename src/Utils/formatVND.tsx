@@ -10,7 +10,7 @@ export function formatVND(amount?: number | null): string {
   }).format(amount);
 }
 
-/** (Tuỳ chọn) Format phút thành "1h 30m", "45m", ... */
+/** Format phút thành "1h 30m", "45m", ... */
 export function formatMinutes(min?: number | null): string {
   if (!min || min <= 0) return "";
   const hours = Math.floor(min / 60);
