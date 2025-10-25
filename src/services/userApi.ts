@@ -155,8 +155,15 @@ export async function apiListUsersByRoleDoctor(params?: {
   }
 }
 
-export async function updateUserRoles(id: number, roles: AdminRole[]) {
-  await authHttp.put(`/api/v1/admin/user-update/${id}`, { roles });
+export async function updateUserRoles(userId: number, roles: AdminRole[]) {
+  try {
+    const { data } = await authHttp.put(`/api/v1/admin/user-update/${userId}`, { 
+      roles 
+    });
+    return data;
+  } catch (e) {
+    throw new Error(getErrorMessage(e, "Không thể cập nhật vai trò"));
+  }
 }
 
 export async function disableUser(id: number) {
