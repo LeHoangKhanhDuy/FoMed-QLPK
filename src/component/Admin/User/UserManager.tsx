@@ -1,12 +1,13 @@
 // src/components/admin/users/UserManager.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users, Power, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Users, Power, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import type { User, AdminRole, UserStatus } from "../../../types/user/user";
 import { SelectMenu } from "../../ui/select-menu";
 import { getAllUsers, setUserStatus } from "../../../services/userApi";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../../Utils/errorHepler";
 import MaskedPhone from "../../../common/MaskedPhone";
+import EditRoleModal from "./EditRoleModal";
 
 type FilterRole = "all" | AdminRole;
 
@@ -17,6 +18,10 @@ export default function UserManager() {
   const [role, setRole] = useState<FilterRole>("all");
   const [page, setPage] = useState(1);
   const perPage = 10;
+  
+  // Modal state for editing roles
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     // lần đầu load
@@ -95,6 +100,23 @@ export default function UserManager() {
     } finally {
       setLoadingId(null);
     }
+  };
+
+  const openEditRoleModal = (user: User) => {
+    setEditingUser(user);
+    setIsModalOpen(true);
+  };
+
+  const closeEditRoleModal = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleRoleUpdateSuccess = (userId: number, newRoles: AdminRole[]) => {
+    // Update local state
+    setItems((arr) =>
+      arr.map((u) => (u.id === userId ? { ...u, roles: newRoles } : u))
+    );
   };
 
   return (
@@ -200,6 +222,13 @@ export default function UserManager() {
                 <td className="py-2 pr-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                     <button
+                      onClick={() => openEditRoleModal(u)}
+                      className="cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] px-2 py-2 bg-primary-linear text-white hover:opacity-90 transition-opacity"
+                      title="Sửa vai trò"
+                    >
+                      <Pencil className="w-5 h-5" />
+                    </button>
+                    <button
                       disabled={loadingId === u.id}
                       onClick={() =>
                         setStatus(
@@ -212,9 +241,10 @@ export default function UserManager() {
                           ? "bg-warning-linear text-white"
                           : "bg-success-linear text-white"
                       }`}
+                      title={u.status === "active" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
                     >
                       <Power className="w-5 h-5" />
-                      {loadingId === u.id ? "..." : u.status === "active"}
+                      {loadingId === u.id ? "..." : ""}
                     </button>
                   </div>
                 </td>
@@ -246,6 +276,14 @@ export default function UserManager() {
           </button>
         </div>
       </div>
+
+      {/* Edit Role Modal */}
+      <EditRoleModal
+        open={isModalOpen}
+        onClose={closeEditRoleModal}
+        user={editingUser}
+        onSuccess={handleRoleUpdateSuccess}
+      />
     </section>
   );
 }

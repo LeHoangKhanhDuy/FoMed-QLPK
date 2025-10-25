@@ -255,15 +255,26 @@ export default function ServiceManager() {
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    {s.imageUrl ? (
-                      <img
-                        src={s.imageUrl}
-                        alt={s.name}
-                        className="w-12 h-12 object-cover rounded-md"
-                      />
-                    ) : (
-                      <span>Chưa có ảnh</span>
-                    )}
+                    <div className="flex justify-center">
+                      {s.imageUrl ? (
+                        <img
+                          src={s.imageUrl}
+                          alt={s.name}
+                          className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 shadow-sm"
+                          onError={(e) => {
+                            // Fallback nếu ảnh lỗi
+                            e.currentTarget.src =
+                              "https://via.placeholder.com/64?text=No+Image";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 flex items-center justify-center bg-slate-100 rounded-lg border-2 border-dashed border-slate-300">
+                          <span className="text-xs text-slate-400">
+                            Chưa có
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-2 text-red-500 font-semibold">
                     {formatVND(Number(s.basePrice ?? 0))}
@@ -323,7 +334,7 @@ export default function ServiceManager() {
       {/* Pagination */}
       <div className="mt-4 flex items-center justify-between">
         <p className="text-sm text-slate-500">
-          Trang {Math.min(page, last)} / {last} • {total} mục
+          Trang {Math.min(page, last)} / {last} - {total} mục
         </p>
         <div className="flex items-center gap-2">
           <button
