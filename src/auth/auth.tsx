@@ -93,6 +93,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsInitialized(true);
   }, []);
 
+  // Listen sự kiện logout từ bên ngoài (interceptor, etc.)
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      console.log("🚪 Received auth:logout event - clearing user state");
+      setUser(null);
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      // Nếu auth_user hoặc userToken bị xóa, clear state
+      if (
+        (e.key === AUTH_KEY || e.key === "userToken") &&
+        e.newValue === null
+      ) {
+        console.log("🚪 Storage cleared - logging out user");
+        setUser(null);
+      }
+    };
+
+    // Listen custom event từ interceptor
+    window.addEventListener("auth:logout", handleAuthLogout);
+    // Listen storage event (khi localStorage thay đổi)
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("auth:logout", handleAuthLogout);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   const login = (u: User) => {
     setUser(u);
     localStorage.setItem(AUTH_KEY, JSON.stringify(u));

@@ -6,6 +6,7 @@ import { BookingDatePage } from "./pages/Booking/BookingDatePage";
 import { BookingDoctorPage } from "./pages/Booking/BookingDoctorPage";
 import { BookingPackagePage } from "./pages/Booking/BookingPackagePage";
 import { PatientPortalPage } from "./pages/Patient/PatientPortalPage";
+import { PatientResultPage } from "./pages/Patient/PatientResultPage";
 import UserProfilePage from "./pages/Account/UserProfilePage";
 import UserMedicalHistoryPage from "./pages/Account/UserMedicalHistoryPage";
 import UserPrescriptionPage from "./pages/Account/UserPrescriptionPage";
@@ -68,6 +69,7 @@ function App() {
 
         {/* PATIENT PORTAL */}
         <Route path="/patient-portal-login" element={<PatientPortalPage />} />
+        <Route path="/patient-result" element={<PatientResultPage />} />
 
         {/* USER PROFILE */}
         <Route path="/user/profile" element={<UserProfilePage />} />

@@ -1,75 +1,70 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import SkeletonRow from "../../Utils/SkeletonRow";
-
-interface MedicalRecord {
-  id: number;
-  record_code: string;
-  date: string;
-  doctor: string;
-  service: string;
-  status: string;
-}
-
-const fakeData: MedicalRecord[] = [
-  {
-    id: 1,
-    record_code: "HSFM-ABCDEF",
-    date: "2025-08-01 09:00",
-    doctor: "BS. Nguyễn Văn A",
-    service: "Khám tổng quát",
-    status: "completed",
-  },
-  {
-    id: 2,
-    record_code: "HSFM-ABEREF",
-    date: "2025-08-05 14:30",
-    doctor: "BS. Trần Thị B",
-    service: "Xét nghiệm máu",
-    status: "pending",
-  },
-  {
-    id: 3,
-    record_code: "HSFM-UOCDEF",
-    date: "2025-08-10 10:15",
-    doctor: "BS. Lê Văn C",
-    service: "Khám tim mạch",
-    status: "canceled",
-  },
-  {
-    id: 4,
-    record_code: "HSFM-LKHDEF",
-    date: "2025-08-10 13:15",
-    doctor: "BS. Lê Văn D",
-    service: "Khám tim mạch",
-    status: "booked",
-  },
-];
+import { apiGetEncounters, type Encounter } from "../../services/encountersApi";
 
 export const MedicalHistory = () => {
-  const [loading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [encounters, setEncounters] = useState<Encounter[]>([]);
+  const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // --- Search
-  const filteredHistory = (fakeData ?? []).filter((record) => {
-    const searchString = Object.values(record).join(" ").toLowerCase();
+  const pageSize = 20;
+
+  // --- Fetch data từ API
+  useEffect(() => {
+    const fetchEncounters = async () => {
+      try {
+        setLoading(true);
+        const response = await apiGetEncounters({
+          page: currentPage,
+          limit: pageSize,
+        });
+        setEncounters(response.items || []);
+        setTotal(response.total || 0);
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          const errMsg = error?.response?.data?.message || "";
+          if (!errMsg.includes("Không xác định được bệnh nhân")) {
+            toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+          }
+        } else if (error?.response?.status === 404) {
+          toast.error("API chưa được triển khai. Vui lòng liên hệ admin.");
+        } else {
+          const errorMsg = error?.response?.data?.message || error?.message;
+          if (errorMsg) {
+            toast.error(errorMsg);
+          }
+        }
+        setEncounters([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEncounters();
+  }, [currentPage]);
+
+  // --- Search (client-side filter)
+  const filteredHistory = encounters.filter((encounter) => {
+    const searchString = [
+      encounter.encounterCode,
+      encounter.doctorName,
+      encounter.serviceName,
+      encounter.chiefComplaint,
+      encounter.diagnosis,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
   // --- Pagination
-  const pageSize = 10;
-  const totalPages = Math.ceil(filteredHistory.length / pageSize); // 0, 1, 2, ...
-
-  // nếu đang ở trang > totalPages thì kéo về trang hợp lệ
-  useEffect(() => {
-    if (totalPages === 0 && currentPage !== 1) setCurrentPage(1);
-    else if (totalPages > 0 && currentPage > totalPages)
-      setCurrentPage(totalPages);
-  }, [totalPages, currentPage]);
-
-  const startIdx = (currentPage - 1) * pageSize;
-  const pagedRecords = filteredHistory.slice(startIdx, startIdx + pageSize);
+  const totalPages = Math.ceil(total / pageSize);
 
   const handlePageChange = (pageNumber: number) => {
     if (totalPages < 2) return; // không cho đổi trang khi < 2 trang
@@ -113,26 +108,29 @@ export const MedicalHistory = () => {
     let style = "";
     let text = "";
 
-    switch (status) {
-      case "pending":
+    const statusUpper = status?.toUpperCase() || "";
+
+    switch (statusUpper) {
+      case "PENDING":
         style = "bg-yellow-100 text-yellow-600";
         text = "Đang chờ";
         break;
-      case "completed":
+      case "COMPLETED":
         style = "bg-green-100 text-green-600";
         text = "Đã khám";
         break;
-      case "canceled":
+      case "CANCELLED":
+      case "CANCELED":
         style = "bg-red-100 text-red-600";
         text = "Đã hủy";
         break;
-      case "booked":
+      case "IN_PROGRESS":
         style = "bg-blue-100 text-blue-600";
-        text = "Đã đặt";
+        text = "Đang khám";
         break;
       default:
         style = "bg-gray-200 text-gray-600";
-        text = "Không xác định";
+        text = status || "Không xác định";
         break;
     }
 
@@ -143,6 +141,22 @@ export const MedicalHistory = () => {
         {text}
       </span>
     );
+  };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateString;
+    }
   };
 
   return (
@@ -164,13 +178,14 @@ export const MedicalHistory = () => {
 
       {/* Bảng lịch sử khám */}
       <div className="max-w-full mt-6 overflow-x-auto rounded-sm border border-gray-200">
-        <table className="min-w-[900px] w-full text-left text-sm text-gray-700">
+        <table className="min-w-[1000px] w-full text-left text-sm text-gray-700">
           <thead className="bg-sky-500 text-white">
             <tr>
               <th className="px-6 py-3">Mã hồ sơ</th>
               <th className="px-6 py-3">Ngày khám</th>
               <th className="px-6 py-3">Bác sĩ</th>
               <th className="px-6 py-3">Dịch vụ</th>
+              <th className="px-6 py-3">Lý do khám</th>
               <th className="px-6 py-3">Trạng thái</th>
               <th className="px-6 py-3">Chức năng</th>
             </tr>
@@ -179,24 +194,34 @@ export const MedicalHistory = () => {
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <SkeletonRow key={i} columns={6} />
+                  <SkeletonRow key={i} columns={7} />
                 ))}
               </>
-            ) : pagedRecords.length > 0 ? (
-              pagedRecords.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50 cursor-pointer">
+            ) : filteredHistory.length > 0 ? (
+              filteredHistory.map((encounter, idx) => (
+                <tr
+                  key={encounter.encounterCode || idx}
+                  className="hover:bg-gray-50 cursor-pointer"
+                >
                   <td className="px-5 py-4 font-medium text-gray-800">
-                    {record.record_code}
+                    {encounter.encounterCode}
                   </td>
-                  <td className="px-5 py-4">{record.date}</td>
-                  <td className="px-5 py-4">{record.doctor}</td>
-                  <td className="px-5 py-4">{record.service}</td>
                   <td className="px-5 py-4">
-                    <StatusBadge status={record.status} />
+                    {formatDate(encounter.encounterDate)}
+                  </td>
+                  <td className="px-5 py-4">{encounter.doctorName}</td>
+                  <td className="px-5 py-4">
+                    {encounter.serviceName || "-"}
+                  </td>
+                  <td className="px-5 py-4">
+                    {encounter.chiefComplaint || "-"}
+                  </td>
+                  <td className="px-5 py-4">
+                    <StatusBadge status={encounter.status} />
                   </td>
                   <td className="px-3 py-3 text-center whitespace-nowrap">
                     <Link
-                      to="/user/medical-history/detail"
+                      to={`/user/medical-history/${encounter.encounterCode}`}
                       className="bg-primary-linear text-white text-sm px-3 py-2 rounded-[var(--rounded)] cursor-pointer"
                     >
                       Chi tiết
@@ -206,8 +231,10 @@ export const MedicalHistory = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-5 py-4 text-center text-gray-600">
-                  Không có hồ sơ nào
+                <td colSpan={7} className="px-5 py-4 text-center text-gray-600">
+                  {searchTerm
+                    ? "Không tìm thấy hồ sơ nào"
+                    : "Chưa có lịch sử khám bệnh"}
                 </td>
               </tr>
             )}

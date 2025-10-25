@@ -28,58 +28,45 @@ authHttp.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: Xử lý lỗi 401 thông minh
+// Response interceptor: Xử lý lỗi 401 - Token hết hạn
 authHttp.interceptors.response.use(
   (response) => response, // Success - không làm gì
   (error) => {
     if (error.response?.status === 401) {
-      // Kiểm tra xem user có role CMS không
-      const authUserRaw = localStorage.getItem(AUTH_USER_KEY);
-      let shouldLogout = true;
-
-      if (authUserRaw) {
-        try {
-          const authUser = JSON.parse(authUserRaw);
-          const cmsRoles = ["ADMIN", "DOCTOR", "EMPLOYEE"];
-          const hasCmsRole = Array.isArray(authUser.roles) && 
-            authUser.roles.some((r: string) => cmsRoles.includes(r.toUpperCase()));
-
-          // Nếu là CMS user và đang ở trang CMS, KHÔNG tự động logout
-          if (hasCmsRole && window.location.pathname.startsWith("/cms")) {
-            shouldLogout = false;
-            console.warn("⚠️ Token hết hạn nhưng giữ session cho CMS user");
-            
-            // Chỉ hiển thị warning, không logout
-            if (!document.querySelector('.toast-401-warning')) {
-              toast.error(
-                "Phiên làm việc sắp hết hạn. Vui lòng lưu công việc của bạn.",
-                {
-                  duration: 5000,
-                  className: 'toast-401-warning'
-                }
-              );
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing auth user:", e);
-        }
+      // Lấy message từ response
+      const errorMessage = error.response?.data?.message || "";
+      
+      // Kiểm tra xem có phải lỗi "user chưa có Patient record" không
+      const isNoPatientRecord = errorMessage.includes("Không xác định được bệnh nhân");
+      
+      if (isNoPatientRecord) {
+        // User chưa có hồ sơ bệnh nhân - KHÔNG logout, chỉ log warning
+        console.warn("⚠️ User chưa có hồ sơ bệnh nhân:", errorMessage);
+        // Để component tự xử lý hiển thị message
+        return Promise.reject(error);
       }
-
-      // Nếu không phải CMS user hoặc không ở trang CMS, logout
-      if (shouldLogout) {
-        localStorage.removeItem(USER_TOKEN_KEY);
-        localStorage.removeItem(AUTH_USER_KEY);
-        localStorage.removeItem("userInfo");
-        
-        toast.error("Phiên đăng nhập đã hết hạn!");
-        
-        // Redirect to 401 page
-        setTimeout(() => {
-          if (!window.location.pathname.includes("/401")) {
-            window.location.href = "/401";
-          }
-        }, 1000);
-      }
+      
+      // Token thật sự hết hạn hoặc không hợp lệ - Logout và redirect
+      console.warn("⚠️ Token hết hạn (401 Unauthorized)");
+      
+      // Clear tất cả auth data
+      localStorage.removeItem(USER_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem("userInfo");
+      localStorage.removeItem("userRefreshToken");
+      
+      // Dispatch event để AuthProvider biết và clear state
+      window.dispatchEvent(new Event("auth:logout"));
+      
+      // Show toast thông báo
+      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", {
+        duration: 2000,
+      });
+      
+      // Redirect về trang chủ sau 300ms
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 300);
     }
 
     return Promise.reject(error);
