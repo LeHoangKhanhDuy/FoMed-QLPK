@@ -161,7 +161,7 @@ export default function DoctorModal({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-3xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-xl uppercase">
+          <h3 className="font-semibold text-xl uppercase flex-1 text-center">
             {isEditing ? "Sửa hồ sơ bác sĩ" : "Thêm bác sĩ mới"}
           </h3>
           <button
@@ -210,7 +210,10 @@ export default function DoctorModal({
 
           {/* Học hàm */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Học hàm</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Học hàm</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.title ?? ""}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -222,9 +225,12 @@ export default function DoctorModal({
 
           {/* Số chứng chỉ hành nghề */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">
-              Số chứng chỉ hành nghề
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">
+                Số chứng chỉ hành nghề
+              </span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.licenseNo ?? ""}
               onChange={(e) => setForm({ ...form, licenseNo: e.target.value })}
@@ -237,6 +243,7 @@ export default function DoctorModal({
           {/* Chuyên khoa chính */}
           <SelectMenu<number>
             label="Chuyên khoa chính"
+            required
             value={form.primarySpecialtyId ?? ""}
             options={specialtyOptions}
             placeholder={
@@ -253,7 +260,10 @@ export default function DoctorModal({
 
           {/* Phòng khám */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Phòng khám</span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">Phòng khám</span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               value={form.roomName ?? ""}
               onChange={(e) => setForm({ ...form, roomName: e.target.value })}
@@ -265,9 +275,12 @@ export default function DoctorModal({
 
           {/* Số năm kinh nghiệm */}
           <label className="text-sm col-span-1 sm:col-span-2">
-            <span className="block mb-1 text-slate-600">
-              Số năm kinh nghiệm
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="block mb-1 text-slate-600">
+                Số năm kinh nghiệm
+              </span>
+              <span className="text-red-500">*</span>
+            </div>
             <input
               type="number"
               min={0}
@@ -322,7 +335,7 @@ export default function DoctorModal({
           </label>
 
           {/* Trạng thái (chỉ hiện khi edit) */}
-          {isEditing && (
+          {/* {isEditing && (
             <label className="text-sm flex items-center gap-2 col-span-1 sm:col-span-2">
               <input
                 type="checkbox"
@@ -334,7 +347,7 @@ export default function DoctorModal({
               />
               <span>Đang hoạt động</span>
             </label>
-          )}
+          )} */}
         </div>
 
         {/* Actions */}

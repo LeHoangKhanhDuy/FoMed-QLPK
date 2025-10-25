@@ -1,13 +1,14 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
+import { updateProfile } from "../../services/auth";
 
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  // onUpdated: () => void;
+  onUpdated?: () => void;
 }
 interface User {
   id: number;
@@ -15,43 +16,81 @@ interface User {
   name: string;
   created_at: string;
   phone: string | number;
+  avatar?: string;
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   onClose,
   user,
-  // onUpdated
+  onUpdated
 }) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  // Track xem đã khởi tạo giá trị cho lần mở modal này chưa
+  const initializedRef = useRef(false);
 
+  // Reset khi modal đóng
   useEffect(() => {
-    if (user) {
+    if (!isOpen) {
+      initializedRef.current = false;
+    }
+  }, [isOpen]);
+
+  // Chỉ set giá trị ban đầu khi modal mở lần đầu, không reset khi đang nhập
+  useEffect(() => {
+    if (isOpen && user && !initializedRef.current) {
       setName(user.name || "");
       setPhone(user.phone?.toString() || "");
+      setEmail(user.email || "");
+      initializedRef.current = true;
     }
-  }, [user]);
+  }, [isOpen, user]); // Bây giờ có thể thêm user vào dependency an toàn
 
   if (!isOpen) return null;
 
   const handleSave = async () => {
-    if (!name || !phone) {
-      toast.error("Vui lòng nhập đầy đủ thông tin");
+    if (!name.trim()) {
+      toast.error("Vui lòng nhập họ tên");
       return;
     }
-    const isValidPhone = /^0\d{9}$/.test(phone);
-    if (!isValidPhone) {
-      toast.error("Số điện thoại không hợp lệ");
+    
+    // Validate phone nếu có nhập
+    if (phone && !/^0\d{9}$/.test(phone)) {
+      toast.error("Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)");
       return;
     }
+
+    setLoading(true);
     try {
+      const updateData: any = {
+        name: name.trim(),
+      };
+      
+      // CHỈ gửi phone nếu có giá trị và khác rỗng
+      if (phone && phone.trim()) {
+        updateData.phone = phone.trim();
+      }
+      
+      console.log("Submitting update profile with:", updateData);
+      
+      await updateProfile(updateData);
+      
+      toast.success("Cập nhật thông tin thành công!");
       onClose();
-      //onUpdated(); 
-    } catch (error) {
-      toast.error("Cập nhật thất bại");
-      console.error(error);
+      
+      // Trigger refresh user info
+      if (onUpdated) {
+        onUpdated();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Cập nhật thất bại");
+      console.error("Update profile error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,9 +127,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <div>
             <label className="text-sm font-medium">Email</label>
             <input
-              className="w-full mt-2 p-2 border rounded-[var(--rounded)] px-4 py-2.5 border-gray-300 focus:border-gray-400 outline-none"
+              className="w-full mt-2 p-2 border rounded-[var(--rounded)] px-4 py-2.5 border-gray-300 bg-gray-100 cursor-not-allowed outline-none"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              disabled
+              readOnly
+              title="Email không thể thay đổi"
             />
           </div>
         </div>
@@ -104,9 +145,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 rounded-[var(--rounded)] bg-primary-linear text-white cursor-pointer"
+            disabled={loading}
+            className="px-6 py-2 rounded-[var(--rounded)] bg-primary-linear text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Lưu
+            {loading ? "Đang lưu..." : "Lưu"}
           </button>
         </div>
       </div>

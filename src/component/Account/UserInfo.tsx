@@ -100,9 +100,33 @@ export default function UserInfo({
     try {
       const url = await uploadAvatar(file);
       toast.success("Tải ảnh thành công!");
-      console.log("URL ảnh:", url);
+      
+      // Cập nhật state user với avatar mới ngay lập tức
+      setUser((prev) => (prev ? { ...prev, avatar: url } : null));
     } catch (err: any) {
       toast.error(err.message || "Không thể tải ảnh");
+    }
+  };
+
+  // Hàm fetch user data
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem(USER_TOKEN_KEY) || "";
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
+      // Hiển thị nhanh từ localStorage (nếu có)
+      const cached = readUserFromStorage();
+      if (cached) setUser(mapToUserUI(cached));
+
+      // Lấy mới từ /profile để có userId, tên chuẩn, v.v.
+      const fresh = await getProfile(token);
+      setUser(mapToUserUI(fresh));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,33 +138,13 @@ export default function UserInfo({
       return;
     }
 
-    const run = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem(USER_TOKEN_KEY) || "";
-        if (!token) {
-          setUser(null);
-          return;
-        }
-
-        // Hiển thị nhanh từ localStorage (nếu có)
-        const cached = readUserFromStorage();
-        if (cached) setUser(mapToUserUI(cached));
-
-        // Lấy mới từ /profile để có userId, tên chuẩn, v.v.
-        const fresh = await getProfile(token);
-        setUser(mapToUserUI(fresh));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    run();
+    fetchUserData();
 
     // Tự refresh khi login/logout nơi khác
-    const h = () => run();
+    const h = () => fetchUserData();
     window.addEventListener("auth:updated", h);
     return () => window.removeEventListener("auth:updated", h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userFromProps]);
 
   return (
@@ -304,6 +308,10 @@ export default function UserInfo({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         user={user}
+        onUpdated={() => {
+          // Refresh user data after update
+          fetchUserData();
+        }}
       />
     </div>
   );

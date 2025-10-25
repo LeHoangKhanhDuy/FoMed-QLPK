@@ -7,11 +7,17 @@ type ServiceInfo = {
   durationMin?: number | null;
 };
 
+type SelectedDoctor = {
+  name: string;
+  specialty: string;
+} | null;
+
 interface Props {
   service: ServiceInfo;
+  selectedDoctor?: SelectedDoctor;
 }
 
-export const ServiceInfoCard = ({ service }: Props) => {
+export const ServiceInfoCard = ({ service, selectedDoctor }: Props) => {
   // Format thời gian
   const formatDuration = (minutes: number | null | undefined) => {
     if (!minutes) return null;
@@ -27,7 +33,7 @@ export const ServiceInfoCard = ({ service }: Props) => {
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <header className="px-4 py-3 bg-sky-400 border-b border-slate-200">
             <h2 className="font-semibold text-center text-white text-base sm:text-lg">
-              Thông tin dịch vụ
+              Thông tin đặt khám
             </h2>
           </header>
 
@@ -40,9 +46,19 @@ export const ServiceInfoCard = ({ service }: Props) => {
 
             {/* Chuyên khoa */}
             <div>
-              <p className="text-xs sm:text-sm text-slate-500">Chuyên khoa</p>
+              <p className="text-xs sm:text-sm text-slate-500">Khoa</p>
               <p className="text-lg font-semibold">{service.specialty}</p>
             </div>
+
+            {/* Bác sĩ đã chọn */}
+            {selectedDoctor && (
+              <div className="border-t pt-4">
+                <p className="text-xs sm:text-sm text-slate-500">Bác sĩ</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-semibold">{selectedDoctor.name}</p>
+                </div>
+              </div>
+            )}
 
             {/* Giá dịch vụ */}
             <div>
@@ -69,7 +85,7 @@ export const ServiceInfoCard = ({ service }: Props) => {
             {service.durationMin && (
               <div>
                 <p className="text-xs sm:text-sm text-slate-500">
-                  Thời gian dự kiến
+                  Thời gian khám chữa bệnh
                 </p>
                 <p className="text-lg font-semibold">
                   {formatDuration(service.durationMin)}

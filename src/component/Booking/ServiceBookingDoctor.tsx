@@ -19,22 +19,31 @@ type Doctor = {
   name: string;
   note?: string;
   experience: string;
+  specialty: string;
   verified?: boolean;
 };
 
 interface Props {
   service: ServiceInfo;
   doctors: Doctor[];
+  selectedDoctorId?: number | null;
   onDetail?: (id: number) => void;
   onBook?: (id: number) => void;
+  onSelectDoctor?: (doctor: Doctor) => void;
 }
 
 export default function ServiceBookingDoctor({
   service,
   doctors,
+  selectedDoctorId,
   onDetail,
   onBook,
+  onSelectDoctor,
 }: Props) {
+  
+  const selectedDoctor = selectedDoctorId 
+    ? doctors.find(d => d.id === selectedDoctorId) 
+    : null;
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 5;
 
@@ -89,7 +98,13 @@ export default function ServiceBookingDoctor({
 
       <div className="grid md:grid-cols-3 gap-4 sm:gap-5 items-start">
         {/* LEFT: Thông tin dịch vụ */}
-        <ServiceInfoCard service={service} />
+        <ServiceInfoCard 
+          service={service} 
+          selectedDoctor={selectedDoctor ? {
+            name: selectedDoctor.name,
+            specialty: selectedDoctor.specialty
+          } : undefined}
+        />
 
         {/* RIGHT: Chọn bác sĩ */}
         <section className="md:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -133,6 +148,12 @@ export default function ServiceBookingDoctor({
                       <img src={hospital} alt="" className="w-5 h-5" />
                       <div className="text-sm leading-5">{d.experience}</div>
                     </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                      <div className="text-sm leading-5 font-medium text-sky-600">{d.specialty}</div>
+                    </div>
                     {d.note && (
                       <div className="flex items-center gap-2">
                         <img src={schedule} alt="" className="w-5 h-5" />
@@ -148,10 +169,17 @@ export default function ServiceBookingDoctor({
                         Chi tiết
                       </button>
                       <button
-                        onClick={() => onBook?.(d.id)}
-                        className="px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-center text-white text-sm hover:bg-sky-700 shadow-sm cursor-pointer"
+                        onClick={() => {
+                          onSelectDoctor?.(d);
+                          onBook?.(d.id);
+                        }}
+                        className={`px-3 py-2 rounded-[var(--rounded)] text-center text-white text-sm shadow-sm cursor-pointer ${
+                          selectedDoctorId === d.id
+                            ? 'bg-green-500 hover:bg-green-600'
+                            : 'bg-primary-linear hover:bg-sky-700'
+                        }`}
                       >
-                        Đặt khám
+                        {selectedDoctorId === d.id ? '✓ Đã chọn' : 'Đặt khám'}
                       </button>
                     </div>
                   </div>
@@ -169,6 +197,9 @@ export default function ServiceBookingDoctor({
                       </th>
                       <th className="px-4 py-3 text-left font-medium">
                         Kinh nghiệm
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium">
+                        Chuyên khoa
                       </th>
                       <th className="flex justify-center px-4 py-3 text-center font-medium">
                         Chức năng
@@ -201,6 +232,9 @@ export default function ServiceBookingDoctor({
                         <td className="px-4 py-3">
                           <div className="font-semibold">{d.experience}</div>
                         </td>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold">{d.specialty}</div>
+                        </td>
                         <td className="py-3 text-center">
                           <div className="flex flex-col md:flex-row gap-2 justify-center">
                             <button
@@ -210,10 +244,17 @@ export default function ServiceBookingDoctor({
                               Chi tiết
                             </button>
                             <button
-                              onClick={() => onBook?.(d.id)}
-                              className="px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white text-sm cursor-pointer"
+                              onClick={() => {
+                                onSelectDoctor?.(d);
+                                onBook?.(d.id);
+                              }}
+                              className={`px-3 py-2 rounded-[var(--rounded)] text-white text-sm cursor-pointer ${
+                                selectedDoctorId === d.id
+                                  ? 'bg-green-500 hover:bg-green-600'
+                                  : 'bg-primary-linear hover:bg-sky-700'
+                              }`}
                             >
-                              Đặt khám
+                              {selectedDoctorId === d.id ? '✓ Đã chọn' : 'Đặt khám'}
                             </button>
                           </div>
                         </td>

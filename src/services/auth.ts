@@ -319,6 +319,120 @@ export async function logout(): Promise<void> {
   }
 }
 
+// ===== UPDATE PROFILE =====
+export async function updateProfile(payload: {
+  name: string;
+  phone?: string;
+  avatarUrl?: string | null;
+  address?: string | null;
+  bio?: string | null;
+}): Promise<AppUser> {
+  const token = localStorage.getItem(USER_TOKEN_KEY);
+  if (!token) throw new Error("Bạn chưa đăng nhập.");
+
+  // Đảm bảo Authorization header được set
+  setAuthToken(token);
+
+  // Build request payload theo backend UpdateProfileByTokenRequest
+  // Backend yêu cầu Token và Name (required)
+  const requestPayload: any = {
+    Token: token,
+    Name: payload.name.trim(),
+  };
+
+  // Phone: chỉ gửi nếu có giá trị (backend check: if (!string.IsNullOrWhiteSpace(req.Phone)))
+  if (payload.phone && payload.phone.trim()) {
+    requestPayload.Phone = payload.phone.trim();
+  }
+  
+  // AvatarUrl, Address, Bio: chỉ gửi nếu có giá trị
+  // Backend sẽ update chúng nếu có trong request
+  // KHÔNG GỬI nếu null/empty để backend không overwrite với null
+  if (payload.avatarUrl && payload.avatarUrl.trim()) {
+    requestPayload.AvatarUrl = payload.avatarUrl.trim();
+  }
+  if (payload.address && payload.address.trim()) {
+    requestPayload.Address = payload.address.trim();
+  }
+  if (payload.bio && payload.bio.trim()) {
+    requestPayload.Bio = payload.bio.trim();
+  }
+
+  console.log("Update profile request payload:", JSON.stringify(requestPayload, null, 2));
+  console.log("Authorization header:", authHttp.defaults.headers.common.Authorization ? "SET" : "NOT SET");
+
+  try {
+    const response = await authHttp.post("/api/v1/accounts/update-profile", requestPayload);
+    const { data } = response;
+
+    console.log("Update profile response:", data);
+
+    if (!data?.success && !data?.data) {
+      throw new Error(data?.message || "Cập nhật thông tin thất bại.");
+    }
+
+    // Map response data to AppUser
+    const userData = data.data;
+    const updatedUser: AppUser = {
+      userId: userData.id,
+      email: userData.email,
+      name: userData.name,
+      phone: userData.phone || "",
+      roles: [],
+      avatarUrl: userData.avatarUrl || null,
+    };
+
+    // Update localStorage
+    const stored = readUserFromStorage();
+    if (stored) {
+      const merged: AppUser = {
+        ...stored,
+        ...updatedUser,
+      };
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(merged));
+      window.dispatchEvent(new Event("auth:updated"));
+    }
+
+    return updatedUser;
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      console.error("Update profile error - Status:", error.response?.status);
+      console.error("Update profile error - Data:", error.response?.data);
+      console.error("Update profile error - Full details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        requestData: error.config?.data,
+      });
+
+      const beData = error.response?.data as any;
+      
+      // Xử lý validation errors từ backend
+      if (beData?.errors) {
+        const validationErrors = Object.values(beData.errors as Record<string, string[]>)
+          .flat()
+          .join("; ");
+        console.error("Validation errors:", validationErrors);
+        throw new Error(validationErrors || "Dữ liệu không hợp lệ.");
+      }
+      
+      const message =
+        beData?.message ||
+        beData?.Message ||
+        beData?.error ||
+        beData?.Error ||
+        (error.response?.status === 500 
+          ? "Lỗi server. Vui lòng kiểm tra số điện thoại hoặc thử lại sau."
+          : "Cập nhật thông tin thất bại.");
+      throw new Error(message);
+    }
+
+    console.error("Unknown update profile error:", error);
+    throw new Error("Cập nhật thông tin thất bại.");
+  }
+}
+
 // ===== UPLOAD AVATAR =====
 export async function uploadAvatar(file: File): Promise<string> {
   const token = localStorage.getItem(USER_TOKEN_KEY);
@@ -326,34 +440,52 @@ export async function uploadAvatar(file: File): Promise<string> {
 
   // tạo form data
   const formData = new FormData();
-  formData.append("File", file); // tên field phải khớp với [FromForm] AvatarUploadRequest.File
+  formData.append("File", file); // Backend expects "File" with capital F ([FromForm] AvatarUploadRequest)
 
   // axios instance có header Authorization sẵn
   setAuthToken(token);
 
   try {
-    const { data } = await authHttp.post("/api/v1/accounts/avatar", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    // Không set Content-Type, để axios tự set với boundary
+    const { data } = await authHttp.post("/api/v1/accounts/avatar", formData);
 
-    if (!data?.data?.avatarUrl)
-      throw new Error(data?.message || "Không nhận được URL ảnh từ server.");
+    // Log để debug
+    console.log("Upload avatar response:", data);
+
+    // Xử lý response có thể có nhiều format
+    const avatarUrl = data?.data?.avatarUrl || data?.data?.AvatarUrl || data?.avatarUrl || data?.AvatarUrl;
+    
+    if (!avatarUrl) {
+      console.error("Invalid response structure:", data);
+      throw new Error(data?.message || data?.Message || "Không nhận được URL ảnh từ server.");
+    }
 
     // lưu avatar mới vào localStorage (nếu muốn cập nhật UI tức thì)
     const user = readUserFromStorage();
     if (user) {
-      user.avatarUrl = data.data.avatarUrl;
+      user.avatarUrl = avatarUrl;
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
       window.dispatchEvent(new Event("auth:updated"));
     }
 
-    return data.data.avatarUrl;
+    return avatarUrl;
   } catch (error: unknown) {
     if (isAxiosError(error)) {
+      console.error("Upload avatar error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+      
+      const beData = error.response?.data as any;
       const message =
-        error.response?.data?.message || "Tải ảnh thất bại từ server.";
+        beData?.message || 
+        beData?.Message || 
+        beData?.error ||
+        beData?.Error ||
+        (error.response?.status === 500 
+          ? "Lỗi server. Có thể file quá lớn hoặc định dạng không hợp lệ."
+          : "Tải ảnh thất bại từ server.");
       throw new Error(message);
     }
 

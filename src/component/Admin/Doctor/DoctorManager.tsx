@@ -37,16 +37,36 @@ export default function DoctorManager() {
   const fetchData = async (opts?: { keepPage?: boolean }) => {
     try {
       setLoading(true);
+      
+      // Đảm bảo page là số hợp lệ trước khi gửi request
+      let currentPage = opts?.keepPage ? page : 1;
+      if (isNaN(currentPage) || currentPage < 1) {
+        currentPage = 1;
+      }
+      
       const res = await apiGetDoctors({
-        page: opts?.keepPage ? page : 1,
+        page: currentPage,
         limit: pageSize,
         search: query.trim() || undefined,
       });
-      setItems(res.items);
-      setTotal(res.total);
-      if (!opts?.keepPage) setPage(res.page);
-    } catch {
+      
+      setItems(res.items || []);
+      setTotal(res.total || 0);
+      
+      if (!opts?.keepPage) {
+        // Đảm bảo page từ response là số hợp lệ
+        const newPage = Number(res.page);
+        if (!isNaN(newPage) && newPage > 0) {
+          setPage(newPage);
+        } else {
+          setPage(1);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
       toast.error("Không tải được danh sách bác sĩ");
+      setItems([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
