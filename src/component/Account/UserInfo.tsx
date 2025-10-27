@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff, Pencil } from "lucide-react";
-import defaultAvatar from "../../assets/images/default-avatar.png";
 import { Link } from "react-router-dom";
 import EditProfileModal from "./EditProfile";
 
@@ -13,6 +12,7 @@ import {
 } from "../../services/auth";
 import type { AppUser } from "../../types/auth/login";
 import toast from "react-hot-toast";
+import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../Utils/avatarHelper";
 
 /* ==== Kiểu dữ liệu UI hiện tại ==== */
 export interface User {
@@ -156,16 +156,16 @@ export default function UserInfo({
             <div className="relative w-24 h-24">
               <div className="w-24 h-24 overflow-hidden border border-gray-200 rounded-full">
                 <img
-                  src={
-                    user && user.avatar && user.avatar.trim() !== ""
-                      ? user.avatar
-                      : defaultAvatar
-                  }
+                  src={getFullAvatarUrl(user?.avatar)}
                   alt="Avatar"
                   onClick={openFilePicker}
                   className="w-full h-full rounded-full object-cover cursor-pointer"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = defaultAvatar;
+                    const target = e.target as HTMLImageElement;
+                    // Chỉ set default nếu chưa phải là default (tránh infinite loop)
+                    if (!target.src.includes(DEFAULT_AVATAR_URL)) {
+                      target.src = DEFAULT_AVATAR_URL;
+                    }
                   }}
                 />
               </div>

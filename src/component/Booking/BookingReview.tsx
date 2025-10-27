@@ -331,7 +331,7 @@ export const BookingReview = () => {
       <div className="flex justify-center items-center mb-6 p-6">
         <div className="flex flex-col items-center gap-3 mb-2">
           <CheckIcon className="w-10 h-10 text-green-500" />
-          <h1 className="text-2xl font-bold text-slate-900 uppercase">
+          <h1 className="text-3xl font-bold text-sky-400 uppercase">
             Xác nhận thông tin đặt lịch
           </h1>
           <p className="text-slate-600">

@@ -278,9 +278,11 @@ export async function login(
 export async function getProfile(token: string): Promise<AppUser> {
   setAuthToken(token);
   try {
+    // Backend ưu tiên Authorization header, nhưng cũng có thể nhận Token từ body
+    // Gửi cả 2 để đảm bảo
     const { data } = await authHttp.post<BeProfileResponse>(
       "/api/v1/accounts/profile",
-      {}
+      { Token: token }
     );
     if (!data.data)
       throw new Error(data.message ?? "Không thể lấy thông tin người dùng");
@@ -438,6 +440,17 @@ export async function uploadAvatar(file: File): Promise<string> {
   const token = localStorage.getItem(USER_TOKEN_KEY);
   if (!token) throw new Error("Bạn chưa đăng nhập.");
 
+  // Validate file
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    throw new Error("Ảnh vượt quá dung lượng tối đa 5MB.");
+  }
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("Chỉ hỗ trợ định dạng JPG, PNG, WebP.");
+  }
+
   // tạo form data
   const formData = new FormData();
   formData.append("File", file); // Backend expects "File" with capital F ([FromForm] AvatarUploadRequest)
@@ -452,7 +465,7 @@ export async function uploadAvatar(file: File): Promise<string> {
     // Log để debug
     console.log("Upload avatar response:", data);
 
-    // Xử lý response có thể có nhiều format
+    // Backend response format: { message, data: { avatarUrl } }
     const avatarUrl = data?.data?.avatarUrl || data?.data?.AvatarUrl || data?.avatarUrl || data?.AvatarUrl;
     
     if (!avatarUrl) {
