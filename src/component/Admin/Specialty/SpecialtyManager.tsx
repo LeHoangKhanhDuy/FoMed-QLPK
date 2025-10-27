@@ -3,7 +3,6 @@ import {
   Search,
   Stethoscope,
   Pencil,
-  Trash2,
   Power,
   ChevronLeft,
   ChevronRight,
@@ -13,6 +12,7 @@ import ConfirmModal from "../../../common/ConfirmModal";
 import type { CreateSpecialtyPayload, SpecialtyItem, UpdateSpecialtyPayload } from "../../../types/specialty/specialtyType";
 import { apiActivateSpecialty, apiCreateSpecialty, apiDeactivateSpecialty, apiGetSpecialties, apiUpdateSpecialty } from "../../../services/specialtyApi";
 import SpecialtyModal from "./SpecialtyModal";
+import { formatDateTime } from "../../../Utils/datetime";
 
 
 // ===================== MAIN COMPONENT =====================
@@ -44,6 +44,13 @@ export default function SpecialtyManager() {
         limit: pageSize,
         search: query.trim() || undefined,
       });
+      
+      // Debug: Kiểm tra response data
+      console.log("🔍 Specialty API Response:", res);
+      if (res.items.length > 0) {
+        console.log("📋 First item:", res.items[0]);
+      }
+      
       setItems(res.items);
       setTotal(res.total);
       if (!opts?.keepPage) setPage(res.page);
@@ -116,10 +123,10 @@ export default function SpecialtyManager() {
     }
   };
 
-  const askDelete = (id: number) => {
-    setDeletingId(id);
-    setConfirmOpen(true);
-  };
+  // const askDelete = (id: number) => {
+  //   setDeletingId(id);
+  //   setConfirmOpen(true);
+  // };
 
   const doDelete = async () => {
     if (!deletingId) return;
@@ -196,10 +203,13 @@ export default function SpecialtyManager() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-white">
-              <th className="px-3 py-2 text-left">Mã</th>
+              <th className="px-3 py-2 text-left">ID</th>
+              <th className="px-3 py-2 text-left">Mã chuyên khoa</th>
               <th className="px-3 py-2 text-left">Tên chuyên khoa</th>
               <th className="px-3 py-2 text-left">Mô tả</th>
               <th className="px-3 py-2 text-center">Số bác sĩ</th>
+              <th className="px-3 py-2 text-center">Ngày tạo</th>
+              <th className="px-3 py-2 text-center">Ngày cập nhật</th>
               <th className="px-3 py-2 text-center">Trạng thái</th>
               <th className="px-3 py-2 text-center">Thao tác</th>
             </tr>
@@ -228,6 +238,9 @@ export default function SpecialtyManager() {
                   className="text-center border-b last:border-none"
                 >
                   <td className="px-3 py-2 text-left">
+                    {spec.specialtyId }
+                  </td>
+                  <td className="px-3 py-2 text-left">
                     {spec.code || "-"}
                   </td>
                   <td className="px-3 py-2 text-left font-bold">{spec.name}</td>
@@ -240,8 +253,14 @@ export default function SpecialtyManager() {
                   </td>
                   <td className="px-3 py-2">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                      {spec.doctorCount || 0} bác sĩ
+                      {spec.doctorCount ?? 0} bác sĩ
                     </span>
+                  </td>
+                  <td className="px-3 py-2 text-slate-600 text-xs">
+                    {formatDateTime(spec.createdAt)}
+                  </td>
+                  <td className="px-3 py-2 text-slate-600 text-xs">
+                    {formatDateTime(spec.updatedAt)}
                   </td>
                   <td className="px-3 py-2">
                     <span
@@ -274,14 +293,6 @@ export default function SpecialtyManager() {
                         title={spec.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
                       >
                         <Power className="w-5 h-5" />
-                      </button>
-
-                      <button
-                        onClick={() => askDelete(spec.specialtyId)}
-                        className="cursor-pointer inline-flex items-center justify-center gap-1 rounded-[var(--rounded)] bg-error-linear text-white px-2 py-2"
-                        title="Xoá"
-                      >
-                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </td>

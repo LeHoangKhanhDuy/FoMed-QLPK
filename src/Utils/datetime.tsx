@@ -25,3 +25,27 @@ export function normalizeApiDate(input: unknown): string | null {
 
   return null;
 }
+
+/**
+ * Format datetime từ backend sang định dạng DD/MM/YYYY HH:mm:ss
+ * VD: "2025-10-27T15:30:24" -> "27/10/2025 15:30:24"
+ */
+export function formatDateTime(input: string | null | undefined): string {
+  if (!input) return "-";
+  
+  try {
+    const date = new Date(input);
+    if (!Number.isFinite(date.getTime())) return "-";
+    
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  } catch {
+    return "-";
+  }
+}

@@ -94,7 +94,7 @@ export default function SpecialtyModal({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-xl uppercase">
+          <h3 className="font-semibold text-xl uppercase flex-1 text-center">
             {isEditing ? "Sửa chuyên khoa" : "Thêm chuyên khoa mới"}
           </h3>
           <button
@@ -107,7 +107,7 @@ export default function SpecialtyModal({
 
         {err && <p className="mb-3 text-sm text-rose-600">{err}</p>}
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {/* Tên chuyên khoa */}
           <label className="text-sm">
             <span className="block mb-1 text-slate-600">
@@ -125,7 +125,9 @@ export default function SpecialtyModal({
 
           {/* Mã chuyên khoa */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Mã chuyên khoa</span>
+            <span className="block mb-1 text-slate-600">
+              Mã chuyên khoa <span className="text-rose-500">*</span>
+            </span>
             <input
               value={form.code ?? ""}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
@@ -134,10 +136,11 @@ export default function SpecialtyModal({
               maxLength={50}
             />
           </label>
+        </div>
 
-          {/* Mô tả */}
+        {/* Mô tả */}
           <label className="text-sm">
-            <span className="block mb-1 text-slate-600">Mô tả</span>
+            <span className="block mt-2 mb-1 text-slate-600">Mô tả</span>
             <textarea
               value={form.description ?? ""}
               onChange={(e) =>
@@ -152,22 +155,6 @@ export default function SpecialtyModal({
               {form.description?.length || 0}/500 ký tự
             </p>
           </label>
-
-          {/* Trạng thái (chỉ hiện khi edit) */}
-          {isEditing && (
-            <label className="text-sm flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={!!form.isActive}
-                onChange={(e) =>
-                  setForm({ ...form, isActive: e.target.checked })
-                }
-                className="cursor-pointer h-4 w-4"
-              />
-              <span>Đang hoạt động</span>
-            </label>
-          )}
-        </div>
 
         {/* Actions */}
         <div className="mt-5 flex items-center justify-end gap-2">

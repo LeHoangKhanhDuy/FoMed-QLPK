@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Search,
   Plus,
-  Pencil,
   Trash2,
   BookUser,
   ChevronLeft,
@@ -16,6 +15,8 @@ import {
 } from "../../../services/patientsApi";
 import PatientModal from "./PatientModal";
 import { getErrorMessage } from "../../../Utils/errorHepler";
+import ConfirmModal from "../../../common/ConfirmModal";
+import { formatDateTime } from "../../../Utils/datetime";
 
 export default function PatientManager() {
   const [items, setItems] = useState<PatientListItem[]>([]);
@@ -27,6 +28,10 @@ export default function PatientManager() {
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const fetchList = async () => {
     try {
@@ -67,19 +72,30 @@ export default function PatientManager() {
     setEditingId(null);
     setOpen(true);
   };
-  const onEdit = (id: number) => {
-    setEditingId(id);
-    setOpen(true);
+  // const onEdit = (id: number) => {
+  //   setEditingId(id);
+  //   setOpen(true);
+  // };
+
+  const askDelete = (id: number) => {
+    setDeletingId(id);
+    setConfirmOpen(true);
   };
 
-  const onDelete = async (id: number): Promise<void> => {
-    if (!confirm("Xác nhận xoá (ẩn) bệnh nhân này?")) return;
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    
+    setConfirmLoading(true);
     try {
-      await apiDeletePatient(id);
+      await apiDeletePatient(deletingId);
       toast.success("Đã ẩn bệnh nhân");
+      setConfirmOpen(false);
+      setDeletingId(null);
       fetchList();
     } catch (e: unknown) {
       toast.error(getErrorMessage(e, "Xoá thất bại"));
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -92,7 +108,7 @@ export default function PatientManager() {
         <div className="flex items-center gap-2">
           <BookUser className="w-5 h-5 text-sky-400" />
           <h2 className="font-bold">Quản lý bệnh nhân</h2>
-          <span className="text-sm text-slate-500">({total} dịch vụ)</span>
+          <span className="text-sm text-slate-500">({total} bệnh nhân)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -168,21 +184,14 @@ export default function PatientManager() {
                   <td className="py-2 px-3">{p.email ?? "-"}</td>
                   <td className="py-2 px-3 text-center">{p.phone}</td>
 
-                  <td className="py-2 px-3 text-center">
-                    {new Date(p.createdAt).toLocaleString("vi-VN")}
+                  <td className="py-2 px-3 text-center text-slate-600 text-xs">
+                    {formatDateTime(p.createdAt)}
                   </td>
                   <td className="py-2 px-3">
                     <div className="flex items-center gap-2 justify-center">
                       <button
-                        title="Sửa"
-                        onClick={() => onEdit(p.patientId)}
-                        className="cursor-pointer p-2 rounded-[var(--rounded)] bg-warning-linear text-white"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
                         title="Xoá (ẩn)"
-                        onClick={() => onDelete(p.patientId)}
+                        onClick={() => askDelete(p.patientId)}
                         className="cursor-pointer p-2 rounded-[var(--rounded)] bg-error-linear text-white"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -224,6 +233,19 @@ export default function PatientManager() {
         editingId={editingId}
         onClose={() => setOpen(false)}
         onSaved={onSaved}
+      />
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        loading={confirmLoading}
+        title="Xóa bệnh nhân"
+        description="Bạn có chắc muốn xóa (ẩn) bệnh nhân này? Hành động này có thể ảnh hưởng đến dữ liệu liên quan."
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy"
+        danger
       />
     </section>
   );
