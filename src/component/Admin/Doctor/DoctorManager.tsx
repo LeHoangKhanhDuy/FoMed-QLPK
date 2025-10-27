@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "../../../common/ConfirmModal";
 import { apiActivateDoctor, apiCreateDoctor, apiDeactivateDoctor, apiGetDoctors, apiUpdateDoctor, type CreateDoctorPayload, type DoctorItem, type UpdateDoctorPayload } from "../../../services/doctorMApi";
 import DoctorModal from "./DoctorModal";
+import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../../Utils/avatarHelper";
 
 // ===================== MAIN COMPONENT =====================
 export default function DoctorManager() {
@@ -51,7 +52,7 @@ export default function DoctorManager() {
       });
       
       setItems(res.items || []);
-      setTotal(res.total || 0);
+      setTotal(res.totalItems || 0);
       
       if (!opts?.keepPage) {
         // Đảm bảo page từ response là số hợp lệ
@@ -209,6 +210,8 @@ export default function DoctorManager() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-white">
+              <th className="px-3 py-2 text-center">ID</th>
+              <th className="px-3 py-2 text-center">Ảnh</th>
               <th className="px-3 py-2 text-left">Họ tên</th>
               <th className="px-3 py-2 text-left">Email</th>
               <th className="px-3 py-2 text-left">SĐT</th>
@@ -224,7 +227,7 @@ export default function DoctorManager() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={10} className="py-6 text-center text-slate-500">
+                <td colSpan={11} className="py-6 text-center text-slate-500">
                   Đang tải dữ liệu…
                 </td>
               </tr>
@@ -232,7 +235,7 @@ export default function DoctorManager() {
 
             {!loading && showing.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-6 text-center text-slate-500">
+                <td colSpan={11} className="py-6 text-center text-slate-500">
                   Không có dữ liệu
                 </td>
               </tr>
@@ -244,6 +247,25 @@ export default function DoctorManager() {
                   key={doc.doctorId}
                   className="text-center border-b last:border-none"
                 >
+                  <td className="px-3 py-2 text-left font-bold">
+                    {doc.doctorId}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex justify-center">
+                      <img
+                        src={getFullAvatarUrl(doc.avatarUrl)}
+                        alt={doc.fullName}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-sky-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          // Chỉ set default nếu chưa phải là default (tránh infinite loop)
+                          if (!target.src.includes(DEFAULT_AVATAR_URL)) {
+                            target.src = DEFAULT_AVATAR_URL;
+                          }
+                        }}
+                      />
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-left font-bold">
                     {doc.fullName}
                   </td>

@@ -1,12 +1,18 @@
 // src/services/doctorsApi.ts
-import { authHttp } from "../services/http";
+// File này giữ lại cho backward compatibility, nhưng nên dùng doctorMApi.ts mới
+import { publicHttp } from "./http";
 
+// Types cơ bản (giữ lại cho backward compatibility)
 export type BEDoctor = {
   doctorId: number;
-  fullName: string; // "BS. Nguyễn Văn A" (theo swagger bạn gửi)
+  fullName: string;
   title?: string | null;
   ratingAvg?: number | null;
   ratingCount?: number | null;
+  avatarUrl?: string | null;
+  primarySpecialtyName?: string | null;
+  roomName?: string | null;
+  experienceYears?: number | null;
 };
 
 export async function apiListDoctors(params?: {
@@ -15,16 +21,26 @@ export async function apiListDoctors(params?: {
   specialtyId?: number;
   isActive?: boolean;
 }) {
-  const { data } = await authHttp.get<{
+  const { data } = await publicHttp.get<{
     success: boolean;
     data: {
       page: number;
       limit: number;
-      total: number;
+      totalItems: number;
       totalPages: number;
       items: BEDoctor[];
     };
   }>("/api/v1/doctors", { params });
+
+  return data.data;
+}
+
+export async function apiGetDoctorById(id: number) {
+  const { data } = await publicHttp.get<{
+    success: boolean;
+    message: string;
+    data: BEDoctor;
+  }>(`/api/v1/doctors/details/${id}`);
 
   return data.data;
 }
