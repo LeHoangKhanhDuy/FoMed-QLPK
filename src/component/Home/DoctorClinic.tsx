@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import DoctorCard from "../Card/DoctorCard";
 import defaultDoctorImg from "../../assets/images/bacsi1.jpg";
 import { apiGetPublicDoctors } from "../../services/doctorMApi";
+import { getFullAvatarUrl } from "../../Utils/avatarHelper";
 
 interface DoctorDisplay {
   id: number;
@@ -36,9 +37,9 @@ export default function DoctorClinic() {
             : "+10 năm kinh nghiệm",
           specialty: doc.primarySpecialtyName || "Chuyên khoa tổng quát",
           rating: doc.ratingAvg || 4.5,
-          visitCount: doc.visitCount || Math.floor(Math.random() * 200) + 50,
-          logo: doc.avatarUrl || defaultDoctorImg,
-          verified: doc.isActive,
+          visitCount: Math.floor(Math.random() * 200) + 50, // visitCount không có trong DoctorListItem
+          logo: doc.avatarUrl ? getFullAvatarUrl(doc.avatarUrl) : defaultDoctorImg,
+          verified: true, // isActive không có trong DoctorListItem, mặc định true
         }));
         setDoctors(mappedDoctors);
       } catch (error) {

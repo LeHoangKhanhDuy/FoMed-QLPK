@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getService } from "../../services/service";
-import { apiGetDoctorDetail, type DoctorItem } from "../../services/doctorMApi";
+import { apiGetDoctorDetail, type DoctorDetail } from "../../services/doctorMApi";
 import { createAppointment } from "../../services/appointmentsApi";
 import { publicHttp } from "../../services/http";
 
@@ -77,7 +77,7 @@ export const BookingReview = () => {
         }
 
         // 2. Lấy bác sĩ
-        const doctor: DoctorItem = await apiGetDoctorDetail(
+        const doctor: DoctorDetail = await apiGetDoctorDetail(
           Number(doctorId)
         );
 

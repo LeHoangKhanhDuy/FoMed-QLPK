@@ -8,7 +8,7 @@ import MainLayout from "../../layouts/MainLayout";
 import { getService } from "../../services/service";
 import {
   apiGetPublicDoctors,
-  type DoctorItem,
+  type DoctorListItem,
 } from "../../services/doctorMApi";
 
 type ServiceInfo = {
@@ -84,7 +84,7 @@ export const BookingDoctorPage = () => {
 
         // Map dữ liệu bác sĩ
         const mappedDoctors: Doctor[] = doctorsRes.items.map(
-          (d: DoctorItem) => ({
+          (d: DoctorListItem) => ({
             id: d.doctorId,
             name: d.fullName,
             note: d.roomName ? `Phòng khám: ${d.roomName}` : undefined,
@@ -92,7 +92,7 @@ export const BookingDoctorPage = () => {
               ? `+${d.experienceYears} năm kinh nghiệm`
               : "Kinh nghiệm chuyên môn",
             specialty: d.primarySpecialtyName || "Chuyên khoa tổng hợp",
-            verified: d.isActive,
+            verified: true, // DoctorListItem không có isActive
           })
         );
 
