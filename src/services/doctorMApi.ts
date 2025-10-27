@@ -1,5 +1,45 @@
+// Types cho Education, Expertise, Achievement
+export interface DoctorEducation {
+  yearFrom?: number | null;
+  yearTo?: number | null;
+  title: string;
+  detail?: string | null;
+}
 
+export interface DoctorExpertise {
+  content: string;
+}
 
+export interface DoctorAchievement {
+  yearLabel?: string | null;
+  content: string;
+}
+
+export interface DoctorWeeklySlot {
+  weekday: number; // 0=CN, 1=T2, ..., 6=T7
+  startTime: string; // "08:00"
+  endTime: string; // "12:00"
+  note?: string | null;
+}
+
+// Doctor Item cho danh sách (list)
+export interface DoctorListItem {
+  doctorId: number;
+  fullName: string;
+  title: string | null;
+  primarySpecialtyName: string | null;
+  roomName: string | null;
+  experienceYears: number | null;
+  ratingAvg: number;
+  ratingCount: number;
+  avatarUrl: string | null;
+  intro?: string | null;
+  educations: DoctorEducation[];
+  expertises: DoctorExpertise[];
+  achievements: DoctorAchievement[];
+}
+
+// Doctor Item cho admin (có thêm thông tin quản trị)
 export interface DoctorItem {
   doctorId: number;
   userId: number;
@@ -20,6 +60,27 @@ export interface DoctorItem {
   updatedAt: string;
 }
 
+// Doctor Detail (chi tiết đầy đủ)
+export interface DoctorDetail {
+  doctorId: number;
+  fullName: string;
+  title: string | null;
+  licenseNo: string | null;
+  primarySpecialtyName: string | null;
+  roomName: string | null;
+  experienceYears: number | null;
+  experienceNote: string | null;
+  intro: string | null;
+  visitCount: number;
+  ratingAvg: number;
+  ratingCount: number;
+  avatarUrl: string | null;
+  educations: DoctorEducation[];
+  expertises: DoctorExpertise[];
+  achievements: DoctorAchievement[];
+  weeklySlots: DoctorWeeklySlot[];
+}
+
 export interface AvailableUser {
   userId: number;
   fullName: string;
@@ -38,6 +99,9 @@ export interface CreateDoctorPayload {
   experienceYears?: number | null;
   experienceNote?: string | null;
   intro?: string | null;
+  educations?: DoctorEducation[];
+  expertises?: DoctorExpertise[];
+  achievements?: DoctorAchievement[];
 }
 
 export interface UpdateDoctorPayload {
@@ -49,12 +113,39 @@ export interface UpdateDoctorPayload {
   experienceNote?: string | null;
   intro?: string | null;
   isActive?: boolean;
+  educations: DoctorEducation[];
+  expertises: DoctorExpertise[];
+  achievements: DoctorAchievement[];
 }
 
 export interface DoctorsListResponse {
   items: DoctorItem[];
-  total: number;
+  totalItems: number;
   page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface DoctorsPublicListResponse {
+  items: DoctorListItem[];
+  totalItems: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface DoctorRating {
+  ratingId: number;
+  score: number;
+  comment?: string | null;
+  createdAt: string;
+}
+
+export interface DoctorRatingsResponse {
+  items: DoctorRating[];
+  totalItems: number;
+  page: number;
+  limit: number;
   totalPages: number;
 }
 
@@ -62,6 +153,12 @@ export interface Specialty {
   specialtyId: number;
   name: string;
   code: string | null;
+}
+
+// Upload response types
+export interface UploadAvatarResponse {
+  avatarUrl: string;
+  message?: string;
 }
 
 const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "")}/api/v1/doctors`;
@@ -217,7 +314,7 @@ export async function apiGetSpecialties(): Promise<Specialty[]> {
  */
 export async function apiGetDoctorDetail(
   doctorId: number
-): Promise<DoctorItem> {
+): Promise<DoctorDetail> {
   const res = await fetch(`${API_BASE}/details/${doctorId}`);
 
   if (!res.ok) {
@@ -226,7 +323,7 @@ export async function apiGetDoctorDetail(
   }
 
   const json = await res.json();
-  return json.data as DoctorItem; // ép kiểu an toàn
+  return json.data as DoctorDetail;
 }
 
 /**
@@ -235,7 +332,7 @@ export async function apiGetDoctorDetail(
 export async function apiGetPublicDoctors(params: {
   page?: number;
   limit?: number;
-}): Promise<DoctorsListResponse> {
+}): Promise<DoctorsPublicListResponse> {
   const query = new URLSearchParams({
     page: String(params.page || 1),
     limit: String(params.limit || 20),
@@ -249,7 +346,7 @@ export async function apiGetPublicDoctors(params: {
   }
 
   const json = await res.json();
-  return json.data;
+  return json.data as DoctorsPublicListResponse;
 }
 
 /**
@@ -258,12 +355,7 @@ export async function apiGetPublicDoctors(params: {
 export async function apiGetDoctorRatings(
   doctorId: number,
   params: { page?: number; limit?: number }
-): Promise<{
-  items: unknown[];
-  total: number;
-  page: number;
-  totalPages: number;
-}> {
+): Promise<DoctorRatingsResponse> {
   const query = new URLSearchParams({
     page: String(params.page || 1),
     limit: String(params.limit || 20),
@@ -277,5 +369,72 @@ export async function apiGetDoctorRatings(
   }
 
   const json = await res.json();
-  return json.data;
+  return json.data as DoctorRatingsResponse;
+}
+
+/**
+ * Upload ảnh đại diện cho bác sĩ
+ * @param doctorId - ID của bác sĩ
+ * @param file - File ảnh cần upload
+ * @returns URL của ảnh đã upload
+ */
+export async function apiUploadDoctorAvatar(
+  doctorId: number,
+  file: File
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file); // Backend nhận field name là "file"
+
+  const res = await fetch(`${API_BASE}/admin/${doctorId}/upload-avatar`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Không thể upload ảnh đại diện");
+  }
+
+  const json = await res.json();
+  
+  // Backend response: { success, message, data: { doctorId, avatarUrl } }
+  if (!json.success) {
+    throw new Error(json.message || "Upload thất bại");
+  }
+  
+  return json.data?.avatarUrl || "";
+}
+
+/**
+ * Xóa ảnh đại diện của bác sĩ (trở về ảnh profile)
+ * @param doctorId - ID của bác sĩ
+ * @returns URL ảnh fallback (từ profile)
+ */
+export async function apiDeleteDoctorAvatar(
+  doctorId: number
+): Promise<string> {
+  const res = await fetch(`${API_BASE}/admin/${doctorId}/delete-avatar`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Không thể xóa ảnh đại diện");
+  }
+
+  const json = await res.json();
+  
+  if (!json.success) {
+    throw new Error(json.message || "Xóa ảnh thất bại");
+  }
+  
+  // Trả về URL của ảnh fallback (profile avatar)
+  return json.data?.avatarUrl || "";
 }
