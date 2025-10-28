@@ -194,6 +194,7 @@ export default function DoctorClinic() {
                   className="snap-start shrink-0 basis-[calc((100%-16px))] lg:basis-[calc((100%-48px)/4)]"
                 >
                   <DoctorCard
+                    id={doc.id}
                     name={doc.name}
                     experience={doc.experience}
                     specialty={doc.specialty}

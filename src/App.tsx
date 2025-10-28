@@ -81,7 +81,7 @@ function App() {
         <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />}/>
 
         {/* DOCTOR */}
-        <Route path="/user/doctor" element={<DoctorProfilePage />} />
+        <Route path="/user/doctor/:id" element={<DoctorProfilePage />} />
         <Route path="/user/doctor-list" element={<DoctorListPage />} />
 
         {/* SPECIALTIES */}
