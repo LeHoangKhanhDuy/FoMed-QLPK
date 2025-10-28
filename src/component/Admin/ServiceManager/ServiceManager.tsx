@@ -208,7 +208,7 @@ export default function ServiceManager() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-white">
-              <th className="px-3 py-2 text-left">Mã</th>
+              <th className="px-3 py-2 text-left">Mã dịch vụ</th>
               <th className="px-3 py-2 text-left">Tên dịch vụ</th>
               <th className="px-3 py-2 text-center">Mô tả</th>
               <th className="px-3 py-2 text-center">Ảnh</th>
