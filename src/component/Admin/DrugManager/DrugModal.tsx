@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Save, X } from "lucide-react";
+import { Save, X, Package } from "lucide-react";
 import type { DrugItem } from "../../../types/drug/drug";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
+import { apiUpdateDrugInventory } from "../../../services/drugApi";
+import toast from "react-hot-toast";
 
 type Props = {
   open: boolean;
@@ -10,6 +12,7 @@ type Props = {
   onSubmit: (
     payload: Omit<DrugItem, "id" | "createdAt" | "status" | "isActive">
   ) => Promise<void>;
+  onInventoryUpdated?: () => void; // Callback để refresh danh sách sau khi cập nhật tồn kho
 };
 
 const UNIT_OPTIONS = ["viên", "gói", "ống", "chai", "vỉ", "ml", "hộp"] as const;
@@ -26,7 +29,7 @@ type DrugForm = Omit<
 type Field = "code" | "name" | "unit" | "price" | "stock";
 type FieldErrors = Partial<Record<Field, string>>;
 
-export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
+export default function DrugModal({ open, onClose, initial, onSubmit, onInventoryUpdated }: Props) {
   const [form, setForm] = useState<DrugForm>({
     code: initial?.code ?? "",
     name: initial?.name ?? "",
@@ -36,7 +39,15 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null); // Thêm state cho thông báo lỗi khi submit
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  
+  // State cho modal cập nhật tồn kho
+  const [showInventory, setShowInventory] = useState(false);
+  const [invQuantity, setInvQuantity] = useState<string>("");
+  const [invType, setInvType] = useState<"in" | "out" | "adjust">("in");
+  const [invLoading, setInvLoading] = useState(false);
+  
+  const isEditing = !!initial?.id;
 
   // —— Validators ——
   const vCode = (v: string) => {
@@ -110,6 +121,13 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
     label: u,
   }));
 
+  // Options cho loại giao dịch tồn kho
+  const inventoryTypeOptions: SelectOption<"in" | "out" | "adjust">[] = [
+    { value: "in", label: "Nhập kho (in)" },
+    { value: "out", label: "Xuất kho (out)" },
+    { value: "adjust", label: "Điều chỉnh (adjust)" },
+  ];
+
   // —— Effects ——
   useEffect(() => {
     if (!open) return;
@@ -121,7 +139,10 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
       stock: initial?.stock ?? 0,
     });
     setErrors({});
-    setSubmitError(null); // Reset thông báo lỗi khi mở modal
+    setSubmitError(null);
+    setShowInventory(false);
+    setInvQuantity("");
+    setInvType("in");
   }, [open, initial]);
 
   // —— Handlers ——
@@ -138,16 +159,49 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
       });
     };
 
+  // Format số thành chuỗi có dấu phẩy ngăn cách hàng nghìn
+  const formatNumber = (num: number): string => {
+    return num.toLocaleString("vi-VN");
+  };
+
   const onChangePriceText: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const raw = e.target.value.replace(/\D/g, ""); // chỉ giữ số
     const n = raw === "" ? 0 : Number(raw);
     setField("price")(n);
   };
 
-  const onChangeStock: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const raw = e.target.value.replace(/^0+(?=\d)/, ""); // Loại bỏ số 0 ở đầu nhưng giữ số 0 đơn lẻ
-    const n = raw === "" ? 0 : Math.max(0, Math.floor(Number(raw)));
-    setField("stock")(Number.isFinite(n) ? n : 0);
+  // Handler cập nhật tồn kho
+  const handleInventoryUpdate = async () => {
+    if (!initial?.id) return;
+    
+    const qty = Number(invQuantity);
+    if (!Number.isFinite(qty) || qty === 0) {
+      toast.error("Số lượng không hợp lệ");
+      return;
+    }
+
+    setInvLoading(true);
+    try {
+      const result = await apiUpdateDrugInventory(initial.id, {
+        txnType: invType,
+        quantity: invType === "out" ? -Math.abs(qty) : qty,
+        refNote: `${invType === "in" ? "Nhập" : invType === "out" ? "Xuất" : "Điều chỉnh"} kho`,
+      });
+
+      toast.success(`Đã cập nhật tồn kho: ${result.stock.toLocaleString("vi-VN")}`);
+      
+      // Cập nhật stock trong form
+      setForm((f) => ({ ...f, stock: result.stock }));
+      setShowInventory(false);
+      setInvQuantity("");
+      
+      // Gọi callback để refresh danh sách bên ngoài
+      onInventoryUpdated?.();
+    } catch (error) {
+      toast.error("Cập nhật tồn kho thất bại");
+    } finally {
+      setInvLoading(false);
+    }
   };
 
   const submit = async () => {
@@ -265,34 +319,46 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
             <input
               type="text"
               inputMode="numeric"
-              value={form.price.toString()}
+              value={formatNumber(form.price)}
               onChange={onChangePriceText}
               className={ctrl("price")}
-              placeholder="VD: 15000"
+              placeholder="VD: 15.000"
             />
             {errors.price && (
               <p className="mt-1 text-xs text-rose-600">{errors.price}</p>
             )}
-          </label>
-
-          {/* Tồn kho */}
-          <label className="text-sm">
-            <div className="flex items-center gap-1">
-              <span className="block mb-1 text-slate-600">Tồn kho</span>
-              <p className="text-red-500">*</p>
-            </div>
-            <input
-              type="text" // Đổi type thành text để giữ định dạng số 0
-              inputMode="numeric"
-              value={form.stock.toString()} // Chuyển thành string để giữ số 0
-              onChange={onChangeStock}
-              className={ctrl("stock")}
-              placeholder="VD: 100"
-            />
-            {errors.stock && (
-              <p className="mt-1 text-xs text-rose-600">{errors.stock}</p>
+            {!errors.price && form.price > 0 && (
+              <p className="mt-1 text-xs text-slate-500">
+                = {formatNumber(form.price)} đ
+              </p>
             )}
           </label>
+
+          {/* Tồn kho - READ ONLY khi edit, ẩn khi create */}
+          {isEditing && (
+            <label className="text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="block mb-1 text-slate-600">Tồn kho hiện tại</span>
+                <button
+                  type="button"
+                  onClick={() => setShowInventory(true)}
+                  className="text-xs px-2 py-1 rounded bg-sky-50 text-sky-600 hover:bg-sky-100 cursor-pointer flex items-center gap-1"
+                >
+                  <Package className="w-3 h-3" />
+                  Cập nhật
+                </button>
+              </div>
+              <input
+                type="text"
+                value={formatNumber(form.stock)}
+                readOnly
+                className="mt-1 block w-full rounded-[var(--rounded)] border bg-slate-50 px-4 py-3 text-[16px] leading-6 shadow-xs cursor-not-allowed text-slate-500"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                💡 Tồn kho tính từ giao dịch nhập/xuất. Nhấn "Cập nhật" để điều chỉnh.
+              </p>
+            </label>
+          )}
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-2">
@@ -314,6 +380,69 @@ export default function DrugModal({ open, onClose, initial, onSubmit }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Modal cập nhật tồn kho */}
+      {showInventory && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowInventory(false)} />
+          <div className="relative w-full max-w-md mx-3 bg-white rounded-lg shadow-lg p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold text-lg">Cập nhật tồn kho</h4>
+              <button
+                onClick={() => setShowInventory(false)}
+                className="cursor-pointer p-1 rounded hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {/* Loại giao dịch */}
+              <SelectMenu<"in" | "out" | "adjust">
+                label="Loại giao dịch"
+                required
+                value={invType}
+                onChange={(v) => setInvType(v as "in" | "out" | "adjust")}
+                options={inventoryTypeOptions}
+              />
+
+              {/* Số lượng */}
+              <label className="text-sm mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="block mb-1 text-slate-600">Số lượng</span>
+                  <p className="text-red-500">*</p>
+                </div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={invQuantity}
+                  onChange={(e) => setInvQuantity(e.target.value)}
+                  className="mt-1 block w-full rounded-[var(--rounded)] border bg-white px-4 py-3 text-[16px] shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="VD: 100"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowInventory(false)}
+                className="cursor-pointer px-3 py-2 rounded-[var(--rounded)] border hover:bg-gray-50"
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={handleInventoryUpdate}
+                disabled={invLoading || !invQuantity}
+                className={`cursor-pointer px-3 py-2 rounded-[var(--rounded)] bg-primary-linear text-white ${
+                  invLoading || !invQuantity ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                {invLoading ? "Đang lưu..." : "Xác nhận"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

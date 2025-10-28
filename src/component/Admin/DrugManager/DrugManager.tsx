@@ -335,6 +335,15 @@ export default function DrugManager() {
           await submit(payloadNoStatusNoActive);
           setOpen(false);
         }}
+        onInventoryUpdated={async () => {
+          // Refresh danh sách sau khi cập nhật tồn kho
+          try {
+            const { items: freshItems } = await apiListDrugs();
+            setItems(freshItems);
+          } catch (error) {
+            console.error("Failed to refresh drug list:", error);
+          }
+        }}
       />
     </section>
   );

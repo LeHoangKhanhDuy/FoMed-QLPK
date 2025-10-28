@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import ServiceClinicCard from "../Card/ServiceCard";
 import defaultImage from "../../assets/images/khamtongquat.jpg";
 import type { ServiceItem } from "../../types/serviceType/service";
@@ -19,6 +20,7 @@ interface ClinicDisplay {
 
 export default function ServiceClinic() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>("goi");
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,6 +262,8 @@ export default function ServiceClinic() {
                     price={c.price}
                     logo={c.logo}
                     verified={c.verified}
+                    linkTo={`/booking-doctor?serviceId=${c.id}`}
+                    onBook={() => navigate(`/booking-doctor?serviceId=${c.id}`)}
                   />
                 </div>
               ))

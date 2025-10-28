@@ -9,6 +9,9 @@ import {
 import { DoctorIntroduce } from "./DoctorIntroduce";
 import DoctorRelated from "./DoctorRelated";
 import type { DoctorCardProps } from "../Card/DoctorCard";
+import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../Utils/avatarHelper";
+
+import type { DoctorEducation, DoctorExpertise, DoctorAchievement } from "../../services/doctorMApi";
 
 type Doctor = {
   id: number;
@@ -20,6 +23,10 @@ type Doctor = {
   schedule_type?: string;
   visitCount: number;
   star: number; // ví dụ: 4.5
+  intro?: string | null;
+  educations?: DoctorEducation[];
+  expertises?: DoctorExpertise[];
+  achievements?: DoctorAchievement[];
 };
 
 /* ⭐ RatingStars: tính số sao full/half/empty từ điểm 0..5 */
@@ -100,14 +107,17 @@ export default function DoctorProfile({
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* Ảnh */}
             <div className="md:col-span-3 flex justify-center md:justify-start">
-              <div className="w-40 h-40 overflow-hidden">
+              <div className="w-40 h-40 overflow-hidden rounded-lg">
                 <img
-                  src={doctor.avatar}
+                  src={getFullAvatarUrl(doctor.avatar)}
                   alt={doctor.name}
                   className="w-full h-full object-cover"
-                  onError={(e) =>
-                    (e.currentTarget.src = "/fallback-doctor.png")
-                  }
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (!target.src.includes(DEFAULT_AVATAR_URL)) {
+                      target.src = DEFAULT_AVATAR_URL;
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -172,7 +182,12 @@ export default function DoctorProfile({
         {/* Thanh dưới */}
       </div>
 
-      <DoctorIntroduce />
+      <DoctorIntroduce
+        intro={doctor.intro}
+        educations={doctor.educations}
+        expertises={doctor.expertises}
+        achievements={doctor.achievements}
+      />
 
       <DoctorRelated
         doctors={relatedDoctors} 

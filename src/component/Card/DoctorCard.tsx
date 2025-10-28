@@ -7,6 +7,7 @@ import visit from "../../assets/images/user.png";
 import { Link } from "react-router-dom";
 
 export interface DoctorCardProps {
+  id?: number; // ID bác sĩ để tạo link
   name: string;
   specialty: string;
   experience: string;
@@ -24,6 +25,7 @@ export interface DoctorCardProps {
 }
 
 const DoctorCard: React.FC<DoctorCardProps> = ({
+  id,
   name,
   specialty,
   experience,
@@ -32,9 +34,9 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   logo,
   verified,
   className = "",
-  // default fallback
-  detailHref = "/user/doctor",
-  bookHref = "/booking/select-service",
+  // default fallback - nếu có id thì tự tạo link
+  detailHref = id ? `/user/doctor/${id}` : "/user/doctor-list",
+  bookHref = id ? `/booking/select-service?doctorId=${id}` : "/booking/select-service",
   onView,
   onBook,
 }) => {
