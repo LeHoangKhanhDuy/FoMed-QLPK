@@ -257,16 +257,21 @@ export default function ServiceManager() {
                   <td className="px-3 py-2">
                     <div className="flex justify-center">
                       {s.imageUrl ? (
-                        <img
-                          src={s.imageUrl}
-                          alt={s.name}
-                          className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 shadow-sm"
-                          onError={(e) => {
-                            // Fallback nếu ảnh lỗi
-                            e.currentTarget.src =
-                              "https://via.placeholder.com/64?text=No+Image";
-                          }}
-                        />
+                        <div className="relative w-16 h-16 overflow-visible group">
+                          {/* Backdrop khi hover */}
+                          <div className="fixed inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-40" />
+                          
+                          <img
+                            src={s.imageUrl}
+                            alt={s.name}
+                            className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 shadow-sm cursor-pointer transition-all duration-300 group-hover:scale-[2.5] group-hover:z-50 group-hover:shadow-2xl group-hover:border-sky-400 relative"
+                            onError={(e) => {
+                              // Fallback nếu ảnh lỗi
+                              e.currentTarget.src =
+                                "https://via.placeholder.com/64?text=No+Image";
+                            }}
+                          />
+                        </div>
                       ) : (
                         <div className="w-16 h-16 flex items-center justify-center bg-slate-100 rounded-lg border-2 border-dashed border-slate-300">
                           <span className="text-xs text-slate-400">

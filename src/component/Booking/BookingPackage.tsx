@@ -15,9 +15,9 @@ export default function BookingPackages() {
     (async () => {
       try {
         setLoading(true);
-        // ✅ chỉ lấy dịch vụ đang hoạt động
+        // lấy dịch vụ đang hoạt động
         const res = await getService({ page: 1, pageSize: 12, isActive: true });
-        // ✅ phòng hờ nếu BE chưa lọc
+        // phòng hờ nếu BE chưa lọc
         const onlyActive = (res.data.items ?? []).filter((x) => x.isActive);
         setItems(onlyActive);
       } catch {
@@ -47,11 +47,14 @@ export default function BookingPackages() {
             Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="w-full bg-white rounded-xl p-5 shadow-md ring-1 ring-slate-100 animate-pulse"
+                className="w-full bg-white rounded-xl p-3 md:p-5 shadow-md ring-1 ring-slate-100 animate-pulse"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-slate-100" />
-                  <div className="h-5 w-40 bg-slate-100 rounded" />
+                <div className="flex items-center gap-2 md:gap-4">
+                  <div className="shrink-0 w-16 h-16 md:w-24 md:h-24 rounded-lg bg-slate-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-5 w-3/4 bg-slate-200 rounded" />
+                    <div className="h-4 w-1/2 bg-slate-200 rounded" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -70,11 +73,11 @@ export default function BookingPackages() {
                   aria-label={s.name}
                 >
                   <div className="flex items-center gap-2 md:gap-4">
-                    <div className="w-12 h-12 md:w-40 md:h-20 rounded-md bg-sky-100 flex items-center justify-center ring-1 ring-sky-100">
+                    <div className="shrink-0 w-16 h-16 md:w-42 md:h-24 rounded-lg bg-sky-50 overflow-hidden ring-1 ring-sky-100">
                       <img
                         src={img}
                         alt={s.name}
-                        className="w-full h-full rounded-md object-cover"
+                        className="w-full h-full object-cover"
                         onError={(e) =>
                           ((e.currentTarget as HTMLImageElement).src = clinic)
                         }
