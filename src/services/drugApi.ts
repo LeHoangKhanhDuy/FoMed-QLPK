@@ -140,8 +140,8 @@ export async function apiCreateDrug(
     name: payload.name,
     unit: payload.unit,
     basePrice: payload.price,
-    stock: payload.stock,
-    isActive: payload.isActive, // trạng thái hoạt động
+    // KHÔNG gửi stock - BE không nhận field này
+    isActive: payload.isActive,
   };
 
   const { data } = await authHttp.post<CreateDrugResp>(
@@ -153,8 +153,13 @@ export async function apiCreateDrug(
 
   return {
     id: newId,
-    ...payload,
-    status: payload.stock > 0 ? "in stock" : "out of stock",
+    code: payload.code,
+    name: payload.name,
+    unit: payload.unit,
+    price: payload.price,
+    stock: 0, // Mới tạo luôn = 0
+    isActive: payload.isActive,
+    status: "out of stock",
     createdAt: null,
   };
 }
@@ -169,40 +174,48 @@ export async function apiUpdateDrug(
     name: payload.name,
     unit: payload.unit,
     basePrice: payload.price,
-    stock: payload.stock,
+    // KHÔNG gửi stock - BE không nhận field này
     isActive: payload.isActive,
   };
   
   try {
-    // Gửi request update và nhận response từ server
-    const response = await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
+    // Gửi request update
+    await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
     
-    // Backend trả về dữ liệu trong response.data.data
-    const responseData = response.data?.data;
-    if (responseData) {
-      return {
-        id: responseData.id || id,
-        code: responseData.code || payload.code,
-        name: responseData.name || payload.name,
-        unit: responseData.unit || payload.unit,
-        price: responseData.basePrice || payload.price,
-        stock: payload.stock, // Stock không có trong response, dùng từ payload
-        isActive: responseData.isActive !== undefined ? responseData.isActive : payload.isActive,
-        status: payload.stock > 0 ? "in stock" : "out of stock",
-        createdAt: null,
-      };
-    }
+    // Lấy lại thông tin chi tiết từ server để có stock mới nhất
+    const updated = await apiGetDrugDetails(id);
     
-    // Fallback nếu response không có data
-    return {
-      id,
-      ...payload,
-      status: payload.stock > 0 ? "in stock" : "out of stock",
-      createdAt: null,
-    };
+    return updated;
   } catch (error) {
     throw error;
   }
+}
+
+/* ===== CẬP NHẬT TỒN KHO ===== */
+export async function apiUpdateDrugInventory(
+  id: number,
+  params: {
+    txnType: "in" | "out" | "adjust";
+    quantity: number;
+    unitCost?: number | null;
+    lotId?: number | null;
+    refNote?: string | null;
+  }
+): Promise<{ medicineId: number; stock: number }> {
+  const body = {
+    txnType: params.txnType,
+    quantity: params.quantity,
+    unitCost: params.unitCost ?? null,
+    lotId: params.lotId ?? null,
+    refNote: params.refNote ?? null,
+  };
+
+  const { data } = await authHttp.post(
+    `/api/v1/admin/medicines/inventory/${id}`,
+    body
+  );
+
+  return data?.data ?? { medicineId: id, stock: 0 };
 }
 
 /* ===== BẬT/TẮT HOẠT ĐỘNG ===== */

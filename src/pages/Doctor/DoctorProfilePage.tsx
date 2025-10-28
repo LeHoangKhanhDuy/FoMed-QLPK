@@ -77,7 +77,10 @@ export const DoctorProfilePage = () => {
       ? `+${doctorData.experienceYears} năm kinh nghiệm`
       : "Kinh nghiệm chuyên môn",
     schedule_type: doctorData.weeklySlots.length > 0 
-      ? doctorData.weeklySlots.map(s => s.dayOfWeek).join(", ")
+      ? doctorData.weeklySlots.map(s => {
+          const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+          return days[s.weekday];
+        }).join(", ")
       : "Hẹn khám",
     visitCount: doctorData.visitCount || 0,
     star: doctorData.ratingAvg || 5.0,
