@@ -1,14 +1,33 @@
-import { Users, Package, TrendingUp, TrendingDown, DollarSign, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Stethoscope, CalendarPlus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getVisitTotals, getDoctorTotals, getPatientTotals, type VisitTotalResponse, type DoctorTotalResponse, type PatientTotalResponse } from "../../../services/dashboard";
+import toast from "react-hot-toast";
 
 type StatCardProps = {
   title: string;
   value: string | number;
   change: number;
   icon: React.ReactNode;
+  loading?: boolean;
 };
 
-const StatCard = ({ title, value, change, icon }: StatCardProps) => {
+const StatCard = ({ title, value, change, icon, loading }: StatCardProps) => {
   const isPositive = change >= 0;
+  
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="h-4 w-20 bg-gray-200 rounded mb-2"></div>
+            <div className="h-8 w-24 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+          </div>
+          <div className="bg-gray-100 rounded-lg p-3 w-12 h-12"></div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
@@ -27,7 +46,7 @@ const StatCard = ({ title, value, change, icon }: StatCardProps) => {
                 isPositive ? "text-green-500" : "text-red-500"
               }`}
             >
-              {Math.abs(change)}%
+              {Math.abs(change).toFixed(2)}%
             </span>
           </div>
         </div>
@@ -38,6 +57,61 @@ const StatCard = ({ title, value, change, icon }: StatCardProps) => {
 };
 
 export const Dashboard = () => {
+  const [visitData, setVisitData] = useState<VisitTotalResponse | null>(null);
+  const [doctorData, setDoctorData] = useState<DoctorTotalResponse | null>(null);
+  const [patientData, setPatientData] = useState<PatientTotalResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Gọi cả 3 API song song
+        const [visits, doctors, patients] = await Promise.all([
+          getVisitTotals(),
+          getDoctorTotals(),
+          getPatientTotals()
+        ]);
+        
+        setVisitData(visits);
+        setDoctorData(doctors);
+        setPatientData(patients);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error("Không thể tải dữ liệu dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Tính % thay đổi lượt khám (so sánh thisMonth vs thisWeek)
+  const calculateVisitChange = (): number => {
+    if (!visitData) return 0;
+    const { totalThisWeek, totalThisMonth } = visitData;
+    if (totalThisWeek === 0) return totalThisMonth > 0 ? 100 : 0;
+    return ((totalThisMonth - totalThisWeek) / totalThisWeek) * 100;
+  };
+
+  // Tính % bác sĩ hoạt động so với tổng số
+  const calculateDoctorActivePercentage = (): number => {
+    if (!doctorData) return 0;
+    const { totalActive, totalAll } = doctorData;
+    if (totalAll === 0) return 0;
+    // % bác sĩ đang hoạt động
+    return (totalActive / totalAll) * 100;
+  };
+
+  // Tính % thay đổi bệnh nhân mới (so sánh thisMonth vs thisWeek)
+  const calculatePatientChange = (): number => {
+    if (!patientData) return 0;
+    const { newThisWeek, newThisMonth } = patientData;
+    if (newThisWeek === 0) return newThisMonth > 0 ? 100 : 0;
+    return ((newThisMonth - newThisWeek) / newThisWeek) * 100;
+  };
   const monthlyData = [
     { month: "Jan", value: 150 },
     { month: "Feb", value: 380 },
@@ -69,22 +143,25 @@ export const Dashboard = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Customers"
-          value="3,782"
-          change={11.01}
-          icon={<Users className="w-6 h-6 text-gray-600" />}
+          title="Lượt khám tháng này"
+          value={visitData?.totalThisMonth.toLocaleString() || "0"}
+          change={calculateVisitChange()}
+          icon={<CalendarPlus className="w-6 h-6 text-sky-600" />}
+          loading={loading}
         />
         <StatCard
-          title="Orders"
-          value="5,359"
-          change={-9.05}
-          icon={<Package className="w-6 h-6 text-gray-600" />}
+          title="Bác sĩ hoạt động"
+          value={`${doctorData?.totalActive || 0}/${doctorData?.totalAll || 0}`}
+          change={calculateDoctorActivePercentage()}
+          icon={<Stethoscope className="w-6 h-6 text-green-600" />}
+          loading={loading}
         />
         <StatCard
-          title="Revenue"
-          value="$89,432"
-          change={12.5}
-          icon={<DollarSign className="w-6 h-6 text-gray-600" />}
+          title="Bệnh nhân mới tháng này"
+          value={patientData?.newThisMonth.toLocaleString() || "0"}
+          change={calculatePatientChange()}
+          icon={<Users className="w-6 h-6 text-purple-600" />}
+          loading={loading}
         />
         <StatCard
           title="Growth"
