@@ -25,10 +25,29 @@ export default function DoctorClinic() {
     const fetchDoctors = async () => {
       try {
         setLoading(true);
+        
+        // Kiểm tra cache trong sessionStorage (cache 5 phút)
+        const cacheKey = 'home_doctors_cache';
+        const cacheTimeKey = 'home_doctors_cache_time';
+        const cached = sessionStorage.getItem(cacheKey);
+        const cacheTime = sessionStorage.getItem(cacheTimeKey);
+        
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
+        const now = Date.now();
+        
+        if (cached && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
+          // Dùng cache
+          setDoctors(JSON.parse(cached));
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch từ API - giảm xuống 16 items (đủ cho carousel)
         const res = await apiGetPublicDoctors({
           page: 1,
-          limit: 50,
+          limit: 16,
         });
+        
         const mappedDoctors: DoctorDisplay[] = res.items.map((doc) => ({
           id: doc.doctorId,
           name: doc.fullName || `BS #${doc.doctorId}`,
@@ -41,7 +60,12 @@ export default function DoctorClinic() {
           logo: doc.avatarUrl ? getFullAvatarUrl(doc.avatarUrl) : defaultDoctorImg,
           verified: true, // isActive không có trong DoctorListItem, mặc định true
         }));
+        
         setDoctors(mappedDoctors);
+        
+        // Lưu vào cache
+        sessionStorage.setItem(cacheKey, JSON.stringify(mappedDoctors));
+        sessionStorage.setItem(cacheTimeKey, now.toString());
       } catch (error) {
         console.error("Lỗi tải bác sĩ:", error);
         setDoctors([]);

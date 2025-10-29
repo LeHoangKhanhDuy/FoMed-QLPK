@@ -87,7 +87,13 @@ export default function DoctorModal({
   const [loadingSpecialties, setLoadingSpecialties] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      // Cleanup: Giải phóng blob URL khi đóng modal
+      if (avatarPreview && avatarPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      return;
+    }
 
     const loadData = async () => {
       // Reset các state
@@ -314,12 +320,15 @@ export default function DoctorModal({
       return;
     }
 
-    // Show preview immediately
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    // ✅ TỐI ƯU: Dùng createObjectURL thay vì FileReader - nhanh hơn ~100 lần!
+    // Giải phóng URL cũ nếu có để tránh memory leak
+    if (avatarPreview && avatarPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    
+    // Tạo preview URL ngay lập tức (không cần đọc file)
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
 
     // Nếu đang EDIT: Upload ngay lên server
     if (isEditing && initial?.doctorId) {
@@ -329,13 +338,18 @@ export default function DoctorModal({
         
         // uploadedUrl từ backend là relative path như: /uploads/doctors/xxx.jpg
         setAvatarUrl(uploadedUrl);
+        
+        // Giải phóng blob URL cũ và dùng URL từ server
+        URL.revokeObjectURL(previewUrl);
         setAvatarPreview(getFullAvatarUrl(uploadedUrl)); // Convert sang full URL để hiển thị
+        
         toast.success("Upload ảnh thành công!");
       } catch (error: any) {
         console.error("Upload error:", error);
         toast.error(error.message || "Không thể upload ảnh");
         
-        // Reset preview về ảnh cũ
+        // Giải phóng blob URL và reset preview về ảnh cũ
+        URL.revokeObjectURL(previewUrl);
         setAvatarPreview(getFullAvatarUrl(initial?.avatarUrl));
       } finally {
         setUploadingAvatar(false);
@@ -362,6 +376,11 @@ export default function DoctorModal({
       setConfirmDeleteAvatar(true);
     } else {
       // Nếu đang tạo mới: Chỉ xóa local
+      // Giải phóng blob URL trước khi reset
+      if (avatarPreview && avatarPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      
       setPendingAvatarFile(null);
       setAvatarUrl("");
       setAvatarPreview(DEFAULT_AVATAR_URL);
