@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Save, X, Plus, Trash, Upload, ImageIcon, Trash2 } from "lucide-react";
+import { Save, X, Plus, Upload, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 import {
   apiGetAvailableUsers,
   apiUploadDoctorAvatar,
   apiDeleteDoctorAvatar,
+  apiGetDoctorDetail,
   type AvailableUser,
   type CreateDoctorPayload,
   type DoctorItem,
@@ -68,6 +69,12 @@ export default function DoctorModal({
   const [expertises, setExpertises] = useState<DoctorExpertise[]>([]);
   const [achievements, setAchievements] = useState<DoctorAchievement[]>([]);
 
+  // Confirm delete state
+  const [confirmDelete, setConfirmDelete] = useState<{
+    type: "education" | "expertise" | "achievement" | null;
+    index: number | null;
+  }>({ type: null, index: null });
+
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -80,49 +87,117 @@ export default function DoctorModal({
   const [loadingSpecialties, setLoadingSpecialties] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-
-    // Reset form
-    setForm({
-      userId: initial?.userId ?? 0,
-      title: initial?.title ?? null,
-      primarySpecialtyId: null,
-      licenseNo: initial?.licenseNo ?? null,
-      roomName: initial?.roomName ?? null,
-      experienceYears: initial?.experienceYears ?? null,
-      experienceNote: null,
-      intro: null,
-      isActive: initial?.isActive ?? true,
-      educations: [],
-      expertises: [],
-      achievements: [],
-    });
-    setEducations([]);
-    setExpertises([]);
-    setAchievements([]);
-    
-    // Set avatar với full URL
-    const initialAvatar = initial?.avatarUrl || "";
-    setAvatarUrl(initialAvatar);
-    setAvatarPreview(getFullAvatarUrl(initialAvatar));
-    setPendingAvatarFile(null); // Reset pending file
-    setErr(null);
-
-    // Load Available Users (chỉ khi tạo mới)
-    if (!isEditing) {
-      setLoadingUsers(true);
-      apiGetAvailableUsers()
-        .then(setAvailableUsers)
-        .catch(() => setAvailableUsers([]))
-        .finally(() => setLoadingUsers(false));
+    if (!open) {
+      // Cleanup: Giải phóng blob URL khi đóng modal
+      if (avatarPreview && avatarPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      return;
     }
 
-    // Load Specialties từ API mới
-    setLoadingSpecialties(true);
-    apiGetPublicSpecialties()
-      .then(setSpecialties)
-      .catch(() => setSpecialties([]))
-      .finally(() => setLoadingSpecialties(false));
+    const loadData = async () => {
+      // Reset các state
+      setEducations([]);
+      setExpertises([]);
+      setAchievements([]);
+      setPendingAvatarFile(null);
+      setErr(null);
+
+      // Load Specialties trước
+      setLoadingSpecialties(true);
+      const specialtiesList = await apiGetPublicSpecialties().catch(() => [] as SpecialtyItem[]);
+      setSpecialties(specialtiesList);
+      setLoadingSpecialties(false);
+
+      // Load Available Users (chỉ khi tạo mới)
+      if (!isEditing) {
+        setLoadingUsers(true);
+        const users = await apiGetAvailableUsers().catch(() => [] as AvailableUser[]);
+        setAvailableUsers(users);
+        setLoadingUsers(false);
+
+        // Reset form cho tạo mới
+    setForm({
+          userId: 0,
+          title: null,
+          primarySpecialtyId: null,
+          licenseNo: null,
+          roomName: null,
+          experienceYears: null,
+          experienceNote: null,
+          intro: null,
+          isActive: true,
+          educations: [],
+          expertises: [],
+          achievements: [],
+        });
+        setAvatarUrl("");
+        setAvatarPreview(DEFAULT_AVATAR_URL);
+        return;
+      }
+
+      // Nếu đang edit: Fetch doctor detail để lấy đầy đủ thông tin
+      if (isEditing && initial?.doctorId) {
+        try {
+          const detail = await apiGetDoctorDetail(initial.doctorId);
+          
+          // Tìm primarySpecialtyId từ name
+          const matchedSpecialty = specialtiesList.find(
+            s => s.name === detail.primarySpecialtyName
+          );
+
+          // Load form
+          setForm({
+            userId: initial.userId ?? 0,
+            title: detail.title,
+            primarySpecialtyId: matchedSpecialty?.specialtyId ?? null,
+            licenseNo: detail.licenseNo,
+            roomName: detail.roomName,
+            experienceYears: detail.experienceYears,
+            experienceNote: detail.experienceNote,
+            intro: detail.intro,
+            isActive: initial.isActive ?? true,
+            educations: [],
+            expertises: [],
+            achievements: [],
+          });
+
+          // Load dynamic lists
+          setEducations(detail.educations || []);
+          setExpertises(detail.expertises || []);
+          setAchievements(detail.achievements || []);
+
+          // Load avatar
+          const initialAvatar = detail.avatarUrl || "";
+          setAvatarUrl(initialAvatar);
+          setAvatarPreview(getFullAvatarUrl(initialAvatar));
+        } catch (error) {
+          console.error("Error loading doctor detail:", error);
+          toast.error("Không thể tải thông tin bác sĩ");
+          
+          // Fallback: Load từ initial nếu có lỗi
+          setForm({
+            userId: initial.userId ?? 0,
+            title: initial.title ?? null,
+            primarySpecialtyId: null,
+            licenseNo: initial?.licenseNo ?? null,
+            roomName: initial?.roomName ?? null,
+            experienceYears: initial?.experienceYears ?? null,
+            experienceNote: null,
+            intro: null,
+            isActive: initial.isActive ?? true,
+            educations: [],
+            expertises: [],
+            achievements: [],
+          });
+          const initialAvatar = initial.avatarUrl || "";
+          setAvatarUrl(initialAvatar);
+          setAvatarPreview(getFullAvatarUrl(initialAvatar));
+        }
+      }
+    };
+
+    loadData();
   }, [open, initial?.doctorId, isEditing]); // Chỉ dùng doctorId thay vì toàn bộ initial object
 
   const ctrl =
@@ -156,8 +231,8 @@ export default function DoctorModal({
     ]);
   };
 
-  const removeEducation = (index: number) => {
-    setEducations(educations.filter((_, i) => i !== index));
+  const askRemoveEducation = (index: number) => {
+    setConfirmDelete({ type: "education", index });
   };
 
   const updateEducation = (
@@ -175,8 +250,8 @@ export default function DoctorModal({
     setExpertises([...expertises, { content: "" }]);
   };
 
-  const removeExpertise = (index: number) => {
-    setExpertises(expertises.filter((_, i) => i !== index));
+  const askRemoveExpertise = (index: number) => {
+    setConfirmDelete({ type: "expertise", index });
   };
 
   const updateExpertise = (index: number, value: string) => {
@@ -190,8 +265,8 @@ export default function DoctorModal({
     setAchievements([...achievements, { yearLabel: null, content: "" }]);
   };
 
-  const removeAchievement = (index: number) => {
-    setAchievements(achievements.filter((_, i) => i !== index));
+  const askRemoveAchievement = (index: number) => {
+    setConfirmDelete({ type: "achievement", index });
   };
 
   const updateAchievement = (
@@ -202,6 +277,21 @@ export default function DoctorModal({
     const updated = [...achievements];
     updated[index] = { ...updated[index], [field]: value };
     setAchievements(updated);
+  };
+
+  // =================== CONFIRM DELETE HANDLER ===================
+  const confirmDeleteItem = () => {
+    if (confirmDelete.type === "education" && confirmDelete.index !== null) {
+      setEducations(educations.filter((_, i) => i !== confirmDelete.index));
+      toast.success("Đã xóa học vấn");
+    } else if (confirmDelete.type === "expertise" && confirmDelete.index !== null) {
+      setExpertises(expertises.filter((_, i) => i !== confirmDelete.index));
+      toast.success("Đã xóa chuyên môn");
+    } else if (confirmDelete.type === "achievement" && confirmDelete.index !== null) {
+      setAchievements(achievements.filter((_, i) => i !== confirmDelete.index));
+      toast.success("Đã xóa thành tựu");
+    }
+    setConfirmDelete({ type: null, index: null });
   };
 
   // =================== AVATAR UPLOAD HANDLERS ===================
@@ -230,12 +320,15 @@ export default function DoctorModal({
       return;
     }
 
-    // Show preview immediately
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    // ✅ TỐI ƯU: Dùng createObjectURL thay vì FileReader - nhanh hơn ~100 lần!
+    // Giải phóng URL cũ nếu có để tránh memory leak
+    if (avatarPreview && avatarPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    
+    // Tạo preview URL ngay lập tức (không cần đọc file)
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
 
     // Nếu đang EDIT: Upload ngay lên server
     if (isEditing && initial?.doctorId) {
@@ -245,13 +338,18 @@ export default function DoctorModal({
         
         // uploadedUrl từ backend là relative path như: /uploads/doctors/xxx.jpg
         setAvatarUrl(uploadedUrl);
+        
+        // Giải phóng blob URL cũ và dùng URL từ server
+        URL.revokeObjectURL(previewUrl);
         setAvatarPreview(getFullAvatarUrl(uploadedUrl)); // Convert sang full URL để hiển thị
+        
         toast.success("Upload ảnh thành công!");
       } catch (error: any) {
         console.error("Upload error:", error);
         toast.error(error.message || "Không thể upload ảnh");
         
-        // Reset preview về ảnh cũ
+        // Giải phóng blob URL và reset preview về ảnh cũ
+        URL.revokeObjectURL(previewUrl);
         setAvatarPreview(getFullAvatarUrl(initial?.avatarUrl));
       } finally {
         setUploadingAvatar(false);
@@ -278,6 +376,11 @@ export default function DoctorModal({
       setConfirmDeleteAvatar(true);
     } else {
       // Nếu đang tạo mới: Chỉ xóa local
+      // Giải phóng blob URL trước khi reset
+      if (avatarPreview && avatarPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      
       setPendingAvatarFile(null);
       setAvatarUrl("");
       setAvatarPreview(DEFAULT_AVATAR_URL);
@@ -375,16 +478,19 @@ export default function DoctorModal({
       // Submit form chính
       await onSubmit(payload);
       
-      // Nếu là tạo mới VÀ có file pending → Thông báo cần upload sau
-      if (!isEditing && pendingAvatarFile) {
-        // TODO: Backend cần trả về doctorId trong response của create endpoint
-        // để có thể upload ảnh ngay sau khi tạo doctor
-        
-        // Hiện tại tạm thời thông báo user upload sau
-        toast("Hồ sơ đã tạo thành công! Vui lòng vào 'Sửa' để upload ảnh đại diện.", {
-          icon: "ℹ️",
-          duration: 5000,
-        });
+      // Hiển thị toast notification dựa trên action
+      if (isEditing) {
+        toast.success("Cập nhật hồ sơ bác sĩ thành công!");
+      } else {
+        if (pendingAvatarFile) {
+          // Nếu là tạo mới VÀ có file pending → Thông báo cần upload sau
+          toast("Hồ sơ đã tạo thành công! Vui lòng vào 'Sửa' để upload ảnh đại diện.", {
+            icon: "ℹ️",
+            duration: 5000,
+          });
+        } else {
+          toast.success("Tạo hồ sơ bác sĩ thành công!");
+        }
       }
       
       onClose();
@@ -419,7 +525,7 @@ export default function DoctorModal({
         <div className="space-y-6">
           {/* ============ THÔNG TIN CƠ BẢN ============ */}
           <div className="border rounded-lg p-4 bg-slate-50">
-            <h4 className="font-bold text-lg mb-4 text-sky-600">
+            <h4 className="font-bold text-xl mb-4 text-sky-400">
               Thông tin cơ bản
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -490,23 +596,23 @@ export default function DoctorModal({
 
                       {/* User Info */}
                       <div className="flex-1">
-                        <SelectMenu<number>
-                          label="Chọn User"
-                          required
-                          value={form.userId || ""}
-                          options={userOptions}
-                          placeholder={
-                            loadingUsers ? "Đang tải..." : "Chọn User có role DOCTOR"
-                          }
-                          onChange={(v) =>
-                            setForm({ ...form, userId: v === "" ? 0 : Number(v) })
-                          }
-                        />
+                  <SelectMenu<number>
+                    label="Chọn User"
+                    required
+                    value={form.userId || ""}
+                    options={userOptions}
+                    placeholder={
+                      loadingUsers ? "Đang tải..." : "Chọn User có role DOCTOR"
+                    }
+                    onChange={(v) =>
+                      setForm({ ...form, userId: v === "" ? 0 : Number(v) })
+                    }
+                  />
                         <p className="text-xs text-slate-400 mt-2">
                           💡 <strong>Lưu ý:</strong> Ảnh sẽ được lưu sau khi tạo hồ sơ thành công. 
                           Nếu cần thay đổi ảnh, vui lòng vào "Sửa" sau khi tạo.
                         </p>
-                      </div>
+                </div>
                     </div>
                   </div>
                 </>
@@ -519,12 +625,12 @@ export default function DoctorModal({
                     {/* Avatar Preview & Upload */}
                     <div className="flex flex-col items-center gap-2">
                       <div className="relative">
-                        <img
-                          src={avatarPreview}
-                          alt={initial.fullName}
+                      <img
+                        src={avatarPreview}
+                        alt={initial.fullName}
                           className="w-28 h-28 rounded-full object-cover border-2 border-sky-200 shadow-sm"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
                             // Chỉ set default nếu chưa phải là default (tránh infinite loop)
                             if (!target.src.includes(DEFAULT_AVATAR_URL)) {
                               target.src = DEFAULT_AVATAR_URL;
@@ -534,7 +640,7 @@ export default function DoctorModal({
                         {uploadingAvatar && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
                             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          </div>
+                    </div>
                         )}
                       </div>
                       
@@ -578,22 +684,18 @@ export default function DoctorModal({
 
                     {/* User Info */}
                     <div className="flex-1">
-                      <p className="text-sm text-slate-600 mb-1">
+                      <p className="text-sm mb-1">
                         <strong>Bác sĩ:</strong> {initial.fullName}
                       </p>
-                      <p className="text-sm text-slate-600 mb-1">
+                      <p className="text-sm mb-1">
                         <strong>Email:</strong> {initial.email || "-"}
                       </p>
-                      <p className="text-sm text-slate-600 mb-3">
+                      <p className="text-sm mb-3">
                         <strong>SĐT:</strong> {initial.phone || "-"}
                       </p>
                       
                       {/* Manual URL Input */}
                       <div>
-                        <label className="text-xs text-slate-600 block mb-1 flex items-center gap-1">
-                          <ImageIcon className="w-3 h-3" />
-                          URL Ảnh đại diện (tùy chọn)
-                        </label>
                         <div className="flex gap-2">
                           <input
                             type="text"
@@ -761,13 +863,14 @@ export default function DoctorModal({
             </div>
             <div className="space-y-3">
               {educations.map((edu, idx) => (
-                <div key={idx} className="bg-white p-3 rounded-lg border relative">
+                <div key={idx} className="bg-white p-3 rounded-lg border relative pr-12">
                   <button
                     type="button"
-                    onClick={() => removeEducation(idx)}
-                    className="absolute top-2 right-2 p-1 text-red-600 hover:bg-red-50 rounded"
+                    onClick={() => askRemoveEducation(idx)}
+                    className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-md transition-all hover:shadow-lg"
+                    title="Xóa học vấn"
                   >
-                    <Trash className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                   <div className="grid grid-cols-4 gap-2">
                     <input
@@ -861,10 +964,11 @@ export default function DoctorModal({
                   />
                   <button
                     type="button"
-                    onClick={() => removeExpertise(idx)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded"
+                    onClick={() => askRemoveExpertise(idx)}
+                    className="shrink-0 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-md transition-all hover:shadow-lg"
+                    title="Xóa chuyên môn"
                   >
-                    <Trash className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
@@ -895,14 +999,15 @@ export default function DoctorModal({
               {achievements.map((ach, idx) => (
                 <div
                   key={idx}
-                  className="bg-white p-3 rounded-lg border relative"
+                  className="bg-white p-3 rounded-lg border relative pr-12"
                 >
                   <button
                     type="button"
-                    onClick={() => removeAchievement(idx)}
-                    className="absolute top-2 right-2 p-1 text-red-600 hover:bg-red-50 rounded"
+                    onClick={() => askRemoveAchievement(idx)}
+                    className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-md transition-all hover:shadow-lg"
+                    title="Xóa thành tựu"
                   >
-                    <Trash className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                   <div className="grid grid-cols-4 gap-2">
                     <input
@@ -968,6 +1073,31 @@ export default function DoctorModal({
         title="Xóa ảnh đại diện"
         description="Bạn có chắc muốn xóa ảnh đại diện này? Ảnh sẽ trở về ảnh profile mặc định."
         confirmText="Xóa ảnh"
+        cancelText="Hủy"
+        danger
+      />
+
+      {/* Confirm Delete Item Modal (Education, Expertise, Achievement) */}
+      <ConfirmModal
+        open={confirmDelete.type !== null}
+        onClose={() => setConfirmDelete({ type: null, index: null })}
+        onConfirm={confirmDeleteItem}
+        loading={false}
+        title={
+          confirmDelete.type === "education"
+            ? "Xóa học vấn"
+            : confirmDelete.type === "expertise"
+            ? "Xóa chuyên môn"
+            : "Xóa thành tựu"
+        }
+        description={
+          confirmDelete.type === "education"
+            ? "Bạn có chắc muốn xóa thông tin học vấn này?"
+            : confirmDelete.type === "expertise"
+            ? "Bạn có chắc muốn xóa chuyên môn này?"
+            : "Bạn có chắc muốn xóa thành tựu này?"
+        }
+        confirmText="Xóa"
         cancelText="Hủy"
         danger
       />

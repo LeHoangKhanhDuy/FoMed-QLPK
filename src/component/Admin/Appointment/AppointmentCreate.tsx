@@ -58,6 +58,9 @@ const isPastOrToday = (yyyy_mm_dd: string) => {
 type Errors = Partial<Record<keyof AppointmentPayload, string>>;
 type Touched = Partial<Record<keyof AppointmentPayload, boolean>>;
 
+type PatientExtraErrors = Partial<Record<string, string>>;
+type PatientExtraTouched = Partial<Record<string, boolean>>;
+
 function validate(form: AppointmentPayload): Errors {
   const err: Errors = {};
   if (!form.patientName.trim())
@@ -90,6 +93,57 @@ function validate(form: AppointmentPayload): Errors {
   return err;
 }
 
+type PatientExtra = {
+  gender: GenderOpt;
+  dob: string;
+  address: string;
+  district: string;
+  city: string;
+  province: string;
+  nationalId: string;
+  email: string;
+};
+
+function validatePatientExtra(extra: PatientExtra): PatientExtraErrors {
+  const err: PatientExtraErrors = {};
+  
+  if (!extra.gender) {
+    err.gender = "Vui lòng chọn giới tính.";
+  }
+  
+  if (!extra.dob.trim()) {
+    err.dob = "Vui lòng nhập ngày sinh.";
+  } else if (!isPastOrToday(extra.dob)) {
+    err.dob = "Ngày sinh phải bé hơn hoặc bằng hôm nay.";
+  }
+  
+  if (!extra.address.trim()) {
+    err.address = "Vui lòng nhập địa chỉ.";
+  }
+  
+  if (!extra.district.trim()) {
+    err.district = "Vui lòng nhập phường/xã.";
+  }
+  
+  if (!extra.city.trim()) {
+    err.city = "Vui lòng nhập tỉnh/thành phố.";
+  }
+  
+  if (!extra.nationalId.trim()) {
+    err.nationalId = "Vui lòng nhập CCCD.";
+  } else if (!/^\d{9}$|^\d{12}$/.test(extra.nationalId)) {
+    err.nationalId = "CMND/CCCD phải gồm 9 hoặc 12 chữ số.";
+  }
+  
+  if (!extra.email.trim()) {
+    err.email = "Vui lòng nhập email.";
+  } else if (!isEmail(extra.email)) {
+    err.email = "Email không hợp lệ.";
+  }
+  
+  return err;
+}
+
 interface ServiceOption {
   serviceId: number;
   name: string;
@@ -110,17 +164,6 @@ export default function AppointmentCreate() {
     queueNo: undefined,
   });
 
-  type PatientExtra = {
-    gender: GenderOpt;
-    dob: string;
-    address: string;
-    district: string;
-    city: string;
-    province: string;
-    nationalId: string;
-    email: string;
-  };
-
   const [patientExtra, setPatientExtra] = useState<PatientExtra>({
     gender: "",
     dob: "",
@@ -133,6 +176,8 @@ export default function AppointmentCreate() {
   });
   const [touched, setTouched] = useState<Touched>({});
   const [errors, setErrors] = useState<Errors>({});
+  const [patientExtraTouched, setPatientExtraTouched] = useState<PatientExtraTouched>({});
+  const [patientExtraErrors, setPatientExtraErrors] = useState<PatientExtraErrors>({});
   const [services, setServices] = useState<ServiceOption[]>([]);
 
   const [doctors, setDoctors] = useState<BEDoctor[]>([]);
@@ -140,6 +185,7 @@ export default function AppointmentCreate() {
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const markTouched = <K extends keyof AppointmentPayload>(k: K) =>
     setTouched((t) => ({ ...t, [k]: true }));
@@ -151,6 +197,19 @@ export default function AppointmentCreate() {
     setForm((s) => {
       const next = { ...s, [k]: v };
       setErrors(validate(next));
+      return next;
+    });
+
+  const markPatientExtraTouched = (k: keyof PatientExtra) =>
+    setPatientExtraTouched((t) => ({ ...t, [k]: true }));
+
+  const updatePatientExtra = <K extends keyof PatientExtra>(
+    k: K,
+    v: PatientExtra[K]
+  ) =>
+    setPatientExtra((s) => {
+      const next = { ...s, [k]: v };
+      setPatientExtraErrors(validatePatientExtra(next));
       return next;
     });
 
@@ -179,48 +238,59 @@ export default function AppointmentCreate() {
     });
     setTouched({});
     setErrors({});
+    setPatientExtraTouched({});
+    setPatientExtraErrors({});
   };
 
-  // ⬇️ Load dữ liệu ban đầu
+  // ⬇️ Load dữ liệu ban đầu - GỌI SONG SONG để tối ưu tốc độ
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await apiListDoctors({ page: 1, limit: 200 });
-        setDoctors(res.items ?? []);
-      } catch {
+    const loadInitialData = async () => {
+      setLoading(true);
+      
+      // Gọi tất cả API ĐỒNG THỜI thay vì tuần tự
+      const [doctorsResult, doctorUsersResult, servicesResult] = await Promise.allSettled([
+        apiListDoctors({ page: 1, limit: 200 }),
+        apiListUsersByRoleDoctor({ page: 1, limit: 200, isActive: true }),
+        getService({ page: 1, pageSize: 200, isActive: true })
+      ]);
+
+      // Xử lý kết quả doctors
+      if (doctorsResult.status === "fulfilled") {
+        setDoctors(doctorsResult.value.items ?? []);
+      } else {
+        console.error("❌ Error loading doctors:", doctorsResult.reason);
         toast.error("Không tải được danh sách bác sĩ");
       }
 
-      try {
-        const u = await apiListUsersByRoleDoctor({
-          page: 1,
-          limit: 200,
-          isActive: true,
-        });
-        setDoctorUsers(u.items ?? []);
-
-        if (!u.items?.length) {
-          console.warn(
-            "⚠️ Không có user role=DOCTOR. Kiểm tra roles ở BE hoặc dữ liệu mẫu."
-          );
+      // Xử lý kết quả doctor users
+      if (doctorUsersResult.status === "fulfilled") {
+        const users = doctorUsersResult.value.items ?? [];
+        setDoctorUsers(users);
+        if (!users.length) {
+          console.warn("⚠️ Không có user role=DOCTOR. Kiểm tra roles ở BE hoặc dữ liệu mẫu.");
         }
-      } catch (err) {
-        console.error("❌ Error loading doctor users:", err);
+      } else {
+        console.error("❌ Error loading doctor users:", doctorUsersResult.reason);
         toast.error("Không tải được danh sách người dùng (DOCTOR)");
       }
 
-      try {
-        const sv = await getService({ page: 1, pageSize: 200, isActive: true });
+      // Xử lý kết quả services
+      if (servicesResult.status === "fulfilled") {
         setServices(
-          sv.data?.items?.map((x: ServiceOption) => ({
+          servicesResult.value.data?.items?.map((x: ServiceOption) => ({
             serviceId: x.serviceId,
             name: x.name || `DV #${x.serviceId}`,
           })) ?? []
         );
-      } catch {
+      } else {
+        console.error("❌ Error loading services:", servicesResult.reason);
         toast.error("Không tải được danh sách dịch vụ");
       }
-    })();
+
+      setLoading(false);
+    };
+
+    loadInitialData();
   }, []);
 
   // ⬇️ Join logic: Ưu tiên lấy tên từ Users (role DOCTOR), fallback về Doctors
@@ -273,8 +343,11 @@ export default function AppointmentCreate() {
   );
 
   useEffect(() => {
-    fetchList();
-  }, [fetchList]);
+    // Chỉ fetch appointments sau khi đã load xong doctors & services
+    if (!loading) {
+      fetchList();
+    }
+  }, [fetchList, loading]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -286,23 +359,10 @@ export default function AppointmentCreate() {
 
   const handleCreate = async () => {
     const v = validate(form);
-    if (patientExtra.email && !isEmail(patientExtra.email)) {
-      toast.error("Email không hợp lệ.");
-      return;
-    }
-    if (patientExtra.dob && !isPastOrToday(patientExtra.dob)) {
-      toast.error("Ngày sinh phải bé hơn hoặc bằng hôm nay.");
-      return;
-    }
-    if (
-      patientExtra.nationalId &&
-      !/^\d{9}$|^\d{12}$/.test(patientExtra.nationalId)
-    ) {
-      toast.error("CMND/CCCD phải gồm 9 hoặc 12 chữ số.");
-      return;
-    }
-
+    const vExtra = validatePatientExtra(patientExtra);
+    
     setErrors(v);
+    setPatientExtraErrors(vExtra);
     setTouched({
       patientName: true,
       patientPhone: true,
@@ -312,7 +372,20 @@ export default function AppointmentCreate() {
       time: true,
       reason: true,
     });
-    if (Object.keys(v).length > 0) return;
+    setPatientExtraTouched({
+      gender: true,
+      dob: true,
+      address: true,
+      district: true,
+      city: true,
+      nationalId: true,
+      email: true,
+    });
+    
+    if (Object.keys(v).length > 0 || Object.keys(vExtra).length > 0) {
+      toast.error("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -469,87 +542,117 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            <FormField label="Giới tính">
+            <FormField 
+              label="Giới tính" 
+              required
+              error={patientExtraTouched.gender ? patientExtraErrors.gender : ""}
+            >
               <SelectMenu<GenderOpt>
                 value={patientExtra.gender}
-                onChange={(v) =>
-                  setPatientExtra((s) => ({
-                    ...s,
-                    gender: (v as GenderOpt) ?? "",
-                  }))
-                }
+                onChange={(v) => {
+                  updatePatientExtra("gender", (v as GenderOpt) ?? "");
+                  markPatientExtraTouched("gender");
+                }}
                 options={[
                   { value: "M", label: "Nam" },
                   { value: "F", label: "Nữ" },
                 ]}
+                invalid={!!(patientExtraTouched.gender && patientExtraErrors.gender)}
               />
             </FormField>
 
-            <FormField label="Ngày sinh">
+            <FormField 
+              label="Ngày sinh" 
+              required
+              error={patientExtraTouched.dob ? patientExtraErrors.dob : ""}
+            >
               <input
                 type="date"
                 value={patientExtra.dob}
                 max={new Date().toISOString().slice(0, 10)}
-                onChange={(e) =>
-                  setPatientExtra((s) => ({ ...s, dob: e.target.value }))
-                }
-                className="block w-full h-12 rounded-[var(--rounded)] border border-slate-200 bg-white/90 px-4 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500"
+                onChange={(e) => updatePatientExtra("dob", e.target.value)}
+                onBlur={() => markPatientExtraTouched("dob")}
+                className={cn(
+                  "block w-full h-12 rounded-[var(--rounded)] border bg-white/90 px-4 text-[16px] leading-6 shadow-xs outline-none focus:ring-2",
+                  patientExtraTouched.dob && patientExtraErrors.dob
+                    ? "border-red-400 focus:ring-red-300"
+                    : "border-slate-200 focus:ring-sky-500"
+                )}
               />
             </FormField>
 
-            <FormField label="Địa chỉ">
+            <FormField 
+              label="Địa chỉ" 
+              required
+              error={patientExtraTouched.address ? patientExtraErrors.address : ""}
+            >
               <Input
                 value={patientExtra.address}
-                onChange={(e) =>
-                  setPatientExtra((s) => ({ ...s, address: e.target.value }))
-                }
+                onChange={(e) => updatePatientExtra("address", e.target.value)}
+                onBlur={() => markPatientExtraTouched("address")}
                 placeholder="Số nhà, đường…"
+                invalid={!!(patientExtraTouched.address && patientExtraErrors.address)}
               />
             </FormField>
 
-            <FormField label="Phường/Xã">
+            <FormField 
+              label="Phường/Xã" 
+              required
+              error={patientExtraTouched.district ? patientExtraErrors.district : ""}
+            >
               <Input
                 value={patientExtra.district}
-                onChange={(e) =>
-                  setPatientExtra((s) => ({ ...s, district: e.target.value }))
-                }
+                onChange={(e) => updatePatientExtra("district", e.target.value)}
+                onBlur={() => markPatientExtraTouched("district")}
                 placeholder="VD: Phường Bến Thành"
+                invalid={!!(patientExtraTouched.district && patientExtraErrors.district)}
               />
             </FormField>
 
-            <FormField label="Tỉnh/Thành phố">
+            <FormField 
+              label="Tỉnh/Thành phố" 
+              required
+              error={patientExtraTouched.city ? patientExtraErrors.city : ""}
+            >
               <Input
                 value={patientExtra.city}
-                onChange={(e) =>
-                  setPatientExtra((s) => ({ ...s, city: e.target.value }))
-                }
+                onChange={(e) => updatePatientExtra("city", e.target.value)}
+                onBlur={() => markPatientExtraTouched("city")}
                 placeholder="VD: TP.HCM"
+                invalid={!!(patientExtraTouched.city && patientExtraErrors.city)}
               />
             </FormField>
 
-            <FormField label="CCCD">
+            <FormField 
+              label="CCCD" 
+              required
+              error={patientExtraTouched.nationalId ? patientExtraErrors.nationalId : ""}
+            >
               <Input
                 value={patientExtra.nationalId}
                 onChange={(e) =>
-                  setPatientExtra((s) => ({
-                    ...s,
-                    nationalId: e.target.value.replace(/\D/g, "").slice(0, 12),
-                  }))
+                  updatePatientExtra("nationalId", e.target.value.replace(/\D/g, "").slice(0, 12))
                 }
+                onBlur={() => markPatientExtraTouched("nationalId")}
                 placeholder="12 số"
                 inputMode="numeric"
+                invalid={!!(patientExtraTouched.nationalId && patientExtraErrors.nationalId)}
               />
             </FormField>
 
-            <FormField label="Email">
+            <FormField 
+              label="Email" 
+              required
+              error={patientExtraTouched.email ? patientExtraErrors.email : ""}
+            >
               <Input
                 value={patientExtra.email}
-                onChange={(e) =>
-                  setPatientExtra((s) => ({ ...s, email: e.target.value }))
-                }
+                onChange={(e) => updatePatientExtra("email", e.target.value)}
+                onBlur={() => markPatientExtraTouched("email")}
                 placeholder="example@mail.com"
                 type="email"
                 autoComplete="email"
+                invalid={!!(patientExtraTouched.email && patientExtraErrors.email)}
               />
             </FormField>
 
@@ -592,7 +695,7 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            <FormField label="Số thứ tự (tự động)">
+            <FormField label="Số thứ tự (tự động)" required>
               <div className="relative">
                 <input
                   value={nextQueueNo || ""}
@@ -617,6 +720,8 @@ export default function AppointmentCreate() {
                   update("date", d);
                   markTouched("date");
                 }}
+                onBlur={() => markTouched("date")}
+                invalid={!!(touched.date && errors.date)}
               />
             </FormField>
             
@@ -631,6 +736,8 @@ export default function AppointmentCreate() {
                   update("time", t);
                   markTouched("time");
                 }}
+                onBlur={() => markTouched("time")}
+                invalid={!!(touched.time && errors.time)}
               />
             </FormField>
           </div>

@@ -45,12 +45,6 @@ export default function SpecialtyManager() {
         search: query.trim() || undefined,
       });
       
-      // Debug: Kiểm tra response data
-      console.log("🔍 Specialty API Response:", res);
-      if (res.items.length > 0) {
-        console.log("📋 First item:", res.items[0]);
-      }
-      
       setItems(res.items);
       setTotal(res.total);
       if (!opts?.keepPage) setPage(res.page);
@@ -217,7 +211,7 @@ export default function SpecialtyManager() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-slate-500">
+                <td colSpan={9} className="py-6 text-center text-slate-500">
                   Đang tải dữ liệu…
                 </td>
               </tr>
@@ -225,7 +219,7 @@ export default function SpecialtyManager() {
 
             {!loading && showing.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-slate-500">
+                <td colSpan={9} className="py-6 text-center text-slate-500">
                   Không có dữ liệu
                 </td>
               </tr>

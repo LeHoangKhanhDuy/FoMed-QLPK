@@ -327,11 +327,6 @@ export default function DrugModal({ open, onClose, initial, onSubmit, onInventor
             {errors.price && (
               <p className="mt-1 text-xs text-rose-600">{errors.price}</p>
             )}
-            {!errors.price && form.price > 0 && (
-              <p className="mt-1 text-xs text-slate-500">
-                = {formatNumber(form.price)} đ
-              </p>
-            )}
           </label>
 
           {/* Tồn kho - READ ONLY khi edit, ẩn khi create */}

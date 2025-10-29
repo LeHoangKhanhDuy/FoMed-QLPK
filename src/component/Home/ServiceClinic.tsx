@@ -25,16 +25,39 @@ export default function ServiceClinic() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Lấy dữ liệu từ API
+  // Lấy dữ liệu từ API với cache
   useEffect(() => {
     const fetchServices = async () => {
       try {
         setLoading(true);
+        
+        // Kiểm tra cache trong sessionStorage (cache 5 phút)
+        const cacheKey = 'home_services_cache';
+        const cacheTimeKey = 'home_services_cache_time';
+        const cached = sessionStorage.getItem(cacheKey);
+        const cacheTime = sessionStorage.getItem(cacheTimeKey);
+        
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
+        const now = Date.now();
+        
+        if (cached && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
+          // Dùng cache
+          setServices(JSON.parse(cached));
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch từ API - giảm xuống 20 items (đủ cho carousel)
         const res = await getService({
-          pageSize: 50,
+          pageSize: 20,
           isActive: true,
         });
+        
         setServices(res.data.items);
+        
+        // Lưu vào cache
+        sessionStorage.setItem(cacheKey, JSON.stringify(res.data.items));
+        sessionStorage.setItem(cacheTimeKey, now.toString());
       } catch (error) {
         console.error("Lỗi tải dịch vụ:", error);
       } finally {

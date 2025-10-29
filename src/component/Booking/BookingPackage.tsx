@@ -12,20 +12,44 @@ export default function BookingPackages() {
   const [items, setItems] = useState<ServiceItem[]>([]);
 
   useEffect(() => {
-    (async () => {
+    const fetchPackages = async () => {
       try {
         setLoading(true);
-        // lấy dịch vụ đang hoạt động
+        
+        // Kiểm tra cache trong sessionStorage (cache 5 phút)
+        const cacheKey = 'booking_packages_cache';
+        const cacheTimeKey = 'booking_packages_cache_time';
+        const cached = sessionStorage.getItem(cacheKey);
+        const cacheTime = sessionStorage.getItem(cacheTimeKey);
+        
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
+        const now = Date.now();
+        
+        if (cached && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
+          // Dùng cache
+          setItems(JSON.parse(cached));
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch từ API - lấy dịch vụ đang hoạt động
         const res = await getService({ page: 1, pageSize: 12, isActive: true });
         // phòng hờ nếu BE chưa lọc
         const onlyActive = (res.data.items ?? []).filter((x) => x.isActive);
+        
         setItems(onlyActive);
+        
+        // Lưu vào cache
+        sessionStorage.setItem(cacheKey, JSON.stringify(onlyActive));
+        sessionStorage.setItem(cacheTimeKey, now.toString());
       } catch {
         toast.error("Không tải được danh sách dịch vụ.");
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    fetchPackages();
   }, []);
 
   const handleClick = (serviceId: number) => {
