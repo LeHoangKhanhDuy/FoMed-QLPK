@@ -119,35 +119,28 @@ export async function apiListUsersByRoleDoctor(params?: {
 }> {
   const { page = 1, limit = 200, isActive = true } = params ?? {};
   try {
-    // Gọi đúng endpoint users, filter role=DOCTOR
-    const { data } = await authHttp.get<ListResp>("/api/v1/admin/users", {
-      params: { page, limit, role: "DOCTOR", isActive },
+    // ✅ Gọi API Doctors để lấy DoctorId thật (từ bảng Doctors)
+    // Endpoint này public, không cần auth
+    const { data } = await authHttp.get("/api/v1/doctors", {
+      params: { page, limit, isActive },
     });
+
+    if (!data?.success) {
+      throw new Error(data?.message || "Không tải được danh sách bác sĩ");
+    }
 
     const payload = data?.data ?? {};
-    const normalized: User[] = (payload.items ?? []).map(normalizeUser);
+    const doctorsList = payload.items ?? [];
 
-    // Lọc đúng role + trạng thái (nếu truyền)
-    const filtered = normalized.filter((u) => {
-      const hasRole = Array.isArray(u.roles) && u.roles.includes("DOCTOR");
-      const statusOk =
-        isActive == null
-          ? true
-          : isActive
-          ? u.status === "active"
-          : u.status !== "active";
-      return hasRole && statusOk;
-    });
-
-    const items: DoctorOption[] = filtered.map((u) => ({
-      doctorId: u.id, // dùng userId làm doctorId (đổi nếu BE yêu cầu khác)
-      fullName: u.name || `BS #${u.id}`,
+    const items: DoctorOption[] = doctorsList.map((d: any) => ({
+      doctorId: d.doctorId || d.DoctorId, // Lấy DoctorId thật từ Doctors table
+      fullName: d.fullName || d.FullName || `BS #${d.doctorId || d.DoctorId}`,
     }));
 
     return {
       page: payload.page ?? page,
       limit: payload.limit ?? limit,
-      total: payload.total ?? items.length,
+      total: payload.totalItems || payload.total || items.length,
       items,
     };
   } catch (e) {

@@ -46,15 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Khôi phục từ auth_user trước
     const authRaw = localStorage.getItem(AUTH_KEY);
+    
     if (authRaw) {
       try {
         const parsed = JSON.parse(authRaw);
+        
         if (isUser(parsed)) {
           setUser(parsed);
           setIsInitialized(true);
           return;
         } else {
-          console.warn("⚠️ Invalid auth_user format, removing...");
           localStorage.removeItem(AUTH_KEY);
         }
       } catch (e) {
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userToken && userInfoRaw) {
       try {
         const userInfo = JSON.parse(userInfoRaw);
+        
         const rebuiltUser: User = {
           id: userInfo.userId || 0,
           email: userInfo.email || "",
@@ -82,8 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(rebuiltUser);
           // Lưu vào auth_user để lần sau không phải rebuild
           localStorage.setItem(AUTH_KEY, JSON.stringify(rebuiltUser));
-        } else {
-          console.warn("⚠️ Incomplete user data, cannot rebuild");
         }
       } catch (e) {
         console.error("❌ Error rebuilding user:", e);
@@ -96,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Listen sự kiện logout từ bên ngoài (interceptor, etc.)
   useEffect(() => {
     const handleAuthLogout = () => {
-      console.log("🚪 Received auth:logout event - clearing user state");
       setUser(null);
     };
 
@@ -106,7 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (e.key === AUTH_KEY || e.key === "userToken") &&
         e.newValue === null
       ) {
-        console.log("🚪 Storage cleared - logging out user");
         setUser(null);
       }
     };

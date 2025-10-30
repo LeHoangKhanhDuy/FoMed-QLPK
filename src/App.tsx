@@ -65,6 +65,7 @@ function App() {
         <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
         <Route path="/booking-package" element={<BookingPackagePage />} />
         <Route path="/booking/select-service" element={<BookingSelectServicePage />}/>
+        <Route path="/booking-service" element={<BookingSelectServicePage />}/>
         <Route path="/booking-doctor/review" element={<BookingReviewPage />}/>
 
         {/* PATIENT PORTAL */}

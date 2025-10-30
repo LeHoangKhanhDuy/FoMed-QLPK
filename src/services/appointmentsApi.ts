@@ -84,16 +84,30 @@ export async function appointmentsList(params: {
 }
 
 export async function createAppointment(body: CreateReq): Promise<CreateData> {
-  const res = await authHttp.post<CreateResp>(
-    "/api/v1/appointments/create",
-    body
-  );
+  try {
+    console.log("🚀 Gọi API tạo appointment với body:", body);
+    
+    const res = await authHttp.post<CreateResp>(
+      "/api/v1/appointments/create",
+      body
+    );
 
-  if (!res.data?.success) {
-    throw new Error(res.data?.message || "Tạo lịch thất bại");
+    console.log("✅ Response từ API:", res.data);
+
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Tạo lịch thất bại");
+    }
+
+    return res.data.data;
+  } catch (error: any) {
+    console.error("❌ Lỗi khi gọi API tạo appointment:", {
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      message: error?.message,
+    });
+    throw error;
   }
-
-  return res.data.data;
 }
 
 export async function updateAppointmentStatus(

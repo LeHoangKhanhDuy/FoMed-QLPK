@@ -438,3 +438,50 @@ export async function apiDeleteDoctorAvatar(
   // Trả về URL của ảnh fallback (profile avatar)
   return json.data?.avatarUrl || "";
 }
+
+/**
+ * Related Doctor DTO
+ */
+export interface RelatedDoctorDto {
+  doctorId: number;
+  fullName: string | null;
+  title: string | null;
+  avatarUrl: string | null;
+  primarySpecialtyId: number | null;
+  primarySpecialtyName: string | null;
+  experienceYears: number | null;
+  ratingAvg: number;
+  ratingCount: number;
+  roomName: string | null;
+}
+
+export interface RelatedDoctorsResponse {
+  success: boolean;
+  data: RelatedDoctorDto[];
+}
+
+/**
+ * Lấy danh sách bác sĩ cùng chuyên khoa
+ * @param doctorId - ID của bác sĩ gốc
+ * @param limit - Số lượng bác sĩ cần lấy (default 10, max 20)
+ * @returns Danh sách bác sĩ cùng chuyên khoa
+ */
+export async function apiGetRelatedDoctors(
+  doctorId: number,
+  limit: number = 10
+): Promise<RelatedDoctorDto[]> {
+  const res = await fetch(`${API_BASE}/related/${doctorId}?limit=${limit}`);
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Không thể tải danh sách bác sĩ liên quan");
+  }
+
+  const json: RelatedDoctorsResponse = await res.json();
+
+  if (!json.success) {
+    throw new Error("Không thể tải danh sách bác sĩ liên quan");
+  }
+
+  return json.data || [];
+}
