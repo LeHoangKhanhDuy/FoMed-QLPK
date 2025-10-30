@@ -293,23 +293,24 @@ export default function AppointmentCreate() {
     loadInitialData();
   }, []);
 
-  // ⬇️ Join logic: Ưu tiên lấy tên từ Users (role DOCTOR), fallback về Doctors
+  // ⬇️ Join logic: ƯU TIÊN Doctors table (có doctorId thật), fallback về Users
   const doctorOptions = useMemo(() => {
-    // Nếu có dữ liệu từ Users (role DOCTOR), dùng luôn
-    if (doctorUsers.length > 0) {
-      return doctorUsers
-        .map((u) => ({
-          value: u.doctorId,
-          label: u.fullName || `BS #${u.doctorId}`,
+    // ✅ Ưu tiên dùng bảng Doctors (có doctorId thật mà backend cần)
+    if (doctors.length > 0) {
+      return doctors
+        .map((d) => ({
+          value: d.doctorId,
+          label: d.fullName || `BS #${d.doctorId}`,
         }))
         .sort((a, b) => a.label.localeCompare(b.label, "vi"));
     }
 
-    // Fallback: dùng bảng Doctors nếu không có Users
-    return doctors
-      .map((d) => ({
-        value: d.doctorId,
-        label: d.fullName || `BS #${d.doctorId}`,
+    // Fallback: dùng Users (role DOCTOR) nếu không có Doctors
+    // Lưu ý: userId có thể không match với doctorId trong DB
+    return doctorUsers
+      .map((u) => ({
+        value: u.doctorId, // Thực ra là userId
+        label: u.fullName || `BS #${u.doctorId}`,
       }))
       .sort((a, b) => a.label.localeCompare(b.label, "vi"));
   }, [doctors, doctorUsers]);
@@ -435,14 +436,24 @@ export default function AppointmentCreate() {
       const timeWithSec =
         form.time.length === 5 ? `${form.time}:00` : form.time;
 
-      const payload = {
+      const selectedDoctorId = Number(form.doctorId);
+
+      const payload: any = {
         patientId,
-        doctorId: Number(form.doctorId),
-        serviceId: form.serviceId ? Number(form.serviceId) : undefined,
+        doctorId: selectedDoctorId,
         visitDate: form.date,
         visitTime: timeWithSec,
-        reason: form.reason?.trim() || null,
       };
+
+      // Chỉ gửi serviceId nếu có giá trị
+      if (form.serviceId) {
+        payload.serviceId = Number(form.serviceId);
+      }
+
+      // Chỉ gửi reason nếu có giá trị
+      if (form.reason?.trim()) {
+        payload.reason = form.reason.trim();
+      }
 
       const created = await createAppointment(payload);
 
@@ -467,12 +478,33 @@ export default function AppointmentCreate() {
       );
 
       resetForm();
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : "Không thể tạo lịch. Vui lòng thử lại.";
-      console.error("❌ Lỗi:", err);
+    } catch (err: any) {
+      console.error("❌ Lỗi tạo appointment:", err);
+      
+      // Lấy thông tin chi tiết từ response
+      const responseData = err?.response?.data;
+      console.error("❌ Response data:", responseData);
+      
+      let msg = "Không thể tạo lịch. Vui lòng thử lại.";
+      
+      if (responseData) {
+        // Trích xuất message từ response
+        msg = responseData.message || responseData.Message || msg;
+        
+        // Nếu có validation errors
+        if (responseData.errors) {
+          const errorMessages = Object.entries(responseData.errors)
+            .map(([field, messages]: [string, any]) => {
+              const msgArray = Array.isArray(messages) ? messages : [messages];
+              return `${field}: ${msgArray.join(", ")}`;
+            })
+            .join("; ");
+          msg = errorMessages || msg;
+        }
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
+      
       toast.error(msg);
     } finally {
       setSubmitting(false);

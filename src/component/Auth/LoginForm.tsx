@@ -68,19 +68,24 @@ export default function LoginForm({
         }
       } else {
         finalUser = await getProfile(loginRes.token);
-        if (loginRes.user?.roles?.length) finalUser.roles = loginRes.user.roles;
+        if (loginRes.user?.roles?.length) {
+          finalUser.roles = loginRes.user.roles;
+        }
       }
-
+      
       saveAuth(loginRes.token, finalUser, loginRes.refreshToken);
 
-      // ✅ Cập nhật AuthContext
-      setAuthUser({
+      const mappedRoles = (finalUser.roles || []).map((r) => r.toUpperCase() as CmsRole);
+
+      // Cập nhật AuthContext
+      const authUserData = {
         id: finalUser.userId!,
         email: finalUser.email,
         token: loginRes.token,
-        roles: (finalUser.roles ?? []).map((r) => r.toUpperCase() as CmsRole),
+        roles: mappedRoles,
         name: finalUser.name ?? null,
-      });
+      };
+      setAuthUser(authUserData);
 
       toast.success(`Chào mừng ${finalUser.name || finalUser.email}!`);
 

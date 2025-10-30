@@ -73,7 +73,7 @@ export default function CMSSidebar() {
       icon: Users,
       badge: todayCount > 0 ? todayCount : undefined,
       category: "Lịch khám bệnh",
-      roles: ["ADMIN", "DOCTOR"],
+      roles: ["ADMIN", "DOCTOR", "EMPLOYEE"],
     },
     
     // === LỊCH LÀM VIỆC - DOCTOR XEM, EMPLOYEE VÀ ADMIN SỬA ===
