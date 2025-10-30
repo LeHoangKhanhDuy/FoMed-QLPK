@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   CalendarClock,
   Hospital,
@@ -81,6 +81,23 @@ export default function DoctorProfile({
   doctor: Doctor;
   relatedDoctors?: DoctorCardProps[];
 }) {
+  const navigate = useNavigate();
+
+  const handleBooking = () => {
+    // Navigate đến trang chọn dịch vụ với doctorId
+    navigate(`/booking-service?doctorId=${doctor.id}`, {
+      state: {
+        doctor: {
+          id: doctor.id,
+          name: doctor.name,
+          experience: doctor.experience,
+          specialty: doctor.specialty,
+          verified: true,
+        }
+      }
+    });
+  };
+
   return (
     <div className="space-y-3">
       {/* Breadcrumb */}
@@ -166,11 +183,12 @@ export default function DoctorProfile({
             <div className="md:col-span-2 flex items-start md:items-center justify-center md:justify-end">
               <button
                 type="button"
+                onClick={handleBooking}
                 aria-label="Đặt lịch khám"
                 className="inline-flex items-center gap-2 h-10 px-4 rounded-[var(--rounded)] 
                bg-primary-linear text-white font-medium shadow-sm cursor-pointer
                whitespace-nowrap leading-none
-               transition duration-200 active:scale-95"
+               transition duration-200 active:scale-95 hover:opacity-90"
               >
                 <CalendarClock className="w-4 h-4" />
                 <span>Đặt lịch khám</span>
@@ -190,6 +208,7 @@ export default function DoctorProfile({
       />
 
       <DoctorRelated
+        doctorId={doctor.id}
         doctors={relatedDoctors} 
         currentDoctorName={doctor.name}
         limit={8}
