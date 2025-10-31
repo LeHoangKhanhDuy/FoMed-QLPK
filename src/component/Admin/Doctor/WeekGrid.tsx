@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Shift, ScheduleStatus } from "../../../types/schedule/types";
 import { isSameDay, toYMD } from "../../../types/schedule/date";
 import ConfirmModal from "../../../common/ConfirmModal";
@@ -172,14 +172,14 @@ export const WeekGrid: React.FC<Props> = ({
                           onClick={() => onEdit(shift)}
                           title={`${shift.doctorName} - ${shift.start} - ${shift.end}`}
                         >
-                          <div className="text-xs font-semibold truncate">
+                          <div className="text-xl font-bold truncate">
                             {shift.doctorName}
                           </div>
-                          <div className="text-xs mt-0.5">
+                          <div className="text-md mt-0.5">
                             {shift.start} - {shift.end}
                           </div>
                           {shift.location && (
-                            <div className="text-xs mt-0.5 opacity-75 truncate">
+                            <div className="text-md truncate">
                               {shift.location}
                             </div>
                           )}
@@ -189,20 +189,20 @@ export const WeekGrid: React.FC<Props> = ({
                                 e.stopPropagation();
                                 onEdit(shift);
                               }}
-                              className="p-0.5 rounded hover:bg-white/50"
+                              className="p-0.5 rounded cursor-pointer"
                               title="Sửa"
                             >
-                              <Edit className="w-3 h-3" />
+                              <Pencil className="w-6 h-6" />
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteClick(shift.id);
                               }}
-                              className="p-0.5 rounded hover:bg-white/50"
+                              className="p-0.5 rounded cursor-pointer"
                               title="Xóa"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-6 h-6" />
                             </button>
                           </div>
                         </div>

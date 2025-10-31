@@ -22,6 +22,7 @@ type Props = {
   query: string;
   setQuery: (s: string) => void;
   openCreate: () => void;
+  canCreate?: boolean; // chỉ ADMIN/EMPLOYEE được phép
 };
 
 export const Toolbar: React.FC<Props> = ({
@@ -36,6 +37,7 @@ export const Toolbar: React.FC<Props> = ({
   query,
   setQuery,
   openCreate,
+  canCreate = true,
 }) => {
   const options: SelectOption<number | "all">[] = [
     { value: "all", label: "Tất cả bác sĩ" },
@@ -105,7 +107,9 @@ export const Toolbar: React.FC<Props> = ({
 
         <button
           onClick={openCreate}
-          className="cursor-pointer mt-1 h-12 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white"
+          disabled={!canCreate}
+          className="cursor-pointer mt-1 h-12 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white disabled:opacity-60 disabled:cursor-not-allowed"
+          title={canCreate ? undefined : "Chỉ ADMIN hoặc EMPLOYEE mới được tạo ca"}
         >
           <Plus className="w-4 h-4" />
           Thêm ca

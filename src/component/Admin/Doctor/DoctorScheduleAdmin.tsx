@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
+import { useAuth } from "../../../auth/auth";
 import type {
   Doctor,
   Shift,
@@ -20,6 +21,7 @@ import { ShiftModal } from "./ShiftModal";
 import toast from "react-hot-toast";
 
 export default function DoctorScheduleAdmin() {
+  const { hasRole } = useAuth();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [doctorId, setDoctorId] = useState<number | "all">("all");
@@ -126,6 +128,7 @@ export default function DoctorScheduleAdmin() {
           query={query}
           setQuery={setQuery}
           openCreate={openCreate}
+          canCreate={hasRole(["ADMIN", "EMPLOYEE"])}
         />
 
         <WeekGrid

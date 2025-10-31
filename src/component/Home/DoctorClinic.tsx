@@ -138,9 +138,9 @@ export default function DoctorClinic() {
     return (
       <div className="w-full">
         <section className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
-          <header className="flex items-center justify-center gap-3 mb-6">
+          {/* <header className="flex items-center justify-center gap-3 mb-6">
             <div className="h-8 w-48 bg-gray-200 rounded animate-shimmer" />
-          </header>
+          </header> */}
 
           <div className="relative">
             <div className="hidden md:flex absolute -left-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
