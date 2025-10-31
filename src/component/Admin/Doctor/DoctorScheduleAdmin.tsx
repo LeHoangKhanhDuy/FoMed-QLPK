@@ -113,7 +113,7 @@ export default function DoctorScheduleAdmin() {
         <h1 className="text-xl font-bold">Quản lý lịch làm việc bác sĩ</h1>
       </header>
 
-      <div className="rounded-xl border bg-white p-4 shadow-xs">
+      <div className="rounded-xl border bg-white p-4 shadow-xs space-y-4">
         <Toolbar
           weekFrom={weekFrom}
           weekTo={weekTo}

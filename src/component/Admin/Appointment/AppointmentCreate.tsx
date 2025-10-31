@@ -1,5 +1,5 @@
 // src/components/Admin/Appointment/AppointmentCreate.tsx
-import { CalendarPlus, Hash, PhoneIcon, User2 } from "lucide-react";
+import { CalendarPlus, Hash, PhoneIcon, User2, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   Appointment,
@@ -52,6 +52,22 @@ const isPastOrToday = (yyyy_mm_dd: string) => {
   t.setHours(0, 0, 0, 0);
   today.setHours(0, 0, 0, 0);
   return t <= today;
+};
+
+// Date picker helpers (same as ShiftModal)
+const pad = (n: number) => n.toString().padStart(2, "0");
+
+// ymd <-> dmy
+const ymdToDmy = (ymd: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd;
+  const [y, m, d] = ymd.split("-");
+  return `${d}/${m}/${y}`;
+};
+
+const dmyToYmd = (dmy: string) => {
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dmy)) return null;
+  const [d, m, y] = dmy.split("/");
+  return `${y}-${m}-${d}`;
 };
 
 // ===== Validate =====
@@ -186,6 +202,15 @@ export default function AppointmentCreate() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Calendar state for date of birth picker
+  const [dobCalOpen, setDobCalOpen] = useState(false);
+  const [dobViewYear, setDobViewYear] = useState<number>(() =>
+    new Date().getFullYear()
+  );
+  const [dobViewMonth, setDobViewMonth] = useState<number>(() =>
+    new Date().getMonth()
+  );
 
   const markTouched = <K extends keyof AppointmentPayload>(k: K) =>
     setTouched((t) => ({ ...t, [k]: true }));
@@ -358,6 +383,57 @@ export default function AppointmentCreate() {
     return () => clearTimeout(timeout);
   }, [form.date, form.doctorId, fetchList]);
 
+  // Đồng bộ tháng/năm hiển thị lịch cho ngày sinh
+  useEffect(() => {
+    if (!patientExtra.dob) return;
+    const d =
+      patientExtra.dob && /^\d{4}-\d{2}-\d{2}$/.test(patientExtra.dob)
+        ? new Date(patientExtra.dob)
+        : new Date();
+    setDobViewYear(d.getFullYear());
+    setDobViewMonth(d.getMonth());
+  }, [patientExtra.dob]);
+
+  // Calendar computed for DOB picker
+  const dobMonthLabel = useMemo(
+    () => `${pad(dobViewMonth + 1)}/${dobViewYear}`,
+    [dobViewMonth, dobViewYear]
+  );
+  const dobDays = useMemo(() => {
+    const first = new Date(dobViewYear, dobViewMonth, 1);
+    const last = new Date(dobViewYear, dobViewMonth + 1, 0);
+    const startIdx = (first.getDay() + 6) % 7;
+    const total = last.getDate();
+    const arr: Array<{ d: number; ymd: string }> = [];
+    for (let i = 1; i <= total; i++) {
+      const ymd = `${dobViewYear}-${pad(dobViewMonth + 1)}-${pad(i)}`;
+      arr.push({ d: i, ymd });
+    }
+    return { startIdx, arr };
+  }, [dobViewYear, dobViewMonth]);
+
+  const isDobToday = (ymd: string) => {
+    const now = new Date();
+    const t = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+      now.getDate()
+    )}`;
+    return ymd === t;
+  };
+  const isDobSelected = (ymd: string) => patientExtra.dob === ymd;
+  const isDobPastOrToday = (ymd: string) => {
+    const t = new Date(ymd);
+    if (Number.isNaN(t.getTime())) return false;
+    const today = new Date();
+    t.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return t <= today;
+  };
+
+  const gotoDobPrevMonth = () =>
+    setDobViewMonth((m) => (m === 0 ? (setDobViewYear((y) => y - 1), 11) : m - 1));
+  const gotoDobNextMonth = () =>
+    setDobViewMonth((m) => (m === 11 ? (setDobViewYear((y) => y + 1), 0) : m - 1));
+
   const handleCreate = async () => {
     const v = validate(form);
     const vExtra = validatePatientExtra(patientExtra);
@@ -452,7 +528,7 @@ export default function AppointmentCreate() {
 
       // Chỉ gửi reason nếu có giá trị
       if (form.reason?.trim()) {
-        payload.reason = form.reason.trim();
+         payload.reason = form.reason.trim();
       }
 
       const created = await createAppointment(payload);
@@ -598,19 +674,108 @@ export default function AppointmentCreate() {
               required
               error={patientExtraTouched.dob ? patientExtraErrors.dob : ""}
             >
-              <input
-                type="date"
-                value={patientExtra.dob}
-                max={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => updatePatientExtra("dob", e.target.value)}
-                onBlur={() => markPatientExtraTouched("dob")}
-                className={cn(
-                  "block w-full h-12 rounded-[var(--rounded)] border bg-white/90 px-4 text-[16px] leading-6 shadow-xs outline-none focus:ring-2",
-                  patientExtraTouched.dob && patientExtraErrors.dob
-                    ? "border-red-400 focus:ring-red-300"
-                    : "border-slate-200 focus:ring-sky-500"
+              <div className="relative">
+                <div className="mt-1 flex gap-2">
+                  <input
+                    value={patientExtra.dob ? ymdToDmy(patientExtra.dob) : ""}
+                    onChange={(e) => {
+                      const ymd = dmyToYmd(e.target.value);
+                      if (ymd) {
+                        updatePatientExtra("dob", ymd);
+                        const d = new Date(ymd);
+                        setDobViewYear(d.getFullYear());
+                        setDobViewMonth(d.getMonth());
+                      } else if (e.target.value === "") {
+                        updatePatientExtra("dob", "");
+                      }
+                    }}
+                    onBlur={() => markPatientExtraTouched("dob")}
+                    placeholder="dd/mm/yyyy"
+                    className={cn(
+                      "w-full rounded-[var(--rounded)] border px-3 py-3.5 shadow-xs outline-none focus:ring-2",
+                      patientExtraTouched.dob && patientExtraErrors.dob
+                        ? "border-red-400 focus:ring-red-300"
+                        : "border-slate-200 focus:ring-sky-500"
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setDobCalOpen((s) => !s)}
+                    className="cursor-pointer px-3 rounded-[var(--rounded)] border hover:bg-gray-50 inline-flex items-center"
+                    title="Chọn trên lịch"
+                  >
+                    <CalendarDays className="w-5 h-5 text-blue-500" />
+                  </button>
+                </div>
+
+                {dobCalOpen && (
+                  <div className="absolute z-10 mt-2 w-[320px] rounded-xl border bg-white shadow-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        type="button"
+                        onClick={gotoDobPrevMonth}
+                        className="cursor-pointer p-2 rounded-md hover:bg-slate-100"
+                        title="Tháng trước"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <div className="font-medium">{dobMonthLabel}</div>
+                      <button
+                        type="button"
+                        onClick={gotoDobNextMonth}
+                        className="cursor-pointer p-2 rounded-md hover:bg-slate-100"
+                        title="Tháng sau"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-7 text-center text-xs text-slate-500 mb-1">
+                      <div>T2</div>
+                      <div>T3</div>
+                      <div>T4</div>
+                      <div>T5</div>
+                      <div>T6</div>
+                      <div>T7</div>
+                      <div>CN</div>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1">
+                      {Array.from({ length: dobDays.startIdx }).map((_, i) => (
+                        <div key={`emp-${i}`} />
+                      ))}
+                      {dobDays.arr.map(({ d, ymd }) => {
+                        const selected = isDobSelected(ymd);
+                        const today = isDobToday(ymd);
+                        const pastOrToday = isDobPastOrToday(ymd);
+                        return (
+                          <button
+                            key={ymd}
+                            type="button"
+                            onClick={() => {
+                              if (pastOrToday) {
+                                updatePatientExtra("dob", ymd);
+                                setDobCalOpen(false);
+                              }
+                            }}
+                            disabled={!pastOrToday}
+                            className={cn(
+                              "cursor-pointer h-9 rounded-md text-sm",
+                              "hover:bg-slate-100",
+                              selected && "bg-sky-500 text-white hover:bg-sky-500",
+                              !selected && today && "ring-1 ring-sky-400",
+                              !pastOrToday && "opacity-40 cursor-not-allowed hover:bg-transparent"
+                            )}
+                            title={ymdToDmy(ymd)}
+                          >
+                            {d}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
-              />
+              </div>
             </FormField>
 
             <FormField 
