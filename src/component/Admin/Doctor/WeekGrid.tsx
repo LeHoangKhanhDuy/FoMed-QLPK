@@ -91,9 +91,9 @@ export const WeekGrid: React.FC<Props> = ({
     shiftId: number | null;
   }>({ open: false, shiftId: null });
 
-  const handleDeleteClick = (shiftId: number) => {
-    setConfirmDelete({ open: true, shiftId });
-  };
+  // const handleDeleteClick = (shiftId: number) => {
+  //   setConfirmDelete({ open: true, shiftId });
+  // };
 
   const handleConfirmDelete = () => {
     if (confirmDelete.shiftId != null) {
