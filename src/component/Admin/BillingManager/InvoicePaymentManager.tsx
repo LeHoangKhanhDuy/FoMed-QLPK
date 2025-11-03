@@ -16,22 +16,25 @@ import {
   QrCode,
   Eraser,
 } from "lucide-react";
+
 import {
   apiInvoiceAddPayment,
   apiInvoiceGet,
   apiInvoiceUpdateStatus,
-  apiInvoiceList,
-} from "../../../types/billing/mockApi";
+} from "../../../services/billingApi";
+
 import {
   calcDue,
   calcPaid,
   calcSubTotal,
   type Invoice,
   type PaymentMethod,
+  type InvoiceStatus,
 } from "../../../types/billing/billing";
+
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 import { QRCodeCanvas } from "qrcode.react";
-
+import { useLocation } from "react-router-dom";
 /* ===== Helpers ===== */
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: "Tiền mặt",
@@ -92,11 +95,12 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-
 /* ===== Component ===== */
 export default function InvoicePaymentManager() {
   const { invoiceId } = useParams();
-  const [inv, setInv] = useState<Invoice | null>(null);
+  const nav = useNavigate();
+  const location = useLocation();
+  // const [inv, setInv] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
 
   // payDisplay: chuỗi hiển thị (12.000), payAmount: số (12000)
@@ -104,41 +108,74 @@ export default function InvoicePaymentManager() {
   const [payAmount, setPayAmount] = useState<number>(0);
   const [method, setMethod] = useState<PaymentMethod>("cash");
 
-  // QR
+  // QR state
   const [showQR, setShowQR] = useState(false);
   const [qrValue, setQrValue] = useState<string>("");
-
-  const nav = useNavigate();
 
   const load = async () => {
     setLoading(true);
     try {
-      const idNum = Number(invoiceId);
-      let idToLoad: number | null = null;
-
-      if (invoiceId && !Number.isNaN(idNum)) {
-        idToLoad = idNum;
-      } else {
-        const list = await apiInvoiceList();
-        if (list.length > 0) idToLoad = list[0].id;
-      }
-
-      if (idToLoad == null) {
+      const idToLoad = Number(invoiceId);
+      if (Number.isNaN(idToLoad)) {
+        console.error("invoiceId không hợp lệ:", invoiceId);
         setInv(null);
         return;
       }
 
-      const data = await apiInvoiceGet(idToLoad);
-      setInv(data);
+      const fresh = await apiInvoiceGet(idToLoad);
+
+      setInv((prev) => {
+        return {
+          ...prev,
+          ...fresh,
+          code: prev?.code ?? fresh.code,
+          patientName: prev?.patientName ?? fresh.patientName,
+          createdAt: prev?.createdAt ?? fresh.createdAt,
+        };
+      });
 
       setPayAmount(0);
       setPayDisplay("");
       setShowQR(false);
       setQrValue("");
+    } catch (err) {
+      console.error("load invoice error:", err);
+      // nếu fail BE thì vẫn giữ prev (thông tin từ pending) thay vì null
     } finally {
       setLoading(false);
     }
   };
+
+  const stateFromPending = location.state as
+    | {
+        invoiceId: number;
+        invoiceCode: string;
+        caseCode: string;
+        patientName: string;
+        finishedTime: string;
+        finishedDate: string;
+        totalAmount: number;
+        doctorName: string;
+        serviceName: string;
+      }
+    | undefined;
+
+  const [inv, setInv] = useState<Invoice | null>(
+    stateFromPending
+      ? {
+          id: stateFromPending.invoiceId,
+          code: stateFromPending.caseCode || stateFromPending.invoiceCode, // ƯU TIÊN mã hồ sơ BN5010
+          patientId: 0,
+          patientName: stateFromPending.patientName,
+          appointmentId: undefined,
+          createdAt: `${stateFromPending.finishedDate} ${stateFromPending.finishedTime}`,
+          status: "Chưa thanh toán", // tạm gán, lát nữa load() sẽ update
+          items: [],
+          payments: [],
+          note: "",
+        }
+      : null
+  );
 
   useEffect(() => {
     load();
@@ -161,7 +198,7 @@ export default function InvoicePaymentManager() {
     setPayDisplay(payAmount === 0 ? "" : formatNumberVI(payAmount));
   };
 
-  // Cộng dồn bằng functional update => bấm nhanh không bị trễ state
+  // Cộng dồn bằng functional update => bấm nhanh mệnh giá không miss state
   const addQuick = (n: number) => {
     setPayAmount((prev) => {
       const next = Math.max(0, prev + n);
@@ -198,33 +235,46 @@ export default function InvoicePaymentManager() {
     const due = calcDue(inv);
     if (payAmount <= 0) return;
 
+    // số tiền thực tế sẽ thu
     const pay = Math.min(payAmount, due);
+
+    // Gửi payment lên BE
     await apiInvoiceAddPayment(inv.id, method, pay);
 
-    const newPayment: (typeof inv.payments)[number] = {
-      id: 0,
-      invoiceId: inv.id,
-      method,
-      paidAmount: pay,
-      paidAt: "",
-    };
+    // Nếu sau thanh toán đã trả hết thì update status "Đã thanh toán"
+    const afterPaid = calcPaid([
+      ...inv.payments,
+      {
+        id: -1,
+        invoiceId: inv.id,
+        method,
+        paidAmount: pay,
+        paidAt: new Date().toISOString(),
+      },
+    ]);
 
-    const afterPaid = calcPaid([...inv.payments, newPayment]);
-    const subtotal = calcSubTotal(inv.items);
-    if (afterPaid >= subtotal && inv.status !== "Đã thanh toán") {
-      await apiInvoiceUpdateStatus(inv.id, "Đã thanh toán");
+    const subTotal = calcSubTotal(inv.items);
+
+    if (afterPaid >= subTotal && inv.status !== "Đã thanh toán") {
+      // gọi API đổi trạng thái
+      await apiInvoiceUpdateStatus(inv.id, "Đã thanh toán" as InvoiceStatus);
     }
+
+    // reload bill sau khi thêm payment
     await load();
   };
 
   const createPaymentCode = () => {
     if (!inv) return;
     const due = calcDue(inv);
-    // bạn có thể thay bằng payload theo cổng thanh toán thực tế
+
+    // payload QR — bạn có thể đổi format theo cổng thanh toán thực tế
     const payload = `INV:${inv.code}|AMT:${due}|METHOD:${method}`;
     setQrValue(payload);
     setShowQR(true);
   };
+
+  /* ===== Render ===== */
 
   if (loading) {
     return (
@@ -238,7 +288,14 @@ export default function InvoicePaymentManager() {
       </div>
     );
   }
-  if (!inv) return <p className="text-slate-500">Chưa có dữ liệu hoá đơn.</p>;
+
+  if (!inv) {
+    return (
+      <p className="text-slate-500">
+        Chưa có dữ liệu hoá đơn (không tìm thấy invoice).
+      </p>
+    );
+  }
 
   const subtotal = calcSubTotal(inv.items);
   const paid = calcPaid(inv.payments);
@@ -281,6 +338,7 @@ export default function InvoicePaymentManager() {
               <b>{inv.patientName}</b>
             </div>
           </div>
+
           <div className="rounded-lg border bg-slate-50/60 px-3 py-2">
             <div className="flex items-center gap-2 text-slate-600 mb-1">
               <Clock className="h-5 w-5" />
@@ -288,6 +346,7 @@ export default function InvoicePaymentManager() {
             </div>
             <StatusBadge status={inv.status} />
           </div>
+
           <div className="rounded-lg border bg-slate-50/60 px-3 py-2">
             <div className="flex items-center gap-2 text-slate-600">
               <CalendarDays className="h-5 w-5" />
@@ -305,7 +364,6 @@ export default function InvoicePaymentManager() {
             <thead className="bg-sky-400 text-white">
               <tr>
                 <th className="px-3 py-2 text-left">STT</th>
-                <th className="px-3 py-2 text-left">Mã dịch vụ</th>
                 <th className="px-3 py-2 text-left">Tên dịch vụ</th>
                 <th className="px-3 py-2 text-left">Loại dịch vụ</th>
                 <th className="px-3 py-2 text-center">Số lượng</th>
@@ -314,10 +372,9 @@ export default function InvoicePaymentManager() {
               </tr>
             </thead>
             <tbody>
-              {inv.items.map((it) => (
+              {inv.items.map((it, idx) => (
                 <tr key={it.id} className="border-t">
-                  <td className="px-3 py-2">{it.id}</td>
-                  {/* <td className="px-3 py-2">{it.code}</td> */}
+                  <td className="px-3 py-2">{idx + 1}</td>
                   <td className="px-3 py-2">{it.name}</td>
                   <td className="px-3 py-2 capitalize">{it.type}</td>
                   <td className="px-3 py-2 text-center">{it.qty}</td>
@@ -368,7 +425,7 @@ export default function InvoicePaymentManager() {
                   if (!v) return;
                   setMethod(v);
                   if (v !== "cash") {
-                    // chuyển sang non-cash: ẩn QR cho đến khi bấm tạo
+                    // chuyển sang non-cash -> ẩn QR cho đến khi bấm tạo
                     setShowQR(false);
                   }
                 }}
@@ -377,7 +434,7 @@ export default function InvoicePaymentManager() {
 
               {isCash && (
                 <>
-                  {/* Input tiền Việt */}
+                  {/* Input tiền khách đưa */}
                   <label className="relative">
                     <input
                       type="text"
@@ -393,7 +450,7 @@ export default function InvoicePaymentManager() {
                     </span>
                   </label>
 
-                  {/* Ô thối lại có khung */}
+                  {/* Tiền thối */}
                   <div className="mt-1 w-full rounded-[var(--rounded)] border px-4 py-3 text-[16px] flex items-center justify-between bg-slate-50">
                     <span className="text-slate-500">Tiền thối</span>
                     <b className="text-green-500">{formatVND(change)}</b>
@@ -434,15 +491,15 @@ export default function InvoicePaymentManager() {
               <div className="flex-1 rounded-xl border p-3 mt-1">
                 {isCash ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                    {/* LEFT: Mệnh giá nhanh (cộng dồn) */}
+                    {/* LEFT: Mệnh giá nhanh */}
                     <div>
                       <div className="text-sm font-semibold mb-2">
                         Mệnh giá nhanh
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {QUICK_AMOUNTS.map((v) => (
+                        {QUICK_AMOUNTS.map((v, idx) => (
                           <button
-                            key={v}
+                            key={idx}
                             onClick={() => addQuick(v)}
                             className="h-10 w-full cursor-pointer rounded-[var(--rounded)] border text-sm font-medium text-center whitespace-nowrap truncate hover:bg-sky-400 hover:text-white"
                             title={`+ ${formatVND(v)}`}
@@ -472,9 +529,9 @@ export default function InvoicePaymentManager() {
                           "000",
                           "0",
                           "⌫",
-                        ].map((k) => (
+                        ].map((k, idx) => (
                           <button
-                            key={k}
+                            key={idx}
                             onClick={() => {
                               if (k === "⌫") backspace();
                               else if (k === "000") appendDigits("000");
@@ -497,7 +554,7 @@ export default function InvoicePaymentManager() {
                     </div>
                   </div>
                 ) : (
-                  /* NON-CASH: QR hiển thị bên phải sau khi bấm "Tạo QR thanh toán" */
+                  // NON-CASH: hiển thị QR sau khi bấm "Tạo QR thanh toán"
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-md font-bold mb-3">
                       Mã QR thanh toán cho hóa đơn #{inv.code}

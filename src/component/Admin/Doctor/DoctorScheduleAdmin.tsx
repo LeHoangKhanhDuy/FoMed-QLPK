@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { useAuth } from "../../../auth/auth";
+import { apiListDoctors, type BEDoctor } from "../../../services/doctorsApi";
 import type {
   Doctor,
   Shift,
@@ -8,13 +9,11 @@ import type {
 } from "../../../types/schedule/types";
 import { addDays, startOfWeek, toYMD } from "../../../types/schedule/date";
 import {
-  apiCreateShift,
-  apiDeleteShift,
-  apiListDoctors,
-  apiListRooms,
-  apiListShifts,
-  apiUpdateShift,
-} from "../../../types/schedule/mockApi";
+  apiGetCalendar,
+  apiCreateWeeklySlot,
+  apiUpdateWeeklySlot,
+  apiDeleteWeeklySlot,
+} from "../../../services/doctorScheduleApi";
 import { Toolbar } from "./Toolbar";
 import { WeekGrid } from "./WeekGrid";
 import { ShiftModal } from "./ShiftModal";
@@ -24,6 +23,7 @@ export default function DoctorScheduleAdmin() {
   const { hasRole } = useAuth();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [doctorId, setDoctorId] = useState<number | "all">("all");
   const [query, setQuery] = useState("");
   const [rooms, setRooms] = useState<string[]>([]);
@@ -42,14 +42,53 @@ export default function DoctorScheduleAdmin() {
   const [editing, setEditing] = useState<Shift | null>(null);
 
   const load = async () => {
-    const [ds, ss, rs] = await Promise.all([
-      apiListDoctors(),
-      apiListShifts({ from: weekFrom, to: weekTo }),
-      apiListRooms(),
-    ]);
-    setDoctors(ds);
-    setShifts(ss);
-    setRooms(rs);
+    // TODO: Replace with real doctors and rooms APIs if available in your project
+    // Tạm thời giữ nguyên doctors/rooms mock nếu đang dùng nơi khác
+    // Lấy calendar từ BE
+    try {
+      setLoadingCalendar(true);
+      // Load doctors for select in modal/toolbar
+      try {
+        const res = await apiListDoctors({ page: 1, limit: 200 });
+        const items: BEDoctor[] = res.items ?? [];
+        const mappedDoctors: Doctor[] = items.map((d) => ({
+          id: d.doctorId,
+          name: d.fullName || `BS #${d.doctorId}`,
+          specialty: d.primarySpecialtyName || "",
+        }));
+        setDoctors(mappedDoctors);
+        const roomList = Array.from(
+          new Set(
+            (items
+              .map((d) => (d.roomName || "").trim())
+              .filter((x) => x && x.length > 0)) as string[]
+          )
+        ).sort((a, b) => a.localeCompare(b, "vi"));
+        setRooms(roomList);
+      } catch (e) {
+        console.warn("Không tải được danh sách bác sĩ", e);
+      }
+
+      const calRes = await apiGetCalendar({ from: weekFrom, to: weekTo, doctorId: doctorId === "all" ? undefined : Number(doctorId) });
+      const items: any[] = calRes.data || [];
+      // Map về Shift[] UI hiện tại
+      const mapped: Shift[] = items.map((b) => ({
+        id: b.slotId,
+        doctorId: b.doctorId,
+        doctorName: b.doctorName,
+        date: typeof b.date === "string" ? b.date : new Date(b.date).toISOString().slice(0,10),
+        start: (b.startTime || "").slice(0,5),
+        end: (b.endTime || "").slice(0,5),
+        location: b.roomName || undefined,
+        status: "scheduled",
+      }));
+      setShifts(mapped);
+    } catch (e) {
+      console.error("Failed to load calendar", e);
+    }
+    finally {
+      setLoadingCalendar(false);
+    }
   };
 
   useEffect(() => {
@@ -83,25 +122,38 @@ export default function DoctorScheduleAdmin() {
   };
 
   const handleSubmit = async (payload: ShiftPayload) => {
-    if (editing?.id) {
-      const upd = await apiUpdateShift(editing.id, payload);
-      setShifts((arr) => arr.map((x) => (x.id === upd.id ? upd : x)));
-    } else {
-      const created = await apiCreateShift(payload);
-      if (
-        new Date(created.date) >= new Date(weekFrom) &&
-        new Date(created.date) <= new Date(weekTo)
-      ) {
-        setShifts((arr) => [created, ...arr]);
+    // Map ShiftPayload -> CreateWeeklySlotRequest
+    const weekday = new Date(payload.date).getDay();
+    const weekdayMap = [7,1,2,3,4,5,6]; // Sun->7, Mon->1 ...
+    const req = {
+      weekday: weekdayMap[weekday],
+      startTime: payload.start.length === 5 ? `${payload.start}:00` : payload.start,
+      endTime: payload.end.length === 5 ? `${payload.end}:00` : payload.end,
+      note: payload.location,
+    };
+    try {
+      if (editing?.id) {
+        await apiUpdateWeeklySlot(editing.id, { ...req, isActive: true });
+        toast.success("Cập nhật lịch làm việc thành công");
+      } else {
+        await apiCreateWeeklySlot(Number(payload.doctorId), req);
+        toast.success("Tạo lịch làm việc lặp tuần thành công");
       }
+      // Refresh calendar in background to close modal faster
+      setTimeout(() => {
+        load();
+      }, 0);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.response?.data?.message || "Thao tác không thành công");
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await apiDeleteShift(id);
-      setShifts((arr) => arr.filter((x) => x.id !== id));
+      await apiDeleteWeeklySlot(id);
       toast.success("Đã xoá lịch làm việc");
+      await load();
     } catch (e) {
       console.error(e);
       toast.error("Xoá không thành công");
@@ -128,12 +180,13 @@ export default function DoctorScheduleAdmin() {
           query={query}
           setQuery={setQuery}
           openCreate={openCreate}
-          canCreate={hasRole(["ADMIN", "EMPLOYEE"])}
+          canCreate={hasRole(["ADMIN", "EMPLOYEE", "DOCTOR"])}
         />
 
         <WeekGrid
           days={weekDays}
           shifts={filtered}
+          loading={loadingCalendar}
           onEdit={openEdit}
           onDelete={handleDelete}
         />

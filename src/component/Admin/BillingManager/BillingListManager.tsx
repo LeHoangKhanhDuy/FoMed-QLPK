@@ -1,28 +1,16 @@
 import { useEffect, useState } from "react";
 import { Plus, Search, Funnel, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { type PaymentMethod } from "../../../types/billing/billing";
+import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 import {
   apiInvoiceList,
   apiCompletedVisitsPendingBilling,
-} from "../../../types/billing/mockApi";
-import {
-  calcDue,
-  calcPaid,
-  calcSubTotal,
-  type CompletedVisit,
-  type Invoice,
-  type Payment,
-  type PaymentMethod,
-} from "../../../types/billing/billing";
-import { SelectMenu, type SelectOption } from "../../ui/select-menu";
+  type BEInvoiceListRow,
+  type BEPendingRow,
+} from "../../../services/billingApi";
 
-const toDMY = (iso: string) => {
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(
-    d.getMonth() + 1
-  ).padStart(2, "0")}/${d.getFullYear()}`;
-};
-
+// trạng thái filter bên UI
 const STATUS_OPTIONS = [
   { value: "all", label: "Tất cả" },
   { value: "Nháp", label: "Nháp" },
@@ -41,29 +29,45 @@ const STATUS_SELECT_OPTS: SelectOption<StatusFilter>[] = STATUS_OPTIONS.map(
   })
 );
 
-const STATUS_BADGE: Record<Exclude<StatusFilter, "all">, { cls: string }> = {
-  Nháp: { cls: "bg-slate-100 text-slate-700 ring-1 ring-slate-200" },
-  "Đã thanh toán": { cls: "bg-green-50 text-green-600 ring-1 ring-green-200" },
-  "Chưa thanh toán": {
-    cls: "bg-red-50 text-red-600 ring-1 ring-red-200",
-  },
-  "Hoàn tiền": { cls: "bg-amber-50 text-amber-600 ring-1 ring-amber-200" },
-  Hủy: { cls: "bg-red-50 text-red-600 ring-1 ring-red-200" },
-};
+function InvoiceStatusBadge({ status }: { status: string | undefined | null }) {
+  // chuẩn hoá tạm chuỗi status để khớp key
+  const normalized =
+    status && status.trim().length > 0 ? status.trim() : "unknown";
 
-function InvoiceStatusBadge({
-  status,
-}: {
-  status: Exclude<StatusFilter, "all">;
-}) {
-  const ui = STATUS_BADGE[status];
+  // mapping màu cho các trạng thái mình support
+  const mapCls: Record<string, string> = {
+    Nháp: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+    "Đã thanh toán": "bg-green-50 text-green-600 ring-1 ring-green-200",
+    "Chưa thanh toán": "bg-red-50 text-red-600 ring-1 ring-red-200",
+    "Hoàn tiền": "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
+    Hủy: "bg-red-50 text-red-600 ring-1 ring-red-200",
+    Huỷ: "bg-red-50 text-red-600 ring-1 ring-red-200",
+    Paid: "bg-green-50 text-green-600 ring-1 ring-green-200",
+    Unpaid: "bg-red-50 text-red-600 ring-1 ring-red-200",
+  };
+
+  const cls =
+    mapCls[normalized] ?? "bg-slate-100 text-slate-700 ring-1 ring-slate-300";
+
   return (
     <span
-      className={`inline-flex items-center px-2 py-1 rounded-[var(--rounded)] text-xs font-medium ${ui.cls}`}
+      className={`inline-flex items-center px-2 py-1 rounded-[var(--rounded)] text-xs font-medium ring-1 ${cls}`}
     >
-      {status}
+      {status ?? "-"}
     </span>
   );
+}
+
+// Ánh xạ BE -> FE cho payment method để dùng badge UI
+// BE có thể trả "cash" | "card" | "transfer" | "e-wallet" | null
+function normalizeMethod(m: string | null): PaymentMethod | null {
+  if (!m) return null;
+  const val = m.toLowerCase();
+  if (val.includes("wallet") || val.includes("e-wallet")) return "wallet";
+  if (val.includes("cash") || val.includes("tiền")) return "cash";
+  if (val.includes("card") || val.includes("thẻ")) return "card";
+  if (val.includes("transfer") || val.includes("khoản")) return "transfer";
+  return null;
 }
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
@@ -87,43 +91,52 @@ function MethodBadge({ m }: { m: PaymentMethod }) {
   return <span className={`${base} ${cls}`}>{METHOD_LABEL[m]}</span>;
 }
 
-const uniquePaymentMethods = (payments: Payment[]): PaymentMethod[] => {
-  const set = new Set<PaymentMethod>();
-  payments.forEach((p) => set.add(p.method));
-  return [...set];
-};
+const cx = (...a: Array<string | false | undefined>) =>
+  a.filter(Boolean).join(" ");
+
+/* ================= Component ================= */
 
 export default function BillingListManager() {
+  const nav = useNavigate();
+  // tab hiện tại
   const [tab, setTab] = useState<"invoices" | "pending">("pending");
+  // filter
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
-  const cx = (...a: Array<string | false | undefined>) =>
-    a.filter(Boolean).join(" ");
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [pending, setPending] = useState<CompletedVisit[]>([]);
+  // data
+  const [invoiceRows, setInvoiceRows] = useState<BEInvoiceListRow[]>([]);
+  const [pending, setPending] = useState<BEPendingRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const nav = useNavigate();
 
+  // load danh sách hóa đơn (tab "invoices")
   const loadInvoices = async () => {
     setLoading(true);
     try {
       const data = await apiInvoiceList({ q, status });
-      setInvoices(data);
+      setInvoiceRows(data);
+    } catch (err) {
+      console.error("loadInvoices error:", err);
+      setInvoiceRows([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // load danh sách chờ thanh toán (tab "pending")
   const loadPending = async () => {
     setLoading(true);
     try {
       const data = await apiCompletedVisitsPendingBilling();
       setPending(data);
+    } catch (err) {
+      console.error("loadPending error:", err);
+      setPending([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // tự động load khi chuyển tab hoặc đổi trạng thái filter
   useEffect(() => {
     if (tab === "invoices") {
       loadInvoices();
@@ -131,7 +144,7 @@ export default function BillingListManager() {
       loadPending();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, status]); // lọc theo tab/trạng thái; search dùng nút "Lọc"
+  }, [tab, status]);
 
   return (
     <section className="space-y-4">
@@ -139,22 +152,25 @@ export default function BillingListManager() {
         <Wallet className="w-6 h-6 text-sky-500" />
         <h1 className="text-xl font-bold">Quản lý thanh toán</h1>
       </header>
+
       <div className="rounded-xl border bg-white p-4 shadow-xs space-y-3">
         {/* Tabs */}
         <div className="flex flex-col-2 gap-2">
           <button
             onClick={() => setTab("pending")}
-            className={`w-full sm:w-auto h-10 px-3 font-semibold rounded-[var(--rounded)] border cursor-pointer ${
-              tab === "pending" ? "bg-sky-50 border-sky-400 text-sky-500" : ""
-            }`}
+            className={cx(
+              "w-full sm:w-auto h-10 px-3 font-semibold rounded-[var(--rounded)] border cursor-pointer",
+              tab === "pending" && "bg-sky-50 border-sky-400 text-sky-500"
+            )}
           >
             Chờ thanh toán
           </button>
           <button
             onClick={() => setTab("invoices")}
-            className={`w-full sm:w-auto h-10 px-3 font-semibold rounded-[var(--rounded)] border cursor-pointer ${
-              tab === "invoices" ? "bg-sky-50 border-sky-400 text-sky-500" : ""
-            }`}
+            className={cx(
+              "w-full sm:w-auto h-10 px-3 font-semibold rounded-[var(--rounded)] border cursor-pointer",
+              tab === "invoices" && "bg-sky-50 border-sky-400 text-sky-500"
+            )}
           >
             Danh sách hoá đơn
           </button>
@@ -162,9 +178,9 @@ export default function BillingListManager() {
 
         {tab === "invoices" ? (
           <>
-            {/* Filter */}
+            {/* Filter khu vực hoá đơn */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-              {/* Trái: search + select + (nút Lọc cho desktop) */}
+              {/* trái: ô search + trạng thái + nút lọc */}
               <div className="flex flex-col sm:flex-row gap-2 w-full">
                 <label className="relative w-full sm:w-80">
                   <Search className="w-5 h-5 text-slate-400 absolute left-3 top-7 -translate-y-1/2" />
@@ -190,7 +206,7 @@ export default function BillingListManager() {
                   className="w-full sm:w-[180px]"
                 />
 
-                {/* Nút Lọc chỉ hiện ở ≥sm để giữ desktop như cũ */}
+                {/* nút lọc (desktop) */}
                 <button
                   onClick={loadInvoices}
                   className={cx(
@@ -205,7 +221,7 @@ export default function BillingListManager() {
                 </button>
               </div>
 
-              {/* Phải: nút Tạo hoá đơn chỉ hiện ở ≥sm để giữ desktop như hình */}
+              {/* phải: tạo hoá đơn desktop */}
               <button
                 onClick={() => nav("/cms/billing/new")}
                 className="hidden sm:inline-flex cursor-pointer h-12 px-4 items-center justify-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white whitespace-nowrap shrink-0"
@@ -213,7 +229,7 @@ export default function BillingListManager() {
                 + Tạo hoá đơn
               </button>
 
-              {/* 👉 Mobile-only: gom Lọc + Tạo hoá đơn vào 1 hàng 2 cột */}
+              {/* mobile: gộp Lọc + Tạo hoá đơn */}
               <div className="grid grid-cols-2 gap-2 w-full sm:hidden">
                 <button
                   onClick={loadInvoices}
@@ -234,7 +250,7 @@ export default function BillingListManager() {
               </div>
             </div>
 
-            {/* Table invoices */}
+            {/* Bảng hoá đơn */}
             <div className="overflow-x-auto rounded-sm border border-gray-200">
               <table className="min-w-full text-sm">
                 <thead>
@@ -251,6 +267,7 @@ export default function BillingListManager() {
                     <th className="py-2 pr-3">Thao tác</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {loading ? (
                     <tr>
@@ -261,7 +278,7 @@ export default function BillingListManager() {
                         Đang tải…
                       </td>
                     </tr>
-                  ) : invoices.length === 0 ? (
+                  ) : invoiceRows.length === 0 ? (
                     <tr>
                       <td
                         colSpan={10}
@@ -271,52 +288,69 @@ export default function BillingListManager() {
                       </td>
                     </tr>
                   ) : (
-                    invoices.map((inv, idx) => (
-                      <tr
-                        key={inv.id}
-                        className="text-center border-b last:border-none"
-                      >
-                        <td className="py-2 pr-3">{idx + 1}</td>
-                        <td className="py-2 pr-3">{inv.code}</td>
-                        <td className="py-2 pr-3 font-semibold">
-                          {inv.patientName}
-                        </td>
-                        <td className="py-2 pr-3">{toDMY(inv.createdAt)}</td>
-                        <td className="py-2 pr-3 font-semibold text-green-500">
-                          {calcPaid(inv.payments).toLocaleString()} ₫
-                        </td>
-                        <td className="py-2 pr-3 font-semibold text-orange-500">
-                          {calcDue(inv).toLocaleString()} ₫
-                        </td>
-                        <td className="py-2 pr-3 font-bold text-red-500">
-                          {calcSubTotal(inv.items).toLocaleString()} ₫
-                        </td>
-                        <td className="py-2 pr-3">
-                          {inv.payments.length === 0 ? (
-                            <span>-</span>
-                          ) : (
-                            <div className="flex flex-wrap gap-1 justify-center">
-                              {uniquePaymentMethods(inv.payments).map((m) => (
-                                <MethodBadge key={m} m={m} />
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3">
-                          <InvoiceStatusBadge
-                            status={inv.status as Exclude<StatusFilter, "all">}
-                          />
-                        </td>
-                        <td className="py-2 pr-3">
-                          <Link
-                            to="/cms/billing/details"
-                            className="bg-primary-linear text-white px-3 py-1.5 rounded-[var(--rounded)]"
-                          >
-                            Chi tiết
-                          </Link>
-                        </td>
-                      </tr>
-                    ))
+                    invoiceRows.map((row, idx) => {
+                      const payMethod = normalizeMethod(
+                        row.lastPaymentMethod ?? null
+                      );
+                      return (
+                        <tr
+                          key={row.invoiceId}
+                          className="text-center border-b last:border-none"
+                        >
+                          <td className="py-2 pr-3">{idx + 1}</td>
+
+                          {/* Mã hồ sơ / invoiceCode */}
+                          <td className="py-2 pr-3">{row.invoiceCode}</td>
+
+                          {/* Bệnh nhân */}
+                          <td className="py-2 pr-3 font-semibold">
+                            {row.patientName}
+                          </td>
+
+                          {/* Ngày */}
+                          <td className="py-2 pr-3">{row.visitDate}</td>
+
+                          {/* Đã thu */}
+                          <td className="py-2 pr-3 font-semibold text-green-500">
+                            {row.paidAmount.toLocaleString("vi-VN")} ₫
+                          </td>
+
+                          {/* Còn thiếu */}
+                          <td className="py-2 pr-3 font-semibold text-orange-500">
+                            {row.remainingAmount.toLocaleString("vi-VN")} ₫
+                          </td>
+
+                          {/* Tổng thanh toán */}
+                          <td className="py-2 pr-3 font-bold text-red-500">
+                            {row.totalAmount.toLocaleString("vi-VN")} ₫
+                          </td>
+
+                          {/* Phương thức thanh toán */}
+                          <td className="py-2 pr-3">
+                            {payMethod ? (
+                              <MethodBadge m={payMethod} />
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </td>
+
+                          {/* Trạng thái */}
+                          <td className="py-2 pr-3">
+                            <InvoiceStatusBadge status={row.statusLabel} />
+                          </td>
+
+                          {/* Thao tác */}
+                          <td className="py-2 pr-3">
+                            <Link
+                              to={`/cms/billing/details/${row.invoiceId}`}
+                              className="bg-primary-linear text-white px-3 py-1.5 rounded-[var(--rounded)] cursor-pointer"
+                            >
+                              Chi tiết
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -324,7 +358,7 @@ export default function BillingListManager() {
           </>
         ) : (
           <>
-            {/* Table pending patients – styled like your UI + dịch vụ & tổng */}
+            {/* Bảng danh sách chờ thanh toán */}
             <div className="overflow-x-auto rounded-sm border border-gray-200">
               <table className="min-w-full text-sm">
                 <thead>
@@ -360,63 +394,68 @@ export default function BillingListManager() {
                       </td>
                     </tr>
                   ) : (
-                    pending.map((v, idx) => {
-                      // Lấy tên dịch vụ (dịch vụ đầu tiên + số lượng còn lại)
-                      const svcCount = v.services?.length ?? 0;
-                      const svcFirst = v.services?.[0]?.name ?? "-";
-                      const svcLabel =
-                        svcCount > 1
-                          ? `${svcFirst} (+${svcCount - 1})`
-                          : svcFirst;
+                    pending.map((row, idx) => (
+                      <tr
+                        key={row.invoiceId ?? idx}
+                        className="text-center border-b last:border-none"
+                      >
+                        {/* STT */}
+                        <td className="py-2 pr-3">{idx + 1}</td>
 
-                      // Tính tổng = phí khám + tổng dịch vụ + tổng thuốc
-                      const total =
-                        (v.examFee ?? 0) +
-                        (v.services?.reduce((s, x) => s + (x.price ?? 0), 0) ??
-                          0) +
-                        (v.drugs?.reduce(
-                          (s, x) => s + x.qty * x.unitPrice,
-                          0
-                        ) ?? 0);
+                        {/* Mã hồ sơ / caseCode */}
+                        <td className="py-2 pr-3 font-semibold">
+                          {row.caseCode}
+                        </td>
 
-                      return (
-                        <tr
-                          key={v.appointmentId}
-                          className="text-center border-b last:border-none"
-                        >
-                          <td className="py-2 pr-3">{idx + 1}</td>
-                          <td className="py-2 pr-3">#{v.appointmentId}</td>
-                          <td className="py-2 pr-3 font-bold">
-                            {v.patientName}
-                          </td>
-                          <td className="py-2 pr-3">{v.doctorName}</td>
-                          <td className="py-2 pr-3">{svcLabel}</td>
-                          <td className="py-2 pr-3">
-                            {new Date(v.finishedAt).toLocaleTimeString(
-                              "vi-VN",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
-                            <span className="text-slate-200"> · </span>
-                            {toDMY(v.finishedAt)}
-                          </td>
-                          <td className="py-2 pr-3 font-semibold text-red-500">
-                            {total.toLocaleString("vi-VN")} ₫
-                          </td>
-                          <td className="py-2 pr-3">
-                            <button
-                              onClick={() => nav("/cms/billing/payment")}
-                              className="h-9 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white cursor-pointer"
-                              title="Tạo hoá đơn"
-                            >
-                              <Wallet className="w-4 h-4" /> Thanh toán
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
+                        {/* Bệnh nhân */}
+                        <td className="py-2 pr-3 font-bold">
+                          {row.patientName}
+                        </td>
+
+                        {/* Bác sĩ */}
+                        <td className="py-2 pr-3">{row.doctorName}</td>
+
+                        {/* Dịch vụ chính */}
+                        <td className="py-2 pr-3">{row.serviceName}</td>
+
+                        {/* Hoàn tất lúc */}
+                        <td className="py-2 pr-3 whitespace-nowrap">
+                          {row.finishedTime}
+                          <span className="text-slate-300"> · </span>
+                          {row.finishedDate}
+                        </td>
+
+                        {/* Tổng thanh toán */}
+                        <td className="py-2 pr-3 font-semibold text-red-500">
+                          {row.totalAmount.toLocaleString("vi-VN")} ₫
+                        </td>
+
+                        {/* Thao tác */}
+                        <td className="py-2 pr-3">
+                          <button
+                            onClick={() =>
+                              nav(`/cms/billing/payment/${row.invoiceId}`, {
+                                state: {
+                                  invoiceId: row.invoiceId,
+                                  invoiceCode: row.invoiceCode,
+                                  caseCode: row.caseCode, 
+                                  patientName: row.patientName,
+                                  finishedTime: row.finishedTime,
+                                  finishedDate: row.finishedDate,
+                                  totalAmount: row.totalAmount,
+                                  doctorName: row.doctorName,
+                                  serviceName: row.serviceName,
+                                },
+                              })
+                            }
+                            className="h-9 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white cursor-pointer"
+                            title="Thanh toán"
+                          >
+                            <Wallet className="w-4 h-4" /> Thanh toán
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
