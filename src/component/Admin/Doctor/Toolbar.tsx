@@ -5,7 +5,6 @@ import {
   ChevronRight,
   RefreshCcw,
   Plus,
-  Search,
 } from "lucide-react";
 import type { Doctor } from "../../../types/schedule/types";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
@@ -22,6 +21,7 @@ type Props = {
   query: string;
   setQuery: (s: string) => void;
   openCreate: () => void;
+  canCreate?: boolean; // chỉ ADMIN/EMPLOYEE được phép
 };
 
 export const Toolbar: React.FC<Props> = ({
@@ -33,9 +33,10 @@ export const Toolbar: React.FC<Props> = ({
   doctors,
   doctorId,
   setDoctorId,
-  query,
-  setQuery,
+  // query,
+  // setQuery,
   openCreate,
+  canCreate = true,
 }) => {
   const options: SelectOption<number | "all">[] = [
     { value: "all", label: "Tất cả bác sĩ" },
@@ -56,8 +57,8 @@ export const Toolbar: React.FC<Props> = ({
     "cursor-pointer h-12 w-10 inline-flex items-center justify-center rounded-[var(--rounded)] border bg-white hover:bg-gray-50";
   const pillBtn =
     "group cursor-pointer h-12 px-4  inline-flex items-center gap-2 rounded-[var(--rounded)] border bg-white text-red-500 hover:bg-gray-50";
-  const inputCls =
-    "mt-1 h-12 w-full sm:w-80 rounded-[var(--rounded)] border pl-9 pr-3 outline-none focus:ring-2 focus:ring-sky-500";
+  // const inputCls =
+  //   "mt-1 h-12 w-full sm:w-80 rounded-[var(--rounded)] border pl-9 pr-3 outline-none focus:ring-2 focus:ring-sky-500";
 
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -83,7 +84,7 @@ export const Toolbar: React.FC<Props> = ({
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 items-stretch space-y-1">
-        <label className="relative">
+        {/* <label className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             value={query}
@@ -91,7 +92,7 @@ export const Toolbar: React.FC<Props> = ({
             placeholder="Tìm bác sĩ / mã ca / ghi chú…"
             className={inputCls}
           />
-        </label>
+        </label> */}
 
         <SelectMenu
           value={doctorId}
@@ -100,12 +101,14 @@ export const Toolbar: React.FC<Props> = ({
           }}
           options={options}
           placeholder="Chọn bác sĩ"
-          className="min-w-[250px]"
+          className="min-w-[350px]"
         />
 
         <button
           onClick={openCreate}
-          className="cursor-pointer mt-1 h-12 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white"
+          disabled={!canCreate}
+          className="cursor-pointer mt-1 h-12 px-3 inline-flex items-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white disabled:opacity-60 disabled:cursor-not-allowed"
+          title={canCreate ? undefined : "Chỉ ADMIN hoặc EMPLOYEE mới được tạo ca"}
         >
           <Plus className="w-4 h-4" />
           Thêm ca

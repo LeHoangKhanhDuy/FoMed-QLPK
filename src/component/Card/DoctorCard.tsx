@@ -113,7 +113,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
           </button>
         </Link>
 
-        <Link to={bookHref} className="w-full">
+        {onBook ? (
           <button
             type="button"
             onClick={onBook}
@@ -121,7 +121,16 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
           >
             Đặt lịch
           </button>
-        </Link>
+        ) : (
+          <Link to={bookHref} className="w-full">
+            <button
+              type="button"
+              className="w-full cursor-pointer rounded-xl bg-primary-linear text-white font-semibold py-2 active:scale-[0.98] transition"
+            >
+              Đặt lịch
+            </button>
+          </Link>
+        )}
       </div>
     </section>
   );

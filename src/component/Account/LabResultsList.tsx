@@ -1,68 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { apiGetLabResults } from "../../services/labResultsApi";
+import {
+  normalizeLabStatus,
+  type LabStatus,
+} from "../../Utils/normalizeLabStatus";
 
-type LabStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "abnormal"
-  | "canceled";
-
-interface LabResultRow {
-  id: number;
-  result_code: string; // Mã phiếu
-  collected_at: string; // Ngày lấy mẫu
-  service_name: string; // Loại xét nghiệm / gói
-  status: LabStatus;
-}
-
-const FAKE_LIST: LabResultRow[] = [
-  {
-    id: 9001,
-    result_code: "LR-0001",
-    collected_at: "2025/08/01 09:10",
-    service_name: "Sinh hóa máu cơ bản",
-    status: "completed",
-  },
-  {
-    id: 9002,
-    result_code: "LR-0002",
-    collected_at: "2025/08/03 10:05",
-    service_name: "CRP định lượng",
-    status: "processing",
-  },
-  {
-    id: 9003,
-    result_code: "LR-0003",
-    collected_at: "2025/08/06 08:40",
-    service_name: "Huyết học tổng quát",
-    status: "abnormal",
-  },
-  {
-    id: 9004,
-    result_code: "LR-0004",
-    collected_at: "2025/07/28 14:20",
-    service_name: "Xét nghiệm nước tiểu",
-    status: "pending",
-  },
-  {
-    id: 9005,
-    result_code: "LR-0005",
-    collected_at: "2025/07/20 09:00",
-    service_name: "FT4, TSH",
-    status: "canceled",
-  },
-];
-
-const StatusBadge = ({ status }: { status: LabStatus }) => {
+// Giữ nguyên StatusBadge như bạn đã có
+const StatusBadge = ({ status }: { status?: string | LabStatus }) => {
+  const s = normalizeLabStatus(status ?? "");
   const map: Record<LabStatus, { cls: string; text: string }> = {
     pending: { cls: "bg-yellow-100 text-yellow-700", text: "Chờ xử lý" },
     processing: { cls: "bg-blue-100 text-blue-500", text: "Đang xử lý" },
-    completed: { cls: "bg-green-100 text-green-600", text: "Bình thường" },
+    completed: { cls: "bg-green-100 text-green-600", text: "Bình thường" }, // hoặc "Hoàn tất"
     abnormal: { cls: "bg-red-100 text-red-600", text: "Bất thường" },
     canceled: { cls: "bg-gray-200 text-gray-600", text: "Đã hủy" },
   };
-  const m = map[status];
+  const m = map[s]; // luôn có vì đã normalize
   return (
     <span
       className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${m.cls}`}
@@ -72,29 +26,79 @@ const StatusBadge = ({ status }: { status: LabStatus }) => {
   );
 };
 
+type Row = {
+  id: number; // tạo tạm để key, từ offset trang + index
+  result_code: string;
+  collected_at: string;
+  service_name: string;
+  status: LabStatus;
+};
+
 export default function LabResultsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Search
-  const filtered = useMemo(() => {
-    const q = searchTerm.toLowerCase();
-    return FAKE_LIST.filter((r) =>
-      Object.values(r).join(" ").toLowerCase().includes(q)
-    );
-  }, [searchTerm]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<Row[]>([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Pagination
-  const totalPages = Math.ceil(filtered.length / pageSize);
+  // Tải dữ liệu khi đổi trang
   useEffect(() => {
-    if (totalPages === 0 && currentPage !== 1) setCurrentPage(1);
-    else if (totalPages > 0 && currentPage > totalPages)
-      setCurrentPage(totalPages);
-  }, [totalPages, currentPage]);
-  const start = (currentPage - 1) * pageSize;
-  const pageItems = filtered.slice(start, start + pageSize);
+    let cancelled = false;
 
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await apiGetLabResults({
+          page: currentPage,
+          limit: pageSize,
+          // Nếu là ADMIN/DOCTOR muốn xem theo bệnh nhân khác:
+          // patientId: ...,  // hoặc
+          // patientCode: "BN000567",
+        });
+
+        if (cancelled) return;
+
+        // map BE -> Row (BE không trả id nên tạo id tạm)
+        const offset = (res.page - 1) * res.limit;
+        const mapped: Row[] = res.items.map((it, idx) => ({
+          id: offset + idx + 1,
+          result_code: it.code,
+          collected_at: it.sampleTakenAt ? it.sampleTakenAt : "",
+          service_name: it.serviceName,
+          status: it.status,
+        }));
+
+        setItems(mapped);
+        setTotalPages(res.totalPages);
+        setTotalItems(res.totalItems);
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message || "Có lỗi xảy ra");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage]);
+
+  // Search (lọc trong trang hiện tại)
+  const pageItems = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((r) =>
+      [r.result_code, r.collected_at, r.service_name, String(r.status)].join(" "));
+  }, [items, searchTerm]);
+
+  // Helper pager
   const buildPageItems = (current: number, total: number, maxButtons = 7) => {
     if (maxButtons % 2 === 0) maxButtons += 1;
     if (total <= maxButtons)
@@ -143,6 +147,14 @@ export default function LabResultsList() {
         />
       </div>
 
+      {/* state */}
+      {error && (
+        <div className="mt-4 text-red-600 bg-red-50 rounded-sm px-4 py-2">
+          {error}
+        </div>
+      )}
+      {loading && <div className="mt-4 text-slate-600">Đang tải dữ liệu…</div>}
+
       {/* table */}
       <div className="max-w-full mt-6 overflow-x-auto rounded-sm border border-gray-200">
         <table className="min-w-[900px] w-full text-left text-sm text-gray-700">
@@ -160,14 +172,20 @@ export default function LabResultsList() {
               pageItems.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50">
                   <td className="px-6 py-3 font-medium">{r.result_code}</td>
-                  <td className="px-6 py-3">{r.collected_at}</td>
+                  <td className="px-6 py-3">
+                    {r.collected_at
+                      ? new Date(r.collected_at).toLocaleString()
+                      : ""}
+                  </td>
                   <td className="px-6 py-3">{r.service_name}</td>
                   <td className="px-6 py-3">
                     <StatusBadge status={r.status} />
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap">
                     <Link
-                      to="/user/lab-result/detail"
+                      to={`/user/lab-result/detail?code=${encodeURIComponent(
+                        r.result_code
+                      )}`}
                       className="bg-primary-linear text-white text-sm px-3 py-2 rounded-[var(--rounded)]"
                     >
                       Chi tiết
@@ -178,7 +196,7 @@ export default function LabResultsList() {
             ) : (
               <tr>
                 <td colSpan={7} className="px-6 py-4 text-center text-gray-600">
-                  Không có kết quả
+                  {loading ? " " : "Không có kết quả"}
                 </td>
               </tr>
             )}
@@ -186,13 +204,14 @@ export default function LabResultsList() {
         </table>
       </div>
 
-      {/* pagination (>=2 trang mới hiện) */}
+      {/* pagination */}
       {totalPages >= 2 && (
         <div className="flex items-center justify-between py-4">
           <p className="font-semibold px-4 text-black">
             Trang{" "}
             <span className="font-semibold text-black">{currentPage}</span> -{" "}
-            <span className="font-semibold text-black">{totalPages}</span>
+            <span className="font-semibold text-black">{totalPages}</span>{" "}
+            <span className="text-slate-500">({totalItems} mục)</span>
           </p>
           <div className="flex items-center px-4 xl:px-10 gap-2">
             {pager.map((it, idx) =>

@@ -163,24 +163,24 @@ export default function ServiceClinic() {
     return (
       <div className="w-full">
         <section className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
-          <header className="flex items-center justify-center gap-3 mb-6">
+          {/* <header className="flex items-center justify-center gap-3 mb-6">
             <div className="h-8 w-64 bg-gray-200 rounded animate-shimmer" />
-          </header>
+          </header> */}
 
           {/* Tabs skeleton */}
-          <div className="mb-4 flex items-center justify-center gap-3">
+          {/* <div className="mb-4 flex items-center justify-center gap-3">
             {[...Array(3)].map((_, i) => (
               <div
                 key={i}
                 className="h-10 w-28 bg-gray-200 rounded-[var(--rounded)] animate-shimmer"
               />
             ))}
-          </div>
+          </div> */}
 
           <div className="relative">
             {/* Nút điều hướng */}
-            <div className="hidden md:flex absolute -left-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
-            <div className="hidden md:flex absolute -right-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
+            {/* <div className="hidden md:flex absolute -left-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
+            <div className="hidden md:flex absolute -right-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" /> */}
 
             {/* Carousel skeleton */}
             <div className="flex overflow-x-auto gap-4 py-2">

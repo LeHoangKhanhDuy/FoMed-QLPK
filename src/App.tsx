@@ -100,7 +100,7 @@ function App() {
           <Route path="service-manager" element={<ServiceManagerPage />} />
           <Route path="drug-manager" element={<DrugManagerPage />} />
           <Route path="billing" element={<BillingManagerPage />} />
-          <Route path="billing/payment" element={<InvoicePaymentManagerPage />} />
+          <Route path="billing/payment/:invoiceId" element={<InvoicePaymentManagerPage />} />
           <Route path="billing/details" element={<InvoiceDetailPaymentPage />} />
           <Route path="doctor-manager" element={<DoctorManagerPage />} />
           <Route path="specialty-manager" element={<SpecialtyManagerPage />} />
