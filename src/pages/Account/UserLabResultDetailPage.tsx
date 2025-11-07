@@ -2,9 +2,8 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import UserLayout from "../../layouts/UserLayout";
-import LabResultDetails, {
-  type LabResultDetail,
-} from "../../component/Account/LabResultDetail";
+import { LabResultDetails } from "../../component/Account/LabResultDetail";
+import type { LabResultDetail } from "../../types/lab/lab";
 
 const FAKE_DETAILS: LabResultDetail[] = [
   {
@@ -107,7 +106,7 @@ export default function UserLabResultDetailPage() {
 
   return (
     <UserLayout>
-      <div className="md:flex-row min-h-screen p-4 mx-auto max-w-screen-2xl px-0 lg:px-0">
+      <div className="min-h-screen p-4 mx-auto max-w-screen-2xl">
         <LabResultDetails result={data} />
       </div>
     </UserLayout>

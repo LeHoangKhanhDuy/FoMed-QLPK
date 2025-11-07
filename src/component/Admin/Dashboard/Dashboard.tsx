@@ -134,7 +134,7 @@ export const Dashboard = () => {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Thống kê hoạt động</h1>
         <p className="text-sm text-gray-600 mt-1">
           Tổng quan về hoạt động phòng khám
         </p>

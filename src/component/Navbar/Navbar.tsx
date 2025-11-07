@@ -9,7 +9,6 @@ import {
   X,
   MousePointerSquareDashed,
   CircleUserRound,
-  Heart,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -438,18 +437,6 @@ export default function Navbar() {
                           <CircleUserRound className="size-5 text-gray-500 group-hover:text-[var(--hover)]" />
                           <span className="group-hover:text-[var(--hover)]">
                             Cài đặt tài khoản
-                          </span>
-                        </Link>
-                      </MenuItem>
-
-                      <MenuItem>
-                        <Link
-                          to="/user/favorite"
-                          className="group flex w-full items-center gap-3 font-semibold px-4 py-2.5 hover:bg-gray-100 transition-colors duration-200"
-                        >
-                          <Heart className="size-5 text-gray-500 group-hover:text-[var(--hover)]" />
-                          <span className="group-hover:text-[var(--hover)]">
-                            Sản phẩm yêu thích
                           </span>
                         </Link>
                       </MenuItem>
