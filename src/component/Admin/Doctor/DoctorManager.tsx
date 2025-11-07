@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../../common/ConfirmModal";
-import { apiActivateDoctor, apiCreateDoctor, apiDeactivateDoctor, apiGetDoctors, apiUpdateDoctor, type CreateDoctorPayload, type DoctorItem, type UpdateDoctorPayload } from "../../../services/doctorMApi";
+import { apiActivateDoctor, apiCreateDoctor, apiDeactivateDoctor, apiGetDoctors, apiUpdateDoctor } from "../../../services/doctorMApi";
+import type { CreateDoctorPayload, DoctorItem, UpdateDoctorPayload } from "../../../types/doctor/doctor";
 import DoctorModal from "./DoctorModal";
 import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../../Utils/avatarHelper";
+import { buildDoctorUpdatePayload } from "../../../Utils/buildDoctorUpdatePayload";
 
 // ===================== MAIN COMPONENT =====================
 export default function DoctorManager() {
@@ -114,7 +116,25 @@ export default function DoctorManager() {
     try {
       setLoading(true);
       if (editing) {
-        await apiUpdateDoctor(editing.doctorId, payload as UpdateDoctorPayload);
+        const partial = buildDoctorUpdatePayload(
+          payload as UpdateDoctorPayload,
+          {
+            title: editing.title,
+            primarySpecialtyId: null, // nếu bạn có initial khác, truyền đúng vào đây
+            licenseNo: editing.licenseNo,
+            roomName: editing.roomName,
+            experienceYears: editing.experienceYears ?? undefined,
+            experienceNote: null,
+            intro: null,
+            isActive: editing.isActive,
+            avatarUrl: editing.avatarUrl ?? undefined,
+            // nếu form modal có mảng hiện tại, truyền vào initial tương ứng
+            educations: (payload as UpdateDoctorPayload).educations,
+            expertises: (payload as UpdateDoctorPayload).expertises,
+            achievements: (payload as UpdateDoctorPayload).achievements,
+          }
+        );
+        await apiUpdateDoctor(editing.doctorId, partial);
         toast.success("Đã cập nhật hồ sơ bác sĩ");
       } else {
         await apiCreateDoctor(payload as CreateDoctorPayload);

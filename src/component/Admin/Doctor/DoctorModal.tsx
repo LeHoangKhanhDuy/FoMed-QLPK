@@ -7,17 +7,22 @@ import {
   apiUploadDoctorAvatar,
   apiDeleteDoctorAvatar,
   apiGetDoctorDetail,
-  type AvailableUser,
-  type CreateDoctorPayload,
-  type DoctorItem,
-  type UpdateDoctorPayload,
-  type DoctorEducation,
-  type DoctorExpertise,
-  type DoctorAchievement,
 } from "../../../services/doctorMApi";
+import type {
+  AvailableUser,
+  CreateDoctorPayload,
+  DoctorItem,
+  UpdateDoctorPayload,
+  DoctorEducation,
+  DoctorExpertise,
+  DoctorAchievement,
+} from "../../../types/doctor/doctor";
 import type { SpecialtyItem } from "../../../types/specialty/specialtyType";
 import { apiGetPublicSpecialties } from "../../../services/specialtyApi";
-import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../../Utils/avatarHelper";
+import {
+  getFullAvatarUrl,
+  DEFAULT_AVATAR_URL,
+} from "../../../Utils/avatarHelper";
 import ConfirmModal from "../../../common/ConfirmModal";
 
 // ===================== PROPS =====================
@@ -39,9 +44,7 @@ export default function DoctorModal({
 }: Props) {
   const isEditing = !!initial?.doctorId;
 
-  const [form, setForm] = useState<
-    CreateDoctorPayload & UpdateDoctorPayload
-  >({
+  const [form, setForm] = useState<CreateDoctorPayload & UpdateDoctorPayload>({
     userId: initial?.userId ?? 0,
     title: initial?.title ?? null,
     primarySpecialtyId: null,
@@ -58,7 +61,8 @@ export default function DoctorModal({
 
   // Avatar state
   const [avatarUrl, setAvatarUrl] = useState<string>("");
-  const [avatarPreview, setAvatarPreview] = useState<string>(DEFAULT_AVATAR_URL);
+  const [avatarPreview, setAvatarPreview] =
+    useState<string>(DEFAULT_AVATAR_URL);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [confirmDeleteAvatar, setConfirmDeleteAvatar] = useState(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null); // File tạm khi tạo mới
@@ -89,7 +93,7 @@ export default function DoctorModal({
   useEffect(() => {
     if (!open) {
       // Cleanup: Giải phóng blob URL khi đóng modal
-      if (avatarPreview && avatarPreview.startsWith('blob:')) {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
         URL.revokeObjectURL(avatarPreview);
       }
       return;
@@ -105,19 +109,23 @@ export default function DoctorModal({
 
       // Load Specialties trước
       setLoadingSpecialties(true);
-      const specialtiesList = await apiGetPublicSpecialties().catch(() => [] as SpecialtyItem[]);
+      const specialtiesList = await apiGetPublicSpecialties().catch(
+        () => [] as SpecialtyItem[]
+      );
       setSpecialties(specialtiesList);
       setLoadingSpecialties(false);
 
       // Load Available Users (chỉ khi tạo mới)
       if (!isEditing) {
         setLoadingUsers(true);
-        const users = await apiGetAvailableUsers().catch(() => [] as AvailableUser[]);
+        const users = await apiGetAvailableUsers().catch(
+          () => [] as AvailableUser[]
+        );
         setAvailableUsers(users);
         setLoadingUsers(false);
 
         // Reset form cho tạo mới
-    setForm({
+        setForm({
           userId: 0,
           title: null,
           primarySpecialtyId: null,
@@ -140,10 +148,10 @@ export default function DoctorModal({
       if (isEditing && initial?.doctorId) {
         try {
           const detail = await apiGetDoctorDetail(initial.doctorId);
-          
+
           // Tìm primarySpecialtyId từ name
           const matchedSpecialty = specialtiesList.find(
-            s => s.name === detail.primarySpecialtyName
+            (s) => s.name === detail.primarySpecialtyName
           );
 
           // Load form
@@ -174,7 +182,7 @@ export default function DoctorModal({
         } catch (error) {
           console.error("Error loading doctor detail:", error);
           toast.error("Không thể tải thông tin bác sĩ");
-          
+
           // Fallback: Load từ initial nếu có lỗi
           setForm({
             userId: initial.userId ?? 0,
@@ -198,7 +206,19 @@ export default function DoctorModal({
     };
 
     loadData();
-  }, [open, initial?.doctorId, isEditing]); // Chỉ dùng doctorId thay vì toàn bộ initial object
+  }, [
+    open,
+    initial?.doctorId, // Add initial.doctorId
+    isEditing, // Add isEditing
+    avatarPreview, // Add avatarPreview
+    initial?.avatarUrl, // Add initial.avatarUrl
+    initial?.userId, // Add initial.userId if needed
+    initial?.licenseNo, // Add other initial props you need
+    initial?.roomName,
+    initial?.title,
+    initial?.experienceYears,
+    initial?.isActive,
+  ]); // Ensure all dependencies are included
 
   const ctrl =
     "mt-1 block w-full rounded-[var(--rounded)] border bg-white/90 px-4 py-3 text-[16px] leading-6 shadow-xs outline-none focus:ring-2 focus:ring-sky-500";
@@ -235,10 +255,10 @@ export default function DoctorModal({
     setConfirmDelete({ type: "education", index });
   };
 
-  const updateEducation = (
+  const updateEducation = <K extends keyof DoctorEducation>(
     index: number,
-    field: keyof DoctorEducation,
-    value: any
+    field: K,
+    value: DoctorEducation[K]
   ) => {
     const updated = [...educations];
     updated[index] = { ...updated[index], [field]: value };
@@ -269,10 +289,10 @@ export default function DoctorModal({
     setConfirmDelete({ type: "achievement", index });
   };
 
-  const updateAchievement = (
+  const updateAchievement = <K extends keyof DoctorAchievement>(
     index: number,
-    field: keyof DoctorAchievement,
-    value: any
+    field: K,
+    value: DoctorAchievement[K]
   ) => {
     const updated = [...achievements];
     updated[index] = { ...updated[index], [field]: value };
@@ -284,10 +304,16 @@ export default function DoctorModal({
     if (confirmDelete.type === "education" && confirmDelete.index !== null) {
       setEducations(educations.filter((_, i) => i !== confirmDelete.index));
       toast.success("Đã xóa học vấn");
-    } else if (confirmDelete.type === "expertise" && confirmDelete.index !== null) {
+    } else if (
+      confirmDelete.type === "expertise" &&
+      confirmDelete.index !== null
+    ) {
       setExpertises(expertises.filter((_, i) => i !== confirmDelete.index));
       toast.success("Đã xóa chuyên môn");
-    } else if (confirmDelete.type === "achievement" && confirmDelete.index !== null) {
+    } else if (
+      confirmDelete.type === "achievement" &&
+      confirmDelete.index !== null
+    ) {
       setAchievements(achievements.filter((_, i) => i !== confirmDelete.index));
       toast.success("Đã xóa thành tựu");
     }
@@ -313,8 +339,8 @@ export default function DoctorModal({
     }
 
     // Kiểm tra extension
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
     if (!allowedExtensions.includes(fileExtension)) {
       toast.error("Chỉ chấp nhận: jpg, jpeg, png, gif, webp");
       return;
@@ -322,10 +348,10 @@ export default function DoctorModal({
 
     // ✅ TỐI ƯU: Dùng createObjectURL thay vì FileReader - nhanh hơn ~100 lần!
     // Giải phóng URL cũ nếu có để tránh memory leak
-    if (avatarPreview && avatarPreview.startsWith('blob:')) {
+    if (avatarPreview && avatarPreview.startsWith("blob:")) {
       URL.revokeObjectURL(avatarPreview);
     }
-    
+
     // Tạo preview URL ngay lập tức (không cần đọc file)
     const previewUrl = URL.createObjectURL(file);
     setAvatarPreview(previewUrl);
@@ -335,25 +361,25 @@ export default function DoctorModal({
       setUploadingAvatar(true);
       try {
         const uploadedUrl = await apiUploadDoctorAvatar(initial.doctorId, file);
-        
+
         // uploadedUrl từ backend là relative path như: /uploads/doctors/xxx.jpg
         setAvatarUrl(uploadedUrl);
-        
+
         // Giải phóng blob URL cũ và dùng URL từ server
         URL.revokeObjectURL(previewUrl);
         setAvatarPreview(getFullAvatarUrl(uploadedUrl)); // Convert sang full URL để hiển thị
-        
+
         toast.success("Upload ảnh thành công!");
-      } catch (error: any) {
-        console.error("Upload error:", error);
-        toast.error(error.message || "Không thể upload ảnh");
-        
-        // Giải phóng blob URL và reset preview về ảnh cũ
-        URL.revokeObjectURL(previewUrl);
-        setAvatarPreview(getFullAvatarUrl(initial?.avatarUrl));
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Upload error:", error);
+          toast.error(error.message || "Không thể upload ảnh");
+        } else {
+          toast.error("Không thể upload ảnh");
+        }
       } finally {
         setUploadingAvatar(false);
-        
+
         // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -377,10 +403,10 @@ export default function DoctorModal({
     } else {
       // Nếu đang tạo mới: Chỉ xóa local
       // Giải phóng blob URL trước khi reset
-      if (avatarPreview && avatarPreview.startsWith('blob:')) {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
         URL.revokeObjectURL(avatarPreview);
       }
-      
+
       setPendingAvatarFile(null);
       setAvatarUrl("");
       setAvatarPreview(DEFAULT_AVATAR_URL);
@@ -396,16 +422,20 @@ export default function DoctorModal({
 
     setConfirmDeleteAvatar(false);
     setUploadingAvatar(true);
-    
+
     try {
       const fallbackUrl = await apiDeleteDoctorAvatar(initial.doctorId);
-      
+
       setAvatarUrl("");
       setAvatarPreview(getFullAvatarUrl(fallbackUrl)); // Convert sang full URL
       toast.success("Đã xóa ảnh đại diện. Đang dùng ảnh profile.");
-    } catch (error: any) {
-      console.error("Delete avatar error:", error);
-      toast.error(error.message || "Không thể xóa ảnh đại diện");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Delete avatar error:", error);
+        toast.error(error.message || "Không thể xóa ảnh đại diện");
+      } else {
+        toast.error("Không thể xóa ảnh đại diện");
+      }
     } finally {
       setUploadingAvatar(false);
     }
@@ -477,22 +507,25 @@ export default function DoctorModal({
 
       // Submit form chính
       await onSubmit(payload);
-      
+
       // Hiển thị toast notification dựa trên action
       if (isEditing) {
         toast.success("Cập nhật hồ sơ bác sĩ thành công!");
       } else {
         if (pendingAvatarFile) {
           // Nếu là tạo mới VÀ có file pending → Thông báo cần upload sau
-          toast("Hồ sơ đã tạo thành công! Vui lòng vào 'Sửa' để upload ảnh đại diện.", {
-            icon: "ℹ️",
-            duration: 5000,
-          });
+          toast(
+            "Hồ sơ đã tạo thành công! Vui lòng vào 'Sửa' để upload ảnh đại diện.",
+            {
+              icon: "ℹ️",
+              duration: 5000,
+            }
+          );
         } else {
           toast.success("Tạo hồ sơ bác sĩ thành công!");
         }
       }
-      
+
       onClose();
     } catch (e) {
       const error = e as Error;
@@ -555,7 +588,7 @@ export default function DoctorModal({
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Upload Buttons */}
                         <div className="flex flex-col gap-1 w-full">
                           <button
@@ -596,23 +629,29 @@ export default function DoctorModal({
 
                       {/* User Info */}
                       <div className="flex-1">
-                  <SelectMenu<number>
-                    label="Chọn User"
-                    required
-                    value={form.userId || ""}
-                    options={userOptions}
-                    placeholder={
-                      loadingUsers ? "Đang tải..." : "Chọn User có role DOCTOR"
-                    }
-                    onChange={(v) =>
-                      setForm({ ...form, userId: v === "" ? 0 : Number(v) })
-                    }
-                  />
+                        <SelectMenu<number>
+                          label="Chọn User"
+                          required
+                          value={form.userId || ""}
+                          options={userOptions}
+                          placeholder={
+                            loadingUsers
+                              ? "Đang tải..."
+                              : "Chọn User có role DOCTOR"
+                          }
+                          onChange={(v) =>
+                            setForm({
+                              ...form,
+                              userId: v === "" ? 0 : Number(v),
+                            })
+                          }
+                        />
                         <p className="text-xs text-slate-400 mt-2">
-                          💡 <strong>Lưu ý:</strong> Ảnh sẽ được lưu sau khi tạo hồ sơ thành công. 
-                          Nếu cần thay đổi ảnh, vui lòng vào "Sửa" sau khi tạo.
+                          💡 <strong>Lưu ý:</strong> Ảnh sẽ được lưu sau khi tạo
+                          hồ sơ thành công. Nếu cần thay đổi ảnh, vui lòng vào
+                          "Sửa" sau khi tạo.
                         </p>
-                </div>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -625,12 +664,12 @@ export default function DoctorModal({
                     {/* Avatar Preview & Upload */}
                     <div className="flex flex-col items-center gap-2">
                       <div className="relative">
-                      <img
-                        src={avatarPreview}
-                        alt={initial.fullName}
+                        <img
+                          src={avatarPreview}
+                          alt={initial.fullName}
                           className="w-28 h-28 rounded-full object-cover border-2 border-sky-200 shadow-sm"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
                             // Chỉ set default nếu chưa phải là default (tránh infinite loop)
                             if (!target.src.includes(DEFAULT_AVATAR_URL)) {
                               target.src = DEFAULT_AVATAR_URL;
@@ -640,10 +679,10 @@ export default function DoctorModal({
                         {uploadingAvatar && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
                             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    </div>
+                          </div>
                         )}
                       </div>
-                      
+
                       {/* Upload Buttons */}
                       <div className="flex flex-col gap-1 w-full">
                         <button
@@ -693,7 +732,7 @@ export default function DoctorModal({
                       <p className="text-sm mb-3">
                         <strong>SĐT:</strong> {initial.phone || "-"}
                       </p>
-                      
+
                       {/* Manual URL Input */}
                       <div>
                         <div className="flex gap-2">
@@ -863,7 +902,10 @@ export default function DoctorModal({
             </div>
             <div className="space-y-3">
               {educations.map((edu, idx) => (
-                <div key={idx} className="bg-white p-3 rounded-lg border relative pr-12">
+                <div
+                  key={idx}
+                  className="bg-white p-3 rounded-lg border relative pr-12"
+                >
                   <button
                     type="button"
                     onClick={() => askRemoveEducation(idx)}
@@ -886,7 +928,7 @@ export default function DoctorModal({
                       }
                       className="col-span-1 px-3 py-2 border rounded-lg text-sm"
                       min={1950}
-                      max={2100}
+                      max={2025}
                     />
                     <input
                       type="number"
