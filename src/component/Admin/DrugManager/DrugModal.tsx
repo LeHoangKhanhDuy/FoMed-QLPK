@@ -197,7 +197,7 @@ export default function DrugModal({ open, onClose, initial, onSubmit, onInventor
       
       // Gọi callback để refresh danh sách bên ngoài
       onInventoryUpdated?.();
-    } catch (error) {
+    } catch {
       toast.error("Cập nhật tồn kho thất bại");
     } finally {
       setInvLoading(false);

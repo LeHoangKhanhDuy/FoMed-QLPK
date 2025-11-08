@@ -103,8 +103,9 @@ export default function UserInfo({
       
       // Cập nhật state user với avatar mới ngay lập tức
       setUser((prev) => (prev ? { ...prev, avatar: url } : null));
-    } catch (err: any) {
-      toast.error(err.message || "Không thể tải ảnh");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Không thể tải ảnh";
+      toast.error(errorMessage);
     }
   };
 
@@ -144,7 +145,6 @@ export default function UserInfo({
     const h = () => fetchUserData();
     window.addEventListener("auth:updated", h);
     return () => window.removeEventListener("auth:updated", h);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userFromProps]);
 
   return (

@@ -337,7 +337,14 @@ export async function updateProfile(payload: {
 
   // Build request payload theo backend UpdateProfileByTokenRequest
   // Backend yêu cầu Token và Name (required)
-  const requestPayload: any = {
+  const requestPayload: {
+    Token: string;
+    Name: string;
+    Phone?: string;
+    AvatarUrl?: string;
+    Address?: string;
+    Bio?: string;
+  } = {
     Token: token,
     Name: payload.name.trim(),
   };
@@ -408,11 +415,11 @@ export async function updateProfile(payload: {
         requestData: error.config?.data,
       });
 
-      const beData = error.response?.data as any;
+      const beData = error.response?.data as { message?: string; errors?: Record<string, string[]> };
       
       // Xử lý validation errors từ backend
       if (beData?.errors) {
-        const validationErrors = Object.values(beData.errors as Record<string, string[]>)
+        const validationErrors = Object.values(beData.errors)
           .flat()
           .join("; ");
         console.error("Validation errors:", validationErrors);
@@ -490,7 +497,7 @@ export async function uploadAvatar(file: File): Promise<string> {
         headers: error.response?.headers,
       });
       
-      const beData = error.response?.data as any;
+      const beData = error.response?.data as { message?: string; Message?: string; error?: string };
       const message =
         beData?.message || 
         beData?.Message || 

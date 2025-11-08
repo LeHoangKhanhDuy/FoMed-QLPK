@@ -514,7 +514,14 @@ export default function AppointmentCreate() {
 
       const selectedDoctorId = Number(form.doctorId);
 
-      const payload: any = {
+      const payload: {
+        patientId: number;
+        doctorId: number;
+        visitDate: string;
+        visitTime: string;
+        serviceId?: number;
+        reason?: string;
+      } = {
         patientId,
         doctorId: selectedDoctorId,
         visitDate: form.date,
@@ -554,11 +561,12 @@ export default function AppointmentCreate() {
       );
 
       resetForm();
-    } catch (err: any) {
+    } catch (err) {
       console.error("❌ Lỗi tạo appointment:", err);
       
       // Lấy thông tin chi tiết từ response
-      const responseData = err?.response?.data;
+      const errorWithResponse = err as { response?: { data?: { message?: string; Message?: string; errors?: Record<string, string | string[]> } } };
+      const responseData = errorWithResponse?.response?.data;
       console.error("❌ Response data:", responseData);
       
       let msg = "Không thể tạo lịch. Vui lòng thử lại.";
@@ -570,7 +578,7 @@ export default function AppointmentCreate() {
         // Nếu có validation errors
         if (responseData.errors) {
           const errorMessages = Object.entries(responseData.errors)
-            .map(([field, messages]: [string, any]) => {
+            .map(([field, messages]) => {
               const msgArray = Array.isArray(messages) ? messages : [messages];
               return `${field}: ${msgArray.join(", ")}`;
             })

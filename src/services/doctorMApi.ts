@@ -1,15 +1,192 @@
-import type {
-  AvailableUser,
-  CreateDoctorPayload,
-  DoctorDetail,
-  DoctorsListResponse,
-  DoctorsPublicListResponse,
-  DoctorRatingsResponse,
-  RelatedDoctorDto,
-  RelatedDoctorsResponse,
-  Specialty,
-  UpdateDoctorPayload,
-} from "../types/doctor/doctor";
+// import type {
+//   AvailableUser,
+//   CreateDoctorPayload,
+//   DoctorDetail,
+//   DoctorsListResponse,
+//   DoctorsPublicListResponse,
+//   DoctorRatingsResponse,
+//   RelatedDoctorDto,
+//   RelatedDoctorsResponse,
+//   Specialty,
+//   UpdateDoctorPayload,
+// } from "../types/doctor/doctor";
+
+import type {RelatedDoctorsResponse } from "../types/doctor/doctor";
+
+export interface RelatedDoctorDto {
+  doctorId: number;
+  fullName: string | null;
+  title: string | null;
+  avatarUrl: string | null;
+  primarySpecialtyId: number | null;
+  primarySpecialtyName: string | null;
+  experienceYears: number | null;
+  ratingAvg: number;
+  ratingCount: number;
+  roomName: string | null;
+}
+
+export interface DoctorEducation {
+  yearFrom?: number | null;
+  yearTo?: number | null;
+  title: string;
+  detail?: string | null;
+}
+
+export interface DoctorExpertise {
+  content: string;
+}
+
+export interface DoctorAchievement {
+  yearLabel?: string | null;
+  content: string;
+}
+
+export interface DoctorWeeklySlot {
+  weekday: number; // 0=CN, 1=T2, ..., 6=T7
+  startTime: string; // "08:00"
+  endTime: string; // "12:00"
+  note?: string | null;
+}
+
+// Doctor Item cho danh sách (list)
+export interface DoctorListItem {
+  doctorId: number;
+  fullName: string;
+  title: string | null;
+  primarySpecialtyName: string | null;
+  roomName: string | null;
+  experienceYears: number | null;
+  ratingAvg: number;
+  ratingCount: number;
+  avatarUrl: string | null;
+  intro?: string | null;
+  educations: DoctorEducation[];
+  expertises: DoctorExpertise[];
+  achievements: DoctorAchievement[];
+}
+
+// Doctor Item cho admin (có thêm thông tin quản trị)
+export interface DoctorItem {
+  doctorId: number;
+  userId: number;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  title: string | null;
+  primarySpecialtyName: string | null;
+  licenseNo: string | null;
+  roomName: string | null;
+  experienceYears: number | null;
+  isActive: boolean;
+  avatarUrl: string | null;
+  ratingAvg: number;
+  ratingCount: number;
+  visitCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Doctor Detail (chi tiết đầy đủ)
+export interface DoctorDetail {
+  doctorId: number;
+  fullName: string;
+  title: string | null;
+  licenseNo: string | null;
+  primarySpecialtyName: string | null;
+  roomName: string | null;
+  experienceYears: number | null;
+  experienceNote: string | null;
+  intro: string | null;
+  visitCount: number;
+  ratingAvg: number;
+  ratingCount: number;
+  avatarUrl: string | null;
+  educations: DoctorEducation[];
+  expertises: DoctorExpertise[];
+  achievements: DoctorAchievement[];
+  weeklySlots: DoctorWeeklySlot[];
+}
+
+export interface AvailableUser {
+  userId: number;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  gender: string | null;
+  dateOfBirth: string | null;
+}
+
+export interface CreateDoctorPayload {
+  userId: number;
+  title?: string | null;
+  primarySpecialtyId?: number | null;
+  licenseNo?: string | null;
+  roomName?: string | null;
+  experienceYears?: number | null;
+  experienceNote?: string | null;
+  intro?: string | null;
+  educations?: DoctorEducation[];
+  expertises?: DoctorExpertise[];
+  achievements?: DoctorAchievement[];
+}
+
+export interface UpdateDoctorPayload {
+  title?: string | null;
+  primarySpecialtyId?: number | null;
+  licenseNo?: string | null;
+  roomName?: string | null;
+  experienceYears?: number | null;
+  experienceNote?: string | null;
+  intro?: string | null;
+  isActive?: boolean;
+  educations: DoctorEducation[];
+  expertises: DoctorExpertise[];
+  achievements: DoctorAchievement[];
+}
+
+export interface DoctorsListResponse {
+  items: DoctorItem[];
+  totalItems: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface DoctorsPublicListResponse {
+  items: DoctorListItem[];
+  totalItems: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface DoctorRating {
+  ratingId: number;
+  score: number;
+  comment?: string | null;
+  createdAt: string;
+}
+
+export interface DoctorRatingsResponse {
+  items: DoctorRating[];
+  totalItems: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface Specialty {
+  specialtyId: number;
+  name: string;
+  code: string | null;
+}
+
+// Upload response types
+export interface UploadAvatarResponse {
+  avatarUrl: string;
+  message?: string;
+}
 
 const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(
   /\/+$/,

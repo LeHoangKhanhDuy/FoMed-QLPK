@@ -77,11 +77,11 @@ export async function apiGetEncounters(params?: {
  */
 export async function apiGetEncounterDetail(
   codeOrId: string | number
-): Promise<any> {
+): Promise<unknown> {
   const { data } = await authHttp.get<{
     success: boolean;
     message: string;
-    data: any;
+    data: unknown;
   }>(`/api/v1/encounters/details/${codeOrId}`);
 
   return data.data;

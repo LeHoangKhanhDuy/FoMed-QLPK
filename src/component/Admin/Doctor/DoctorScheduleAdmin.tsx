@@ -70,7 +70,7 @@ export default function DoctorScheduleAdmin() {
       }
 
       const calRes = await apiGetCalendar({ from: weekFrom, to: weekTo, doctorId: doctorId === "all" ? undefined : Number(doctorId) });
-      const items: any[] = calRes.data || [];
+      const items: Array<{ slotId: number; doctorId: number; doctorName: string; date: string | Date; startTime?: string; endTime?: string; roomName?: string | null }> = calRes.data || [];
       // Map về Shift[] UI hiện tại
       const mapped: Shift[] = items.map((b) => ({
         id: b.slotId,
@@ -143,9 +143,10 @@ export default function DoctorScheduleAdmin() {
       setTimeout(() => {
         load();
       }, 0);
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      toast.error(e?.response?.data?.message || "Thao tác không thành công");
+      const errorWithResponse = e as { response?: { data?: { message?: string } } };
+      toast.error(errorWithResponse?.response?.data?.message || "Thao tác không thành công");
     }
   };
 

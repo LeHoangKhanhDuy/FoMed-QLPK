@@ -214,8 +214,8 @@ export const BookingReview = () => {
         } catch (authError) {
           console.log("❌ Both APIs failed, using userId as fallback");
           console.log("Error details:", {
-            publicError: (publicError as any)?.response?.data,
-            authError: (authError as any)?.response?.data
+            publicError: (publicError as { response?: { data?: unknown } })?.response?.data,
+            authError: (authError as { response?: { data?: unknown } })?.response?.data
           });
           
           // Fallback: sử dụng userId
@@ -256,8 +256,9 @@ export const BookingReview = () => {
         
         // Log chi tiết response nếu có
         if ('response' in error && error.response) {
-          console.error("Error response:", (error as any).response.data);
-          console.error("Error status:", (error as any).response.status);
+          const errorWithResponse = error as { response?: { data?: unknown; status?: number } };
+          console.error("Error response:", errorWithResponse.response?.data);
+          console.error("Error status:", errorWithResponse.response?.status);
         }
         
         toast.error(error.message || "Đặt lịch thất bại. Vui lòng thử lại!");

@@ -11,7 +11,7 @@ export async function fetchJson<T>(
   );
   if (!res.ok) {
     const msg = isJson
-      ? (await res.json().catch(() => ({} as any)))?.message ?? res.statusText
+      ? (await res.json().catch(() => ({} as { message?: string })))?.message ?? res.statusText
       : res.statusText;
     throw new Error(msg);
   }

@@ -151,7 +151,7 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
     });
 
     // We'll check medicine status first, then create payload
-    let finalLines = payload.lines;
+    const finalLines = payload.lines;
 
     console.log("=== SUBMIT PRESCRIPTION DEBUG ===");
     console.log("Original payload:", JSON.stringify(payload, null, 2));
@@ -170,12 +170,12 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
       console.log("All fields in first medicine:", medicines[0] ? Object.keys(medicines[0]) : "No medicines found");
       
       // Backend returns medicineId (camelCase), not MedicineId (PascalCase)
-      const ourMedicine = medicines.find((m: any) => m.medicineId === payload.lines[0]?.drugId);
+      const ourMedicine = medicines.find((m: { medicineId: number }) => m.medicineId === payload.lines[0]?.drugId);
       console.log("Our medicine (ID=" + payload.lines[0]?.drugId + "):", ourMedicine);
       
       if (!ourMedicine) {
-        console.log("❌ Medicine not found! Available medicine IDs:", medicines.map((m: any) => m.medicineId));
-        console.log("Available medicines:", medicines.map((m: any) => ({ id: m.medicineId, name: m.name, code: m.code })));
+        console.log("❌ Medicine not found! Available medicine IDs:", medicines.map((m: { medicineId: number }) => m.medicineId));
+        console.log("Available medicines:", medicines.map((m: { medicineId: number; name: string; code: string }) => ({ id: m.medicineId, name: m.name, code: m.code })));
       } else {
         console.log("✅ Medicine found:", { 
           id: ourMedicine.medicineId, 
@@ -187,7 +187,7 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
         
         // Debug: Show all medicines and their status
         console.log("=== ALL MEDICINES STATUS ===");
-        medicines.forEach((m: any, index: number) => {
+        medicines.forEach((m: { medicineId: number; name: string }, index: number) => {
           console.log(`Medicine ${index + 1}:`, {
             id: m.medicineId,
             name: m.name,
@@ -207,7 +207,7 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
         const invalidMedicines: string[] = [];
         
         for (const line of payload.lines) {
-          const medicine = medicines.find((m: any) => m.medicineId === line.drugId);
+          const medicine = medicines.find((m: { medicineId: number }) => m.medicineId === line.drugId);
           if (medicine) {
             if (medicine.medicineId === 1) {
               console.log("🚨 ERROR: MedicineId = 1 (Panadol Extra) is DISABLED!");
@@ -249,7 +249,8 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
         console.log("❌ MedicineId = 6 (Progermila) - Out of Stock");
       }
     } catch (medicinesError) {
-      console.log("Failed to fetch medicines:", (medicinesError as any)?.response?.data);
+      const errorWithResponse = medicinesError as { response?: { data?: unknown } };
+      console.log("Failed to fetch medicines:", errorWithResponse?.response?.data);
     }
 
     // ✅ Đúng format theo backend PrescriptionReq
@@ -296,7 +297,8 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
       // Encounter created successfully, no need to finalize
       console.log("✅ Encounter is ready for prescription creation");
     } catch (encounterError) {
-      console.log("Encounter creation failed (may already exist):", (encounterError as any)?.response?.data);
+      const errorWithResponse = encounterError as { response?: { data?: unknown } };
+      console.log("Encounter creation failed (may already exist):", errorWithResponse?.response?.data);
       // Continue anyway - encounter might already exist
     }
 
@@ -312,14 +314,15 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
     console.log("✅ Prescription submitted successfully:", response.data);
   } catch (e) {
     console.error("❌ Prescription submission failed:", e);
+    const errorWithResponse = e as { message?: string; response?: { data?: unknown; status?: number } };
     console.error("Error details:", {
-      message: (e as any)?.message,
-      response: (e as any)?.response?.data,
-      status: (e as any)?.response?.status
+      message: errorWithResponse?.message,
+      response: errorWithResponse?.response?.data,
+      status: errorWithResponse?.response?.status
     });
     
     // Try to get more detailed error information
-    const errorResponse = (e as any)?.response?.data;
+    const errorResponse = errorWithResponse?.response?.data;
     if (errorResponse) {
       console.error("=== BACKEND ERROR DETAILS ===");
       console.error("Error response:", JSON.stringify(errorResponse, null, 2));

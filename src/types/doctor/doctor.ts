@@ -39,6 +39,14 @@ export interface DoctorListItem {
   achievements: DoctorAchievement[];
 }
 
+export type StartEncounterPayload = {
+  appointmentId: number;
+};
+
+export type CompleteEncounterPayload = {
+  appointmentId: number;
+};
+
 export interface DoctorItem {
   doctorId: number;
   userId: number;
@@ -177,3 +185,55 @@ export interface RelatedDoctorsResponse {
   success: boolean;
   data: RelatedDoctorDto[];
 }
+
+// ÁUDKJJAJSKLDKLAJK
+export interface DiagnosisPayload {
+  appointmentId: number;
+  patientId: number;
+  symptoms: string;
+  diagnosis: string;
+  note?: string | null;
+}
+
+export interface LabItem {
+  id: number;
+  name: string;
+  code: string;
+  // sample?: "blood" | "urine" | "swab" | "other";
+  sample?: string | null;
+}
+
+export interface LabOrderPayload {
+  appointmentId: number;
+  patientId: number;
+  items: number[]; // danh sách id xét nghiệm
+  note?: string | null;
+  priority?: "normal" | "urgent";
+}
+
+export interface PrescriptionLine {
+  drugId: number;
+  dose: string; // "1 viên"
+  frequency: string; // "2 lần/ngày"
+  duration: string; // "5 ngày"
+  note?: string | null;
+}
+
+export interface PrescriptionPayload {
+  appointmentId: number;
+  patientId: number;
+  lines: PrescriptionLine[];
+  advice?: string | null; // dặn dò
+}
+
+export type WorkspaceCatalogs = {
+  labTests: LabItem[];
+  medicines: Array<{
+    id: number;
+    name: string;
+    unit?: string | null;
+    isActive?: boolean;
+    stock?: number;
+    status?: string;
+  }>;
+};

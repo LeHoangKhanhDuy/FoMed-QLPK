@@ -132,9 +132,9 @@ export async function apiListUsersByRoleDoctor(params?: {
     const payload = data?.data ?? {};
     const doctorsList = payload.items ?? [];
 
-    const items: DoctorOption[] = doctorsList.map((d: any) => ({
-      doctorId: d.doctorId || d.DoctorId, // Lấy DoctorId thật từ Doctors table
-      fullName: d.fullName || d.FullName || `BS #${d.doctorId || d.DoctorId}`,
+    const items: DoctorOption[] = doctorsList.map((d: { doctorId?: number; DoctorId?: number; fullName?: string; FullName?: string }) => ({
+      doctorId: d.doctorId || d.DoctorId || 0, // Lấy DoctorId thật từ Doctors table
+      fullName: d.fullName || d.FullName || `BS #${d.doctorId || d.DoctorId || 0}`,
     }));
 
     return {

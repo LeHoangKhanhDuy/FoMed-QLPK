@@ -92,9 +92,9 @@ export async function apiInvoiceList(params?: {
     }
   );
 
-  const outer: any = data;
+  const outer = data as { data?: unknown[] | { items?: unknown[] } };
 
-  let rows: any[] = [];
+  let rows: unknown[] = [];
 
   if (Array.isArray(outer?.data)) {
     rows = outer.data;

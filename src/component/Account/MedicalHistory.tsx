@@ -24,16 +24,17 @@ export const MedicalHistory = () => {
         });
         setEncounters(response.items || []);
         setTotal(response.total || 0);
-      } catch (error: any) {
-        if (error?.response?.status === 401) {
-          const errMsg = error?.response?.data?.message || "";
+      } catch (error) {
+        const errorWithResponse = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
+        if (errorWithResponse?.response?.status === 401) {
+          const errMsg = errorWithResponse?.response?.data?.message || "";
           if (!errMsg.includes("Không xác định được bệnh nhân")) {
             toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
           }
-        } else if (error?.response?.status === 404) {
+        } else if (errorWithResponse?.response?.status === 404) {
           toast.error("API chưa được triển khai. Vui lòng liên hệ admin.");
         } else {
-          const errorMsg = error?.response?.data?.message || error?.message;
+          const errorMsg = errorWithResponse?.response?.data?.message || errorWithResponse?.message;
           if (errorMsg) {
             toast.error(errorMsg);
           }

@@ -52,8 +52,9 @@ export const PatientResult = () => {
       const result = await apiLookupResultByCode(code);
       setCodeResult(result);
       toast.success("Tìm thấy thông tin hồ sơ");
-    } catch (error: any) {
-      toast.error(error.message || "Không tìm thấy hồ sơ");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Không tìm thấy hồ sơ";
+      toast.error(errorMessage);
       setCodeResult(null);
       setTimeout(() => navigate("/patient-portal-login"), 2000);
     } finally {
@@ -77,8 +78,9 @@ export const PatientResult = () => {
       } else {
         toast.success(`Tìm thấy ${result.total} hồ sơ`);
       }
-    } catch (error: any) {
-      toast.error(error.message || "Không thể tra cứu");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Không thể tra cứu";
+      toast.error(errorMessage);
       setPhoneResults([]);
       setTotal(0);
       setTotalPages(0);
