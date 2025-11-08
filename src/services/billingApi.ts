@@ -104,17 +104,30 @@ export async function apiInvoiceList(params?: {
     rows = [];
   }
 
-  return rows.map((row) => ({
-    invoiceId: row.invoiceId,
-    invoiceCode: row.invoiceCode,
-    patientName: row.patientName,
-    visitDate: row.visitDate,
-    paidAmount: row.paidAmount,
-    remainingAmount: row.remainingAmount,
-    totalAmount: row.totalAmount,
-    lastPaymentMethod: row.lastPaymentMethod ?? null,
-    statusLabel: row.statusLabel,
-  }));
+  return rows.map((row) => {
+    const rowData = row as {
+      invoiceId?: number;
+      invoiceCode?: string;
+      patientName?: string;
+      visitDate?: string;
+      paidAmount?: number;
+      remainingAmount?: number;
+      totalAmount?: number;
+      lastPaymentMethod?: string | null;
+      statusLabel?: string;
+    };
+    return {
+      invoiceId: rowData.invoiceId ?? 0,
+      invoiceCode: rowData.invoiceCode ?? "",
+      patientName: rowData.patientName ?? "",
+      visitDate: rowData.visitDate ?? "",
+      paidAmount: rowData.paidAmount ?? 0,
+      remainingAmount: rowData.remainingAmount ?? 0,
+      totalAmount: rowData.totalAmount ?? 0,
+      lastPaymentMethod: rowData.lastPaymentMethod ?? null,
+      statusLabel: rowData.statusLabel ?? "",
+    };
+  });
 }
 
 /* helper để map tên method BE -> union PaymentMethod FE */

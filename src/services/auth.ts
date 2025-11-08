@@ -415,7 +415,7 @@ export async function updateProfile(payload: {
         requestData: error.config?.data,
       });
 
-      const beData = error.response?.data as { message?: string; errors?: Record<string, string[]> };
+      const beData = error.response?.data as { message?: string; Message?: string; error?: string; Error?: string; errors?: Record<string, string[]> };
       
       // Xử lý validation errors từ backend
       if (beData?.errors) {
@@ -425,7 +425,7 @@ export async function updateProfile(payload: {
         console.error("Validation errors:", validationErrors);
         throw new Error(validationErrors || "Dữ liệu không hợp lệ.");
       }
-      
+
       const message =
         beData?.message ||
         beData?.Message ||
@@ -497,7 +497,7 @@ export async function uploadAvatar(file: File): Promise<string> {
         headers: error.response?.headers,
       });
       
-      const beData = error.response?.data as { message?: string; Message?: string; error?: string };
+      const beData = error.response?.data as { message?: string; Message?: string; error?: string; Error?: string };
       const message =
         beData?.message || 
         beData?.Message || 
