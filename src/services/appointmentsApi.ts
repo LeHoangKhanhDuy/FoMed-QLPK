@@ -99,12 +99,13 @@ export async function createAppointment(body: CreateReq): Promise<CreateData> {
     }
 
     return res.data.data;
-  } catch (error: any) {
+  } catch (error) {
+    const errorWithResponse = error as { response?: { status?: number; statusText?: string; data?: unknown }; message?: string };
     console.error("❌ Lỗi khi gọi API tạo appointment:", {
-      status: error?.response?.status,
-      statusText: error?.response?.statusText,
-      data: error?.response?.data,
-      message: error?.message,
+      status: errorWithResponse?.response?.status,
+      statusText: errorWithResponse?.response?.statusText,
+      data: errorWithResponse?.response?.data,
+      message: errorWithResponse?.message,
     });
     throw error;
   }

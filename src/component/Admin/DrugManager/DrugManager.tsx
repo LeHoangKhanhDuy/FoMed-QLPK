@@ -89,7 +89,7 @@ export default function DrugManager() {
         try {
           const { items: freshItems } = await apiListDrugs();
           setItems(freshItems);
-        } catch (refreshError) {
+        } catch {
           // Không cần báo lỗi vì đã update local state
         }
       } else {

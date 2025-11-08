@@ -66,7 +66,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
     setLoading(true);
     try {
-      const updateData: any = {
+      const updateData: { name: string; phone?: string } = {
         name: name.trim(),
       };
       
@@ -86,8 +86,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       if (onUpdated) {
         onUpdated();
       }
-    } catch (error: any) {
-      toast.error(error.message || "Cập nhật thất bại");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Cập nhật thất bại";
+      toast.error(errorMessage);
       console.error("Update profile error:", error);
     } finally {
       setLoading(false);

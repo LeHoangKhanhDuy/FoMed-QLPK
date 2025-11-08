@@ -201,7 +201,6 @@ export default function SpecialtyManager() {
               <th className="px-3 py-2 text-left">Mã chuyên khoa</th>
               <th className="px-3 py-2 text-left">Tên chuyên khoa</th>
               <th className="px-3 py-2 text-left">Mô tả</th>
-              <th className="px-3 py-2 text-center">Số bác sĩ</th>
               <th className="px-3 py-2 text-center">Ngày tạo</th>
               <th className="px-3 py-2 text-center">Ngày cập nhật</th>
               <th className="px-3 py-2 text-center">Trạng thái</th>
@@ -211,7 +210,7 @@ export default function SpecialtyManager() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={8} className="py-6 text-center text-slate-500">
                   Đang tải dữ liệu…
                 </td>
               </tr>
@@ -219,7 +218,7 @@ export default function SpecialtyManager() {
 
             {!loading && showing.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={8} className="py-6 text-center text-slate-500">
                   Không có dữ liệu
                 </td>
               </tr>
@@ -244,11 +243,6 @@ export default function SpecialtyManager() {
                     ) : (
                       "-"
                     )}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                      {spec.doctorCount ?? 0} bác sĩ
-                    </span>
                   </td>
                   <td className="px-3 py-2 text-slate-600 text-xs">
                     {formatDateTime(spec.createdAt)}

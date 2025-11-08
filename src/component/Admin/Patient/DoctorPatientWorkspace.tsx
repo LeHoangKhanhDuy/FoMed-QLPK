@@ -127,8 +127,9 @@ export default function DoctorPatientWorkspace() {
         const cat: WorkspaceCatalogs = await apiGetWorkspaceCatalogs();
         setLabTests(cat.labTests || []);
         setMedicines(cat.medicines || []);
-      } catch (e: any) {
-        toast.error(e?.message || "Không thể mở hồ sơ khám");
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "Không thể mở hồ sơ khám";
+        toast.error(errorMessage);
         nav(-1);
       } finally {
         setLoading(false);
@@ -156,8 +157,9 @@ export default function DoctorPatientWorkspace() {
       await apiSubmitDiagnosis(dx);
       openSuccess("Đã lưu chẩn đoán", "Chẩn đoán đã được lưu thành công.");
       setTab("lab");
-    } catch (e: any) {
-      toast.error(e?.message || "Không thể lưu chẩn đoán");
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "Không thể lưu chẩn đoán";
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -182,8 +184,9 @@ export default function DoctorPatientWorkspace() {
           : "Đã ghi nhận không có xét nghiệm."
       );
       setTab("rx");
-    } catch (e: any) {
-      toast.error(e?.message || "Không thể lưu chỉ định xét nghiệm");
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "Không thể lưu chỉ định xét nghiệm";
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -232,8 +235,9 @@ export default function DoctorPatientWorkspace() {
         "Toa thuốc đã được lưu. Phiên khám đã hoàn tất."
       );
       setTimeout(() => nav(-1), 1500);
-    } catch (e: any) {
-      toast.error(e?.message || "Không thể lưu toa thuốc/hoàn tất");
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "Không thể lưu toa thuốc/hoàn tất";
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

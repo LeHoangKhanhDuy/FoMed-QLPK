@@ -62,7 +62,7 @@ export const BookingDatePage = () => {
         }
 
         // 2. Lấy thông tin bác sĩ
-        const doctor: any = await apiGetDoctorDetail(Number(doctorId));
+        const doctor = await apiGetDoctorDetail(Number(doctorId));
 
         setServiceInfo({
           name: selectedService.name,

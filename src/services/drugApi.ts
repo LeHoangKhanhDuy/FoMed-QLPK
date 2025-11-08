@@ -178,17 +178,13 @@ export async function apiUpdateDrug(
     isActive: payload.isActive,
   };
   
-  try {
-    // Gửi request update
-    await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
-    
-    // Lấy lại thông tin chi tiết từ server để có stock mới nhất
-    const updated = await apiGetDrugDetails(id);
-    
-    return updated;
-  } catch (error) {
-    throw error;
-  }
+  // Gửi request update
+  await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
+  
+  // Lấy lại thông tin chi tiết từ server để có stock mới nhất
+  const updated = await apiGetDrugDetails(id);
+  
+  return updated;
 }
 
 /* ===== CẬP NHẬT TỒN KHO ===== */

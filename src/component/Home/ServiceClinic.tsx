@@ -130,6 +130,7 @@ export default function ServiceClinic() {
       scrollByOne("right");
     }, 3000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   const scrollByOne = (dir: "left" | "right") => {

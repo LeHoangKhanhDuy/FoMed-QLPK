@@ -19,7 +19,7 @@ export async function apiUpdateUserAvatar(
   } catch (e) {
     // Preserve axios error info for better handling
     if (axios.isAxiosError(e)) {
-      const error: any = new Error(getErrorMessage(e, "Không thể cập nhật ảnh đại diện"));
+      const error = new Error(getErrorMessage(e, "Không thể cập nhật ảnh đại diện")) as Error & { response?: unknown; status?: number };
       error.response = e.response;
       error.status = e.response?.status;
       throw error;
@@ -39,7 +39,7 @@ export async function apiUpdateUserProfile(
     avatarUrl?: string | null;
     bio?: string | null;
     address?: string | null;
-    [key: string]: any;
+    [key: string]: unknown;
   }
 ) {
   try {

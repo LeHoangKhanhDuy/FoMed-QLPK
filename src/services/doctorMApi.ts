@@ -1,4 +1,31 @@
-// Types cho Education, Expertise, Achievement
+// import type {
+//   AvailableUser,
+//   CreateDoctorPayload,
+//   DoctorDetail,
+//   DoctorsListResponse,
+//   DoctorsPublicListResponse,
+//   DoctorRatingsResponse,
+//   RelatedDoctorDto,
+//   RelatedDoctorsResponse,
+//   Specialty,
+//   UpdateDoctorPayload,
+// } from "../types/doctor/doctor";
+
+import type {RelatedDoctorsResponse } from "../types/doctor/doctor";
+
+export interface RelatedDoctorDto {
+  doctorId: number;
+  fullName: string | null;
+  title: string | null;
+  avatarUrl: string | null;
+  primarySpecialtyId: number | null;
+  primarySpecialtyName: string | null;
+  experienceYears: number | null;
+  ratingAvg: number;
+  ratingCount: number;
+  roomName: string | null;
+}
+
 export interface DoctorEducation {
   yearFrom?: number | null;
   yearTo?: number | null;
@@ -161,7 +188,10 @@ export interface UploadAvatarResponse {
   message?: string;
 }
 
-const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "")}/api/v1/doctors`;
+const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(
+  /\/+$/,
+  ""
+)}/api/v1/doctors`;
 
 function getAuthHeaders(): HeadersInit {
   return {
@@ -170,9 +200,6 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
-/**
- * Lấy danh sách bác sĩ (Admin)
- */
 export async function apiGetDoctors(params: {
   page: number;
   limit: number;
@@ -183,48 +210,35 @@ export async function apiGetDoctors(params: {
     page: String(params.page),
     limit: String(params.limit),
   });
-
-  if (params.isActive !== undefined) {
+  if (params.isActive !== undefined)
     query.set("isActive", String(params.isActive));
-  }
-
-  if (params.search) {
-    query.set("search", params.search);
-  }
+  if (params.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE}/admin/list?${query}`, {
     headers: getAuthHeaders(),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách bác sĩ");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tải danh sách bác sĩ"
+    );
   const json = await res.json();
   return json.data;
 }
 
-/**
- * Lấy danh sách Users có role DOCTOR chưa có hồ sơ
- */
 export async function apiGetAvailableUsers(): Promise<AvailableUser[]> {
   const res = await fetch(`${API_BASE}/admin/available-users`, {
     headers: getAuthHeaders(),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách users");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tải danh sách users"
+    );
   const json = await res.json();
   return json.data;
 }
 
-/**
- * Tạo hồ sơ bác sĩ mới
- */
 export async function apiCreateDoctor(
   payload: CreateDoctorPayload
 ): Promise<{ doctorId: number }> {
@@ -233,102 +247,79 @@ export async function apiCreateDoctor(
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tạo hồ sơ bác sĩ");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tạo hồ sơ bác sĩ"
+    );
   const json = await res.json();
   return json.data;
 }
 
-/**
- * Cập nhật hồ sơ bác sĩ
- */
 export async function apiUpdateDoctor(
   doctorId: number,
-  payload: UpdateDoctorPayload
+  payload: Partial<UpdateDoctorPayload>
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/${doctorId}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể cập nhật hồ sơ bác sĩ");
-  }
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể cập nhật hồ sơ bác sĩ"
+    );
 }
 
-/**
- * Vô hiệu hóa bác sĩ
- */
 export async function apiDeactivateDoctor(doctorId: number): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/${doctorId}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể vô hiệu hóa bác sĩ");
-  }
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể vô hiệu hóa bác sĩ"
+    );
 }
 
-/**
- * Kích hoạt lại bác sĩ
- */
 export async function apiActivateDoctor(doctorId: number): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/${doctorId}/activate`, {
     method: "PATCH",
     headers: getAuthHeaders(),
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể kích hoạt bác sĩ");
-  }
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể kích hoạt bác sĩ"
+    );
 }
 
-/**
- * Lấy danh sách chuyên khoa
- */
 export async function apiGetSpecialties(): Promise<Specialty[]> {
-  const res = await fetch("/api/v1/specialties", {
-    headers: getAuthHeaders(),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách chuyên khoa");
-  }
-
+  const res = await fetch("/api/v1/specialties", { headers: getAuthHeaders() });
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tải danh sách chuyên khoa"
+    );
   const json = await res.json();
   return json.data || [];
 }
 
-/**
- * Lấy chi tiết bác sĩ công khai
- */
 export async function apiGetDoctorDetail(
   doctorId: number
 ): Promise<DoctorDetail> {
   const res = await fetch(`${API_BASE}/details/${doctorId}`);
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải thông tin bác sĩ");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tải thông tin bác sĩ"
+    );
   const json = await res.json();
   return json.data as DoctorDetail;
 }
 
-/**
- * Lấy danh sách bác sĩ công khai (không cần auth)
- */
 export async function apiGetPublicDoctors(params: {
   page?: number;
   limit?: number;
@@ -337,21 +328,16 @@ export async function apiGetPublicDoctors(params: {
     page: String(params.page || 1),
     limit: String(params.limit || 20),
   });
-
   const res = await fetch(`${API_BASE}?${query}`);
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách bác sĩ");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tải danh sách bác sĩ"
+    );
   const json = await res.json();
   return json.data as DoctorsPublicListResponse;
 }
 
-/**
- * Lấy đánh giá của bác sĩ
- */
 export async function apiGetDoctorRatings(
   doctorId: number,
   params: { page?: number; limit?: number }
@@ -360,62 +346,39 @@ export async function apiGetDoctorRatings(
     page: String(params.page || 1),
     limit: String(params.limit || 20),
   });
-
   const res = await fetch(`${API_BASE}/ratings/${doctorId}?${query}`);
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách đánh giá");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tải danh sách đánh giá"
+    );
   const json = await res.json();
   return json.data as DoctorRatingsResponse;
 }
 
-/**
- * Upload ảnh đại diện cho bác sĩ
- * @param doctorId - ID của bác sĩ
- * @param file - File ảnh cần upload
- * @returns URL của ảnh đã upload
- */
+// Upload avatar qua BE (nếu vẫn dùng). Nếu chuyển URL-only hoàn toàn, có thể bỏ.
 export async function apiUploadDoctorAvatar(
   doctorId: number,
   file: File
 ): Promise<string> {
   const formData = new FormData();
-  formData.append("file", file); // Backend nhận field name là "file"
-
+  formData.append("file", file);
   const res = await fetch(`${API_BASE}/admin/${doctorId}/upload-avatar`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-    },
+    headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` },
     body: formData,
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể upload ảnh đại diện");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể upload ảnh đại diện"
+    );
   const json = await res.json();
-  
-  // Backend response: { success, message, data: { doctorId, avatarUrl } }
-  if (!json.success) {
-    throw new Error(json.message || "Upload thất bại");
-  }
-  
+  if (!json.success) throw new Error(json.message || "Upload thất bại");
   return json.data?.avatarUrl || "";
 }
 
-/**
- * Xóa ảnh đại diện của bác sĩ (trở về ảnh profile)
- * @param doctorId - ID của bác sĩ
- * @returns URL ảnh fallback (từ profile)
- */
-export async function apiDeleteDoctorAvatar(
-  doctorId: number
-): Promise<string> {
+export async function apiDeleteDoctorAvatar(doctorId: number): Promise<string> {
   const res = await fetch(`${API_BASE}/admin/${doctorId}/delete-avatar`, {
     method: "DELETE",
     headers: {
@@ -423,65 +386,29 @@ export async function apiDeleteDoctorAvatar(
       "Content-Type": "application/json",
     },
   });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể xóa ảnh đại diện");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể xóa ảnh đại diện"
+    );
   const json = await res.json();
-  
-  if (!json.success) {
-    throw new Error(json.message || "Xóa ảnh thất bại");
-  }
-  
-  // Trả về URL của ảnh fallback (profile avatar)
+  if (!json.success) throw new Error(json.message || "Xóa ảnh thất bại");
   return json.data?.avatarUrl || "";
 }
 
-/**
- * Related Doctor DTO
- */
-export interface RelatedDoctorDto {
-  doctorId: number;
-  fullName: string | null;
-  title: string | null;
-  avatarUrl: string | null;
-  primarySpecialtyId: number | null;
-  primarySpecialtyName: string | null;
-  experienceYears: number | null;
-  ratingAvg: number;
-  ratingCount: number;
-  roomName: string | null;
-}
-
-export interface RelatedDoctorsResponse {
-  success: boolean;
-  data: RelatedDoctorDto[];
-}
-
-/**
- * Lấy danh sách bác sĩ cùng chuyên khoa
- * @param doctorId - ID của bác sĩ gốc
- * @param limit - Số lượng bác sĩ cần lấy (default 10, max 20)
- * @returns Danh sách bác sĩ cùng chuyên khoa
- */
+// Related
 export async function apiGetRelatedDoctors(
   doctorId: number,
   limit: number = 10
 ): Promise<RelatedDoctorDto[]> {
   const res = await fetch(`${API_BASE}/related/${doctorId}?limit=${limit}`);
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách bác sĩ liên quan");
-  }
-
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).message ||
+        "Không thể tải danh sách bác sĩ liên quan"
+    );
   const json: RelatedDoctorsResponse = await res.json();
-
-  if (!json.success) {
+  if (!json.success)
     throw new Error("Không thể tải danh sách bác sĩ liên quan");
-  }
-
   return json.data || [];
 }
