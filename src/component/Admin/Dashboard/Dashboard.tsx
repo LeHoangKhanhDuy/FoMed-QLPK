@@ -267,7 +267,7 @@ export const Dashboard = () => {
           })`}
           value={fmtVND(salesData?.currentMonthRevenue ?? 0)}
           change={salesData?.monthOverMonthChange ?? 0}
-          icon={<Activity className="w-6 h-6 text-gray-600" />}
+          icon={<Activity className="w-6 h-6 text-yellow-500" />}
           loading={loading}
         />
       </div>
@@ -405,7 +405,7 @@ export const Dashboard = () => {
         {/* Monthly Target (từ API) */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Monthly Target</h2>
+            <h2 className="text-lg font-bold text-gray-900">Mục tiêu tháng này</h2>
             <button
               className="text-gray-400 hover:text-gray-600 cursor-pointer"
               title="Tùy chọn"

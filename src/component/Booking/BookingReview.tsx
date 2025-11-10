@@ -10,9 +10,12 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getService } from "../../services/service";
-import { apiGetDoctorDetail, type DoctorDetail } from "../../services/doctorMApi";
+import {
+  apiGetDoctorDetail,
+  type DoctorDetail,
+} from "../../services/doctorMApi";
 import { createAppointment } from "../../services/appointmentsApi";
-import { publicHttp } from "../../services/http";
+import { apiGetMyPatientId } from "../../services/patientsApi";
 
 export const BookingReview = () => {
   const [searchParams] = useSearchParams();
@@ -77,12 +80,12 @@ export const BookingReview = () => {
         }
 
         // 2. Lấy bác sĩ
-        const doctor: DoctorDetail = await apiGetDoctorDetail(
-          Number(doctorId)
-        );
+        const doctor: DoctorDetail = await apiGetDoctorDetail(Number(doctorId));
 
         // 3. Lấy thông tin user đang đăng nhập
-        const currentUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
+        const currentUser = JSON.parse(
+          localStorage.getItem("userInfo") || "{}"
+        );
 
         setBookingInfo({
           service: {
@@ -125,147 +128,59 @@ export const BookingReview = () => {
     try {
       setSubmitting(true);
 
-      // Lấy thông tin user đang đăng nhập từ localStorage
       const currentUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
-      
-      // Kiểm tra authentication
       const token = localStorage.getItem("userToken");
+
       if (!token) {
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
         navigate("/login");
         return;
       }
 
-      if (!currentUser.userId) {
-        toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!");
-        navigate("/login");
-        return;
-      }
+      let patientId = currentUser.patientId;
 
-      // Debug: Log dữ liệu để kiểm tra
-      console.log("=== DEBUG BOOKING ===");
-      console.log("Current user:", currentUser);
-      console.log("User ID:", currentUser.userId);
-      console.log("User name:", currentUser.name);
-      console.log("User phone:", currentUser.phone);
-      console.log("User email:", currentUser.email);
-      console.log("Auth token:", localStorage.getItem("userToken"));
-
-      // Thử tạo patient record qua API public trước
-      let actualPatientId = currentUser.userId;
-      
-      console.log("=== PATIENT CREATION STRATEGY ===");
-      console.log("Attempting to create patient via public API for userId:", actualPatientId);
-      
-      try {
-        // Thử gọi API public để tạo patient
-        const patientPayload = {
-          fullName: currentUser.name,
-          phone: currentUser.phone,
-          email: currentUser.email,
-          gender: "O",
-          dateOfBirth: null,
-          address: null,
-          district: null,
-          city: null,
-          province: null,
-          identityNo: null,
-          insuranceNo: null,
-          note: null,
-          allergyText: null,
-          patientCode: null,
-        };
-        
-        console.log("Trying public API with payload:", patientPayload);
-        const response = await publicHttp.post("/api/v1/patients/create", patientPayload);
-        actualPatientId = response.data.data.patientId;
-        console.log("✅ Patient created via public API:", response.data);
-        console.log("New patient ID:", actualPatientId);
-      } catch (publicError) {
-        console.log("❌ Public API failed, trying auth API...");
-        
+      // Nếu chưa có patientId, gọi API để lấy/tạo
+      if (!patientId) {
         try {
-          // Thử gọi API auth (có thể user có quyền)
-          const patientPayload = {
-            fullName: currentUser.name,
-            phone: currentUser.phone,
-            email: currentUser.email,
-            gender: "O" as const,
-            dateOfBirth: null,
-            address: null,
-            district: null,
-            city: null,
-            province: null,
-            identityNo: null,
-            insuranceNo: null,
-            note: null,
-            allergyText: null,
-            patientCode: null,
-          };
-          
-          const response = await publicHttp.post("/api/v1/patients/create", patientPayload, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem("userToken")}`
-            }
-          });
-          actualPatientId = response.data.data.patientId;
-          console.log("✅ Patient created via auth API:", response.data);
-          console.log("New patient ID:", actualPatientId);
-        } catch (authError) {
-          console.log("❌ Both APIs failed, using userId as fallback");
-          console.log("Error details:", {
-            publicError: (publicError as { response?: { data?: unknown } })?.response?.data,
-            authError: (authError as { response?: { data?: unknown } })?.response?.data
-          });
-          
-          // Fallback: sử dụng userId
-          actualPatientId = currentUser.userId;
-          console.log("Using fallback userId as patientId:", actualPatientId);
+          const patientInfo = await apiGetMyPatientId();
+          patientId = patientInfo.patientId;
+
+          // Cập nhật localStorage
+          currentUser.patientId = patientId;
+          localStorage.setItem("userInfo", JSON.stringify(currentUser));
+
+          if (patientInfo.isNew) {
+            toast.success("Đã tạo hồ sơ bệnh nhân");
+          }
+        } catch (error) {
+          console.error("❌ Lỗi lấy patientId:", error);
+          toast.error("Không thể lấy thông tin bệnh nhân. Vui lòng thử lại!");
+          setSubmitting(false);
+          return;
         }
       }
 
-      // Gọi API tạo appointment
+      // Tạo appointment
       const appointmentData = {
-        patientId: actualPatientId,
+        patientId: Number(patientId),
         doctorId: bookingInfo.doctor.id,
-        serviceId: bookingInfo.service.id, // Thêm lại serviceId
+        serviceId: bookingInfo.service.id,
         visitDate: bookingInfo.date,
-        visitTime: bookingInfo.time + ":00", // Convert HH:mm to HH:mm:ss
+        visitTime: bookingInfo.time + ":00",
         reason: `Đặt khám ${bookingInfo.service.name}`,
       };
 
-      console.log("=== CREATE APPOINTMENT ===");
-      console.log("Appointment data:", appointmentData);
-      console.log("Visit date format:", bookingInfo.date);
-      console.log("Visit time format:", bookingInfo.time);
-      console.log("Final visit time:", bookingInfo.time + ":00");
+      const result = await createAppointment(appointmentData);
+      console.log("✅ Đặt lịch thành công:", result);
 
-      await createAppointment(appointmentData);
-
-      // Hiển thị thông báo thành công
       toast.success("Đặt lịch thành công! Vui lòng kiểm tra lịch hẹn của bạn.");
-
-      // Chuyển về trang lịch sử đặt lịch
-      setTimeout(() => {
-        navigate("/user/appointments");
-      }, 1500);
+      setTimeout(() => navigate("/user/appointments"), 2000);
     } catch (error) {
-      // Proper error type handling
-      if (error instanceof Error) {
-        console.error("Booking error:", error);
-        
-        // Log chi tiết response nếu có
-        if ('response' in error && error.response) {
-          const errorWithResponse = error as { response?: { data?: unknown; status?: number } };
-          console.error("Error response:", errorWithResponse.response?.data);
-          console.error("Error status:", errorWithResponse.response?.status);
-        }
-        
-        toast.error(error.message || "Đặt lịch thất bại. Vui lòng thử lại!");
-      } else {
-        console.error("Unknown error:", error);
-        toast.error("Đặt lịch thất bại. Vui lòng thử lại!");
-      }
+      console.error("❌ Booking error:", error);
+      toast.error(
+        (error as Error).message || "Đặt lịch thất bại. Vui lòng thử lại!"
+      );
+    } finally {
       setSubmitting(false);
     }
   };
