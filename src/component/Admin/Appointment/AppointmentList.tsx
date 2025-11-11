@@ -8,6 +8,7 @@ import ConfirmModal from "../../../common/ConfirmModal";
 import toast from "react-hot-toast";
 import type { BEAppointment } from "../../../services/appointmentsApi";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../auth/auth";
 
 type Props = {
   items: Array<Appointment | BEAppointment>;
@@ -44,11 +45,10 @@ type Row = {
   patientPhone: string;
   doctorName: string;
   serviceName?: string;
-  date: string; // ISO yyyy-MM-dd
-  time: string; // HH:mm:ss
-  createdAt: string; // ISO
+  date: string;
+  time: string;
+  createdAt: string;
 };
-
 
 /** ==== Utils ==== */
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -99,10 +99,8 @@ function isFEAppt(x: unknown): x is Appointment {
   );
 }
 
-/** Nhận cả 2 kiểu: FE cũ (id/date/time) và BE mới (appointmentId/visitDate/visitTime) */
 function normalizeAppointment(a: Appointment | BEFlat): Row {
   if (isFEAppt(a)) {
-    // FE model đã map sẵn
     return {
       id: a.id,
       code: a.code,
@@ -112,14 +110,13 @@ function normalizeAppointment(a: Appointment | BEFlat): Row {
       patientPhone: a.patientPhone,
       doctorName: a.doctorName,
       serviceName: a.serviceName,
-      date: a.date, // yyyy-MM-dd
-      time: a.time.length > 5 ? a.time.slice(0, 5) : a.time, // HH:mm
+      date: a.date,
+      time: a.time.length > 5 ? a.time.slice(0, 5) : a.time,
       createdAt: a.createdAt,
     };
   }
 
   if (isBEFlat(a)) {
-    // Dữ liệu phẳng từ BE
     const hhmm = (a.visitTime || "").slice(0, 5);
     return {
       id: a.appointmentId,
@@ -131,13 +128,12 @@ function normalizeAppointment(a: Appointment | BEFlat): Row {
       doctorName:
         a.doctorName || (a.doctorId ? `Bác sĩ #${a.doctorId}` : "Bác sĩ"),
       serviceName: a.serviceName || undefined,
-      date: a.visitDate, // yyyy-MM-dd
-      time: hhmm, // HH:mm
+      date: a.visitDate,
+      time: hhmm,
       createdAt: a.createdAt || new Date().toISOString(),
     };
   }
 
-  // Fallback an toàn (không dùng any)
   return {
     id: 0,
     code: "",
@@ -164,16 +160,43 @@ export default function AppointmentList({
   const [tempStatus, setTempStatus] = useState<
     Record<number, AppointmentStatus>
   >({});
-
-  // Chuẩn hoá toàn bộ items ngay khi props đổi
+  const [loadingWorkspace, setLoadingWorkspace] = useState(false);
   const rows = useMemo<Row[]>(() => items.map(normalizeAppointment), [items]);
+  const { hasRole } = useAuth();
 
-  const gotoWorkspace = (row: Row) => {
-    const pid = row.patientId ?? 0;
-    nav(`/cms/patient-list/workspace?appointmentId=${row.id}&patientId=${pid}`);
-  };
+  // Kiểm tra quyền truy cập workspace trước khi navigate
+  const gotoWorkspace = useCallback(
+    (row: Row) => {
+      if (loadingWorkspace) return;
+      setLoadingWorkspace(true);
 
-  // Confirm modal state
+      try {
+        const pid = row.patientId ?? 0;
+
+        // Dùng hasRole từ context → chính xác, an toàn
+        if (!hasRole("DOCTOR")) {
+          toast.error("Chỉ có bác sĩ mới có quyền truy cập", {
+            duration: 4000,
+            position: "top-center",
+          });
+          setLoadingWorkspace(false);
+          return;
+        }
+
+        // Nếu là DOCTOR → navigate
+        nav(
+          `/cms/patient-list/workspace?appointmentId=${row.id}&patientId=${pid}`
+        );
+      } catch (error) {
+        toast.error("Có lỗi xảy ra khi mở hồ sơ");
+        console.error("Workspace navigation error:", error);
+      } finally {
+        setLoadingWorkspace(false);
+      }
+    },
+    [nav, loadingWorkspace, hasRole]
+  );
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [pending, setPending] = useState<null | {
@@ -181,13 +204,11 @@ export default function AppointmentList({
     next: AppointmentStatus;
   }>(null);
 
-  // Lấy status ưu tiên local-temp (khi chưa call BE)
   const getStatus = useCallback(
     (id: number, fallback: AppointmentStatus) => tempStatus[id] ?? fallback,
     [tempStatus]
   );
 
-  // Set status (gọi callback parent nếu có, nếu không thì set local)
   const setStatus = useCallback(
     (id: number, status: AppointmentStatus) => {
       if (onSetStatus) onSetStatus(id, status);
@@ -216,7 +237,6 @@ export default function AppointmentList({
     }
   };
 
-  /** Filter: chỉ hiển thị waiting + booked, áp dụng search */
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
@@ -241,13 +261,11 @@ export default function AppointmentList({
 
   const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
 
-  // Pagination
   const paged = useMemo(() => {
     const start = (page - 1) * perPage;
     return filtered.slice(start, start + perPage);
   }, [filtered, page, perPage]);
 
-  // Reset page nếu vượt lastPage
   useEffect(() => {
     if (page > lastPage) setPage(1);
   }, [lastPage, page]);
@@ -320,7 +338,8 @@ export default function AppointmentList({
                   <td className="py-2 px-3">
                     <button
                       onClick={() => gotoWorkspace(a)}
-                      className="text-sky-600 font-semibold hover:underline cursor-pointer"
+                      disabled={loadingWorkspace}
+                      className="text-sky-600 font-semibold hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Mở hồ sơ khám"
                     >
                       {a.code}
@@ -341,48 +360,23 @@ export default function AppointmentList({
                   <td className="py-2 px-3">{renderBadge(st)}</td>
                   <td className="py-2 px-3">
                     <div className="flex items-center justify-center gap-2">
-                      {(st === "waiting" || st === "booked") && (
+                      {hasRole("DOCTOR") ? (
                         <button
                           onClick={() => gotoWorkspace(a)}
-                          className="cursor-pointer px-2 py-1 rounded-md bg-primary-linear text-white text-xs"
-                          title="Khám"
+                          disabled={loadingWorkspace}
+                          className="cursor-pointer px-2 py-2 rounded-[var(--rounded)] bg-primary-linear text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Khám
+                          {loadingWorkspace ? "Đang mở..." : "Khám bệnh"}
+                        </button>
+                      ) : (
+                        <button
+                          disabled
+                          className="px-2 py-2 rounded-[var(--rounded)] bg-gray-300 text-gray-600 text-sm cursor-not-allowed"
+                          title="Chỉ bác sĩ mới được phép"
+                        >
+                          Khám bệnh
                         </button>
                       )}
-
-                      <select
-                        value={st}
-                        onChange={async (e) => {
-                          // 👈 async
-                          const next = e.target.value as AppointmentStatus;
-                          if (next === st) return;
-
-                          if (next === "cancelled" || next === "no_show") {
-                            setPending({ id: a.id, next });
-                            setConfirmOpen(true);
-                            return;
-                          }
-
-                          try {
-                            if (onSetStatus)
-                              await onSetStatus(a.id, next); // 👈 await hợp lệ
-                            else setStatus(a.id, next);
-                            toast.success(
-                              `Đã cập nhật trạng thái thành "${STATUS_LABEL[next]}"`
-                            );
-                          } catch {
-                            toast.error("Cập nhật trạng thái thất bại");
-                          }
-                        }}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-1.5 cursor-pointer hover:bg-gray-100 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                      >
-                        <option value="booked">Đã đặt</option>
-                        <option value="waiting">Đang chờ</option>
-                        <option value="done">Đã khám</option>
-                        <option value="cancelled">Hủy lịch</option>
-                        <option value="no_show">Vắng mặt</option>
-                      </select>
                     </div>
                   </td>
                 </tr>
@@ -392,7 +386,6 @@ export default function AppointmentList({
         </table>
       </div>
 
-      {/* Confirm Modal */}
       <ConfirmModal
         open={confirmOpen}
         onClose={() => {
@@ -416,7 +409,6 @@ export default function AppointmentList({
         danger
       />
 
-      {/* Pagination */}
       <ListPagination
         total={filtered.length}
         perPage={perPage}
@@ -427,7 +419,6 @@ export default function AppointmentList({
   );
 }
 
-/* Pagination Component */
 function ListPagination({
   total,
   perPage,

@@ -6,6 +6,7 @@ import {
   HeartPulse,
   Pill,
   TestTubeDiagonal,
+  CalendarPlus,
 } from "lucide-react";
 
 const menuItems = [
@@ -13,6 +14,11 @@ const menuItems = [
     to: "/user/profile",
     label: "Thông tin tài khoản",
     icon: <UsersRound className="w-5 h-5" />,
+  },
+  {
+    to: "/user/appointment-shedule",
+    label: "Lịch hẹn khám bệnh",
+    icon: <CalendarPlus className="w-5 h-5" />,
   },
   {
     to: "/user/medical-history",

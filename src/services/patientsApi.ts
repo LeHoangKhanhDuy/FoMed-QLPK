@@ -152,3 +152,25 @@ export async function apiUpsertPatientByPhone(payload: PatientPayload) {
   }
 }
 
+export async function apiGetMyPatientId() {
+  try {
+    const { data } = await authHttp.get<{
+      success: boolean;
+      message?: string;
+      data: {
+        patientId: number;
+        fullName: string;
+        phone: string;
+        isNew: boolean;
+      };
+    }>("/api/v1/user/my-patient-id");
+
+    if (!data.success) {
+      throw new Error(data.message || "Không thể lấy thông tin bệnh nhân");
+    }
+
+    return data.data;
+  } catch (e) {
+    throw new Error(getErrorMessage(e, "Không thể lấy thông tin bệnh nhân"));
+  }
+}

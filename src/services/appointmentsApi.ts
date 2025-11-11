@@ -78,21 +78,15 @@ export async function appointmentsList(params: {
   if (!res.data?.success) {
     throw new Error(res.data?.message || "Không thể tải danh sách lịch");
   }
-
-  // Return data object chứa page, limit, total, totalPages, items
   return res.data.data;
 }
 
 export async function createAppointment(body: CreateReq): Promise<CreateData> {
   try {
-    console.log("🚀 Gọi API tạo appointment với body:", body);
-    
     const res = await authHttp.post<CreateResp>(
       "/api/v1/appointments/create",
       body
     );
-
-    console.log("✅ Response từ API:", res.data);
 
     if (!res.data?.success) {
       throw new Error(res.data?.message || "Tạo lịch thất bại");
@@ -122,3 +116,24 @@ export async function updateAppointmentStatus(
 
 export type { CreateReq as CreateAppointmentReq };
 
+export async function patientSchedule(params?: {
+  dateFrom?: string;
+  dateTo?: string;
+  status?: BEAppointmentStatus | string;
+  page?: number;
+  limit?: number;
+}): Promise<ListData<BEAppointment>> {
+  const { dateFrom, dateTo, status, page = 1, limit = 10 } = params ?? {};
+
+  const res = await authHttp.get<ListResp>(
+    "/api/v1/appointments/patient-schedule",
+    {
+      params: { dateFrom, dateTo, status, page, limit },
+    }
+  );
+
+  if (!res.data?.success) {
+    throw new Error(res.data?.message || "Không thể tải lịch của bạn");
+  }
+  return res.data.data;
+}
