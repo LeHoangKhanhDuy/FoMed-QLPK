@@ -52,13 +52,12 @@ export default function DoctorPatientWorkspace() {
 
   const [labTests, setLabTests] = useState<LabItem[]>([]);
   const [medicines, setMedicines] = useState<
-    Array<{ 
-      id: number; 
-      name: string; 
-      unit?: string | null;
-      isActive?: boolean;
-      stock?: number;
-      status?: string;
+    Array<{
+      id: number;
+      name: string;
+      unit: string;
+      isActive: boolean;
+      stock: number;
     }>
   >([]);
 
@@ -81,6 +80,12 @@ export default function DoctorPatientWorkspace() {
   const [rxLines, setRxLines] = useState<PrescriptionLine[]>([]);
   const [rxAdvice, setRxAdvice] = useState("");
 
+  const hasAvailableMedicines = useMemo(() => {
+    return medicines.some(
+      (m) => m.isActive && Number(m.stock ?? 0) > 0
+    );
+  }, [medicines]);
+
   const canSubmitDx = useMemo(
     () =>
       dx.symptoms.trim().length > 0 &&
@@ -92,7 +97,7 @@ export default function DoctorPatientWorkspace() {
 
   const canSubmitLab = useMemo(
     () =>
-      // ✅ Cho phép submit nếu có ít nhất 1 xét nghiệm HOẶC có ghi chú
+      // Cho phép submit nếu có ít nhất 1 xét nghiệm HOẶC có ghi chú
       (lab.items.length > 0 || (lab.note && lab.note.trim().length > 0)) &&
       appointmentId > 0 &&
       patientId > 0,
@@ -126,9 +131,23 @@ export default function DoctorPatientWorkspace() {
         await apiStartEncounter({ appointmentId });
         const cat: WorkspaceCatalogs = await apiGetWorkspaceCatalogs();
         setLabTests(cat.labTests || []);
-        setMedicines(cat.medicines || []);
+        setMedicines(
+          (cat.medicines || []).map((m) => ({
+            id: m.id,
+            name: m.name,
+            unit: m.unit ?? "",
+            isActive:
+              typeof m.isActive === "boolean"
+                ? m.isActive
+                : m.status
+                ? m.status.toLowerCase() !== "inactive"
+                : true,
+            stock: typeof m.stock === "number" ? m.stock : 0,
+          }))
+        );
       } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : "Không thể mở hồ sơ khám";
+        const errorMessage =
+          e instanceof Error ? e.message : "Không thể mở hồ sơ khám";
         toast.error(errorMessage);
         nav(-1);
       } finally {
@@ -158,7 +177,8 @@ export default function DoctorPatientWorkspace() {
       openSuccess("Đã lưu chẩn đoán", "Chẩn đoán đã được lưu thành công.");
       setTab("lab");
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Không thể lưu chẩn đoán";
+      const errorMessage =
+        e instanceof Error ? e.message : "Không thể lưu chẩn đoán";
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
@@ -185,7 +205,8 @@ export default function DoctorPatientWorkspace() {
       );
       setTab("rx");
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Không thể lưu chỉ định xét nghiệm";
+      const errorMessage =
+        e instanceof Error ? e.message : "Không thể lưu chỉ định xét nghiệm";
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
@@ -212,6 +233,21 @@ export default function DoctorPatientWorkspace() {
       );
       return;
     }
+
+    // KIỂM TRA THUỐC HẾT HÀNG
+    const outOfStockMeds = rxLines
+      .map((line) => medicines.find((m) => m.id === line.drugId))
+      .filter((med) => med && med.stock === 0);
+
+    if (outOfStockMeds.length > 0) {
+      toast.error(
+        `Không thể lưu toa: Các thuốc sau đã hết hàng:\n${outOfStockMeds
+          .map((m) => `• ${m!.name}`)
+          .join("\n")}`
+      );
+      return;
+    }
+
     try {
       setSubmitting(true);
       const payload: PrescriptionPayload = {
@@ -220,14 +256,7 @@ export default function DoctorPatientWorkspace() {
         lines: rxLines,
         advice: rxAdvice || undefined,
       };
-      
-      console.log("=== SAVE PRESCRIPTION DEBUG ===");
-      console.log("Appointment ID:", appointmentId);
-      console.log("Patient ID:", patientId);
-      console.log("RX Lines:", rxLines);
-      console.log("RX Advice:", rxAdvice);
-      console.log("Payload:", payload);
-      
+
       await apiSubmitPrescription(payload);
       await apiCompleteEncounter({ appointmentId });
       openSuccess(
@@ -236,8 +265,7 @@ export default function DoctorPatientWorkspace() {
       );
       setTimeout(() => nav(-1), 1500);
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Không thể lưu toa thuốc/hoàn tất";
-      toast.error(errorMessage);
+      toast.error(e instanceof Error ? e.message : "Không thể lưu toa thuốc");
     } finally {
       setSubmitting(false);
     }
@@ -451,22 +479,25 @@ export default function DoctorPatientWorkspace() {
               <p className="font-semibold">Danh mục thuốc</p>
               <button
                 onClick={() => {
-                  if (medicines.length === 0) {
-                    toast.error("Không có thuốc nào để chọn");
+                  const available = medicines.filter(
+                    (m) => m.isActive && Number(m.stock ?? 0) > 0
+                  );
+                  if (available.length === 0) {
+                    toast.error("Không có thuốc nào còn hàng để thêm!");
                     return;
                   }
                   setRxLines((ls) => [
                     ...ls,
                     {
-                      drugId: medicines[0].id,
+                      drugId: available[0].id,
                       dose: "",
                       frequency: "",
                       duration: "",
                     },
                   ]);
                 }}
-                disabled={medicines.length === 0}
-                className="cursor-pointer px-3 py-1.5 rounded-[var(--rounded)] bg-primary-linear text-white"
+                disabled={!hasAvailableMedicines}
+                className="cursor-pointer px-3 py-1.5 rounded-[var(--rounded)] bg-primary-linear text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 + Thêm thuốc
               </button>
@@ -476,125 +507,132 @@ export default function DoctorPatientWorkspace() {
               <p className="text-sm text-slate-500">Chưa có thuốc trong toa.</p>
             ) : (
               <div className="space-y-3">
-                {rxLines.map((ln, idx) => (
-                  <div
-                    key={`rx-${idx}`}
-                    className="p-3 border rounded-md bg-gray-50"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                      {medicines.length === 0 ? (
-                        <p className="text-red-500 col-span-full">
-                          Không có thuốc nào để chọn.
-                        </p>
-                      ) : (
+                {rxLines.map((ln, idx) => {
+                  const med = medicines.find((m) => m.id === ln.drugId);
+                  const isOutOfStock = med?.stock === 0;
+
+                  return (
+                    <div
+                      key={`rx-${idx}`}
+                      className={`p-3 border rounded-md ${
+                        isOutOfStock ? "bg-red-50 border-red-300" : "bg-gray-50"
+                      }`}
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div className="md:col-span-2 lg:col-span-4">
                           <label className="block text-sm font-medium mb-1">
                             Tên thuốc <span className="text-red-500">*</span>
+                            {isOutOfStock && (
+                              <span className="ml-2 text-xs font-bold text-red-600">
+                                [HẾT HÀNG – VUI LÒNG THAY THẾ]
+                              </span>
+                            )}
                           </label>
                           <SelectMenu
                             value={ln.drugId}
                             onChange={(v) => {
+                              const med = medicines.find(
+                                (m) => m.id === Number(v)
+                              );
+                              if (med?.stock === 0) {
+                                toast.error(`Thuốc "${med.name}" đã hết hàng!`);
+                                return;
+                              }
                               setRxLines((arr) =>
                                 arr.map((x, i) =>
                                   i === idx ? { ...x, drugId: Number(v) } : x
                                 )
                               );
                             }}
-                            options={medicines.map((d) => {
-                              let statusText = "";
-                              let statusColor = "";
-                              
-                              if (d.isActive === false) {
-                                statusText = " (Vô hiệu hóa)";
-                                statusColor = "text-red-500";
-                              } else if (d.stock === 0) {
-                                statusText = " (Hết hàng)";
-                                statusColor = "text-orange-500";
-                              } else if (d.stock && d.stock > 0) {
-                                statusText = " (Còn hàng)";
-                                statusColor = "text-green-500";
-                              }
-                              
-                              return {
-                                value: d.id,
-                                label: `${d.name}${d.unit ? ` (${d.unit})` : ""}${statusText}`,
-                                disabled: d.isActive === false || d.stock === 0,
-                                statusColor,
-                              };
-                            })}
+                            options={medicines
+                              .filter((m) => m.isActive)
+                              .map((m) => ({
+                                value: m.id,
+                                label:
+                                  m.stock === 0
+                                    ? `${m.name} (${m.unit}) — Hết hàng`
+                                    : `${m.name} (${m.unit}) — Tồn kho: ${m.stock}`,
+                                disabled: m.stock === 0,
+                                statusColor:
+                                  m.stock === 0
+                                    ? "text-red-600"
+                                    : "text-green-600",
+                              }))}
                           />
                         </div>
-                      )}
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Liều dùng <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          placeholder="VD: 1 viên"
-                          value={ln.dose}
-                          onChange={(e) =>
-                            setRxLines((arr) =>
-                              arr.map((x, i) =>
-                                i === idx ? { ...x, dose: e.target.value } : x
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Liều dùng <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            placeholder="VD: 1 viên"
+                            value={ln.dose}
+                            onChange={(e) =>
+                              setRxLines((arr) =>
+                                arr.map((x, i) =>
+                                  i === idx ? { ...x, dose: e.target.value } : x
+                                )
                               )
-                            )
-                          }
-                          className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Tần suất <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          placeholder="VD: 2 lần/ngày"
-                          value={ln.frequency}
-                          onChange={(e) =>
-                            setRxLines((arr) =>
-                              arr.map((x, i) =>
-                                i === idx
-                                  ? { ...x, frequency: e.target.value }
-                                  : x
+                            }
+                            className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Tần suất <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            placeholder="VD: 2 lần/ngày"
+                            value={ln.frequency}
+                            onChange={(e) =>
+                              setRxLines((arr) =>
+                                arr.map((x, i) =>
+                                  i === idx
+                                    ? { ...x, frequency: e.target.value }
+                                    : x
+                                )
                               )
-                            )
-                          }
-                          className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Thời gian <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          placeholder="VD: 5 ngày"
-                          value={ln.duration}
-                          onChange={(e) =>
-                            setRxLines((arr) =>
-                              arr.map((x, i) =>
-                                i === idx
-                                  ? { ...x, duration: e.target.value }
-                                  : x
+                            }
+                            className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">
+                            Thời gian <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            placeholder="VD: 5 ngày"
+                            value={ln.duration}
+                            onChange={(e) =>
+                              setRxLines((arr) =>
+                                arr.map((x, i) =>
+                                  i === idx
+                                    ? { ...x, duration: e.target.value }
+                                    : x
+                                )
                               )
-                            )
-                          }
-                          className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-                      <div className="flex items-end">
-                        <button
-                          onClick={() =>
-                            setRxLines((arr) => arr.filter((_, i) => i !== idx))
-                          }
-                          className="cursor-pointer w-full rounded-md text-rose-600 px-3 py-2 border border-rose-300 hover:bg-rose-50 flex items-center justify-center gap-2"
-                          title="Xóa thuốc"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span className="text-sm">Xóa</span>
-                        </button>
+                            }
+                            className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <button
+                            onClick={() =>
+                              setRxLines((arr) =>
+                                arr.filter((_, i) => i !== idx)
+                              )
+                            }
+                            className="cursor-pointer w-full rounded-md text-rose-600 px-3 py-2 border border-rose-300 hover:bg-rose-50 flex items-center justify-center gap-2"
+                            title="Xóa thuốc"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span className="text-sm">Xóa</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

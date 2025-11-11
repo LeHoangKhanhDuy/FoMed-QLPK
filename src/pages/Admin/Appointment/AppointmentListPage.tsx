@@ -20,10 +20,8 @@ export default function AppointmentListPage() {
         const res = await appointmentsList({
           date,
           page: 1,
-          limit: 200,
-          // có thể truyền doctorId nếu muốn lọc theo bác sĩ
+          limit: 20,
         });
-        // Component AppointmentList nhận BEAppointment nên truyền trực tiếp
         setItems(res.items ?? []);
       } catch (e) {
         console.error(e);
