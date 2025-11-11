@@ -133,7 +133,7 @@ export const BookingReview = () => {
 
       if (!token) {
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
-        navigate("/login");
+        navigate("/");
         return;
       }
 
@@ -153,8 +153,10 @@ export const BookingReview = () => {
             toast.success("Đã tạo hồ sơ bệnh nhân");
           }
         } catch (error) {
-          console.error("❌ Lỗi lấy patientId:", error);
-          toast.error("Không thể lấy thông tin bệnh nhân. Vui lòng thử lại!");
+          toast.error(
+            (error as Error).message ||
+              "Không thể lấy thông tin bệnh nhân. Vui lòng thử lại!"
+          );
           setSubmitting(false);
           return;
         }
@@ -176,7 +178,6 @@ export const BookingReview = () => {
       toast.success("Đặt lịch thành công! Vui lòng kiểm tra lịch hẹn của bạn.");
       setTimeout(() => navigate("/user/appointments"), 2000);
     } catch (error) {
-      console.error("❌ Booking error:", error);
       toast.error(
         (error as Error).message || "Đặt lịch thất bại. Vui lòng thử lại!"
       );

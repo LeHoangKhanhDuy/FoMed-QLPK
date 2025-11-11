@@ -41,6 +41,7 @@ import {
   ServerErrorPage,
   MaintenancePage,
 } from "./pages/Error";
+import UserAppointmentSchedulePage from "./pages/Account/UserAppointmentShedulePage";
 
 function CmsGuard() {
   return (
@@ -80,6 +81,7 @@ function App() {
         <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />}/>
         <Route path="/user/lab-result" element={<UserLabResultListPage />} />
         <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />}/>
+        <Route path="/user/appointment-shedule" element={<UserAppointmentSchedulePage />}/>
 
         {/* DOCTOR */}
         <Route path="/user/doctor/:id" element={<DoctorProfilePage />} />

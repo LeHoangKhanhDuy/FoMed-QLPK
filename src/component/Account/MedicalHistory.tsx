@@ -211,9 +211,7 @@ export const MedicalHistory = () => {
                     {formatDate(encounter.encounterDate)}
                   </td>
                   <td className="px-5 py-4">{encounter.doctorName}</td>
-                  <td className="px-5 py-4">
-                    {encounter.serviceName || "-"}
-                  </td>
+                  <td className="px-5 py-4">{encounter.serviceName || "-"}</td>
                   <td className="px-5 py-4">
                     {encounter.chiefComplaint || "-"}
                   </td>
