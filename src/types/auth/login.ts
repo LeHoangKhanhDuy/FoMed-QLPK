@@ -5,7 +5,10 @@ export interface AppUser {
   phone: string;
   createdAt?: string;
   avatarUrl?: string | null;
-  gender?: string;
+  gender?: string | null;
+  dateOfBirth?: string | null;
+  address?: string | null;
+  bio?: string | null;
   roles: Array<"ADMIN" | "DOCTOR" | "EMPLOYEE" | "PATIENT">;
 }
 

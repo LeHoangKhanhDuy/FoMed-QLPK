@@ -71,37 +71,37 @@ export default function AppointmentSchedule() {
     switch (s) {
       case "waiting":
         return (
-          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs bg-yellow-100 text-yellow-800">
+          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs font-semibold bg-yellow-100 text-yellow-600">
             Chờ khám
           </span>
         );
       case "booked":
         return (
-          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs bg-sky-100 text-sky-800">
+          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs font-semibold bg-sky-100 text-sky-600">
             Đã đặt
           </span>
         );
       case "done":
         return (
-          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs bg-green-100 text-green-800">
-            Hoàn thành
+          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs font-semibold bg-green-100 text-green-600">
+            Đã khám
           </span>
         );
       case "cancelled":
         return (
-          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs bg-red-100 text-red-800">
+          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs font-semibold bg-red-100 text-red-600">
             Đã huỷ
           </span>
         );
       case "no_show":
         return (
-          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs bg-gray-100 text-gray-800">
+          <span className="px-2 py-1 rounded-[var(--rounded)] text-xs font-semibold bg-gray-100 text-gray-600">
             Vắng
           </span>
         );
       default:
         return (
-          <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800">
+          <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600">
             —
           </span>
         );
