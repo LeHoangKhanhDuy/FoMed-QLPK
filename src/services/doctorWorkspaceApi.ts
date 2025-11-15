@@ -19,9 +19,18 @@ export async function apiGetLabTests(): Promise<LabItem[]> {
     const { data } = await authHttp.get<{
       success: boolean;
       message: string;
-      data: LabItem[];
+      data: any;
     }>(`${PREFIX}/lab-tests`);
-    return data.data || [];
+    // Backend may return different shapes. Normalize to LabItem[] when possible.
+    const d = data.data;
+    if (Array.isArray(d)) return d as LabItem[];
+    if (!d) return [];
+    if (Array.isArray(d.labTests)) return d.labTests as LabItem[];
+    if (Array.isArray(d.items)) return d.items as LabItem[];
+    // If data is an object with numeric keys or wrapped structure, try to extract arrays
+    const maybeArray = Object.values(d).find((v) => Array.isArray(v));
+    if (Array.isArray(maybeArray)) return maybeArray as LabItem[];
+    return [];
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không tải được danh mục xét nghiệm"));
   }
@@ -107,12 +116,26 @@ export async function apiSubmitDiagnosis(payload: DiagnosisPayload) {
 /** Lưu chỉ định xét nghiệm */
 export async function apiSubmitLabOrder(payload: LabOrderPayload) {
   try {
-    const transformedPayload = {
+    const transformedPayload: any = {
       AppointmentId: payload.appointmentId,
       TestIds: payload.items, // ← Backend expects TestIds
       Note: payload.note,
       Priority: payload.priority,
     };
+
+    // If frontend provides full test details, attach them as well.
+    if (
+      payload.tests &&
+      Array.isArray(payload.tests) &&
+      payload.tests.length > 0
+    ) {
+      transformedPayload.Tests = payload.tests.map((t) => ({
+        Id: t.id,
+        Code: t.code,
+        Name: t.name,
+        Note: t.note?.trim() || null,
+      }));
+    }
     await authHttp.post(`${PREFIX}/encounters/lab-orders`, transformedPayload);
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không thể lưu chỉ định xét nghiệm"));
@@ -124,18 +147,22 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
   try {
     // Validate payload
     if (!payload.appointmentId) throw new Error("AppointmentId is required");
-    if (!payload.lines || payload.lines.length === 0) throw new Error("At least one prescription line is required");
+    if (!payload.lines || payload.lines.length === 0)
+      throw new Error("At least one prescription line is required");
 
     payload.lines.forEach((line, i) => {
       if (!line.drugId) throw new Error(`Dòng ${i + 1}: Chưa chọn thuốc`);
-      if (!line.dose?.trim()) throw new Error(`Dòng ${i + 1}: Chưa nhập liều dùng`);
-      if (!line.frequency?.trim()) throw new Error(`Dòng ${i + 1}: Chưa nhập tần suất`);
-      if (!line.duration?.trim()) throw new Error(`Dòng ${i + 1}: Chưa nhập thời gian`);
+      if (!line.dose?.trim())
+        throw new Error(`Dòng ${i + 1}: Chưa nhập liều dùng`);
+      if (!line.frequency?.trim())
+        throw new Error(`Dòng ${i + 1}: Chưa nhập tần suất`);
+      if (!line.duration?.trim())
+        throw new Error(`Dòng ${i + 1}: Chưa nhập thời gian`);
     });
 
     const transformedPayload = {
       AppointmentId: payload.appointmentId,
-      Lines: payload.lines.map(line => ({
+      Lines: payload.lines.map((line) => ({
         MedicineId: line.drugId,
         Dose: line.dose.trim(),
         Frequency: line.frequency.trim(),
@@ -151,14 +178,17 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
         AppointmentId: payload.appointmentId,
         Symptoms: "Khám bệnh",
         Diagnosis: "Chẩn đoán ban đầu",
-        Note: "Tự động tạo để kê toa"
+        Note: "Tự động tạo để kê toa",
       };
       await authHttp.post(`${PREFIX}/encounters/diagnosis`, encounterPayload);
     } catch {
       // Ignore: có thể đã tồn tại
     }
 
-    const response = await authHttp.post(`${PREFIX}/encounters/prescriptions`, transformedPayload);
+    const response = await authHttp.post(
+      `${PREFIX}/encounters/prescriptions`,
+      transformedPayload
+    );
     return response.data;
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không thể lưu toa thuốc"));

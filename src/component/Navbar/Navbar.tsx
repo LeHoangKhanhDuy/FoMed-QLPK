@@ -11,6 +11,7 @@ import {
   CircleUserRound,
   Settings,
   LogOut,
+  UserStar,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -143,7 +144,14 @@ export default function Navbar() {
   };
 
   const displayName = user?.name?.trim() || user?.email || "User";
-  const userAvatar = "https://cdn-icons-png.flaticon.com/512/219/219983.png"; // TODO: Lấy từ user.avatar
+  const userAvatar = "https://cdn-icons-png.flaticon.com/512/219/219983.png";
+  const canAccessAdmin = Boolean(
+    user &&
+      Array.isArray(user.roles) &&
+      user.roles.some((r) =>
+        ["DOCTOR", "ADMIN", "EMPLOYEE"].includes(String(r).toUpperCase())
+      )
+  );
 
   return (
     <>
@@ -429,6 +437,19 @@ export default function Navbar() {
                       <div className="my-1 h-px bg-gray-200" />
 
                       {/* Menu items */}
+                      {canAccessAdmin && (
+                        <MenuItem>
+                          <Link
+                            to="/cms/dashboard"
+                            className="group flex w-full items-center gap-3 font-semibold px-4 py-2.5 hover:bg-gray-100 transition-colors duration-200"
+                          >
+                            <UserStar className="size-5 text-gray-500 group-hover:text-[var(--hover)]" />
+                            <span className="group-hover:text-[var(--hover)]">
+                              Trang quản lý
+                            </span>
+                          </Link>
+                        </MenuItem>
+                      )}
                       <MenuItem>
                         <Link
                           to="/user/profile"

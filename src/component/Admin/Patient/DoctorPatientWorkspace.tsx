@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -77,13 +77,27 @@ export default function DoctorPatientWorkspace() {
     priority: "normal",
   });
 
+  type LabItemDetail = {
+    id: number;
+    code: string;
+    name: string;
+    note?: string | null;
+  };
+
+  const [labItemsDetail, setLabItemsDetail] = useState<LabItemDetail[]>([]);
+
   const [rxLines, setRxLines] = useState<PrescriptionLine[]>([]);
   const [rxAdvice, setRxAdvice] = useState("");
+  const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
+
+  const availableLabOptions = useMemo(() => {
+    return labTests
+      .filter((t) => !labItemsDetail.some((i) => i.id === t.id))
+      .map((s) => ({ value: s.id, label: `${s.code} — ${s.name}` }));
+  }, [labTests, labItemsDetail]);
 
   const hasAvailableMedicines = useMemo(() => {
-    return medicines.some(
-      (m) => m.isActive && Number(m.stock ?? 0) > 0
-    );
+    return medicines.some((m) => m.isActive && Number(m.stock ?? 0) > 0);
   }, [medicines]);
 
   const canSubmitDx = useMemo(
@@ -98,10 +112,10 @@ export default function DoctorPatientWorkspace() {
   const canSubmitLab = useMemo(
     () =>
       // Cho phép submit nếu có ít nhất 1 xét nghiệm HOẶC có ghi chú
-      (lab.items.length > 0 || (lab.note && lab.note.trim().length > 0)) &&
+      (labItemsDetail.length > 0 || (lab.note && lab.note.trim().length > 0)) &&
       appointmentId > 0 &&
       patientId > 0,
-    [lab.items.length, lab.note, appointmentId, patientId]
+    [labItemsDetail.length, lab.note, appointmentId, patientId]
   );
 
   const canSubmitRx = useMemo(
@@ -185,6 +199,47 @@ export default function DoctorPatientWorkspace() {
     }
   };
 
+  const handleAddLab = useCallback(() => {
+    if (!selectedLabId) {
+      toast.error("Vui lòng chọn xét nghiệm");
+      return;
+    }
+    const selected = labTests.find((t) => t.id === selectedLabId);
+    if (!selected) return;
+
+    setLabItemsDetail((prev) => [
+      ...prev,
+      { id: selected.id, code: selected.code, name: selected.name, note: "" },
+    ]);
+    setLab((l) => ({ ...l, items: [...l.items, selected.id] }));
+    setSelectedLabId(null);
+  }, [selectedLabId, labTests]);
+
+  const handleRemoveLab = useCallback((removeId: number) => {
+    setLabItemsDetail((arr) => arr.filter((x) => x.id !== removeId));
+    setLab((l) => ({ ...l, items: l.items.filter((id) => id !== removeId) }));
+  }, []);
+
+  const handleLabNoteChange = useCallback((id: number, val: string) => {
+    setLabItemsDetail((arr) =>
+      arr.map((x) => (x.id === id ? { ...x, note: val } : x))
+    );
+  }, []);
+
+  const handleAddRx = useCallback(() => {
+    const available = medicines.filter(
+      (m) => m.isActive && Number(m.stock ?? 0) > 0
+    );
+    if (available.length === 0) {
+      toast.error("Không có thuốc nào còn hàng để thêm!");
+      return;
+    }
+    setRxLines((ls) => [
+      ...ls,
+      { drugId: available[0].id, dose: "", frequency: "", duration: "" },
+    ]);
+  }, [medicines]);
+
   const handleSaveLab = async () => {
     if (!canSubmitLab) {
       toast.error(
@@ -196,7 +251,8 @@ export default function DoctorPatientWorkspace() {
     }
     try {
       setSubmitting(true);
-      await apiSubmitLabOrder(lab);
+      // Send both TestIds and full test details so backend can record the test type if supported
+      await apiSubmitLabOrder({ ...lab, tests: labItemsDetail });
       openSuccess(
         lab.items.length > 0 ? "Đã lưu chỉ định" : "Đã lưu ghi chú",
         lab.items.length > 0
@@ -368,22 +424,26 @@ export default function DoctorPatientWorkspace() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="font-medium">Danh mục xét nghiệm</p>
-              <button
-                onClick={() => {
-                  if (labTests.length === 0) {
-                    toast.error("Không có xét nghiệm nào để chọn");
-                    return;
+              <div className="flex items-center gap-2">
+                <SelectMenu<number>
+                  value={selectedLabId ?? undefined}
+                  onChange={(v) =>
+                    setSelectedLabId(v != null ? Number(v) : null)
                   }
-                  setLab((l) => ({
-                    ...l,
-                    items: [...l.items, labTests[0].id],
-                  }));
-                }}
-                disabled={labTests.length === 0}
-                className="cursor-pointer px-3 py-1.5 rounded-[var(--rounded)] bg-primary-linear text-white"
-              >
-                + Thêm
-              </button>
+                  placeholder={
+                    labTests.length > 0 ? "Chọn xét nghiệm" : "Đang tải..."
+                  }
+                  disabled={labTests.length === 0}
+                  options={availableLabOptions}
+                />
+                <button
+                  onClick={handleAddLab}
+                  disabled={!selectedLabId || availableLabOptions.length === 0}
+                  className="cursor-pointer px-3 py-3 rounded-[var(--rounded)] bg-primary-linear text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  + Thêm
+                </button>
+              </div>
             </div>
 
             {lab.items.length === 0 ? (
@@ -395,40 +455,41 @@ export default function DoctorPatientWorkspace() {
               </div>
             ) : (
               <div className="space-y-2">
-                {lab.items.map((labId, idx) => (
+                {labItemsDetail.map((item) => (
                   <div
-                    key={`${labId}-${idx}`}
-                    className="flex gap-2 items-center"
+                    key={item.id}
+                    className="p-3 border rounded-md bg-gray-50 space-y-3"
                   >
-                    <div className="flex-1">
-                      <SelectMenu<number>
-                        value={labId}
-                        onChange={(v) =>
-                          setLab((l) => ({
-                            ...l,
-                            items: l.items.map((x, i) =>
-                              i === idx ? Number(v) : x
-                            ),
-                          }))
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">
+                          {item.code} — {item.name}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          handleRemoveLab(item.id);
+                        }}
+                        className="cursor-pointer rounded-md text-rose-600 px-2 py-1 hover:bg-rose-50"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Ghi chú xét nghiệm (không bắt buộc)
+                      </label>
+                      <textarea
+                        value={item.note ?? ""}
+                        onChange={(e) =>
+                          handleLabNoteChange(item.id, e.target.value)
                         }
-                        options={labTests.map((s) => ({
-                          value: s.id,
-                          label: `${s.code} — ${s.name}`,
-                        }))}
+                        rows={2}
+                        className="w-full rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"
+                        placeholder="Ghi chú cho xét nghiệm này (ví dụ: yêu cầu riêng, vị trí lấy mẫu...)"
                       />
                     </div>
-                    <button
-                      onClick={() =>
-                        setLab((l) => ({
-                          ...l,
-                          items: l.items.filter((_, i) => i !== idx),
-                        }))
-                      }
-                      className="cursor-pointer rounded-md text-rose-600 px-2 py-1 hover:bg-rose-50"
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
                   </div>
                 ))}
               </div>
@@ -478,24 +539,7 @@ export default function DoctorPatientWorkspace() {
             <div className="flex items-center justify-between">
               <p className="font-semibold">Danh mục thuốc</p>
               <button
-                onClick={() => {
-                  const available = medicines.filter(
-                    (m) => m.isActive && Number(m.stock ?? 0) > 0
-                  );
-                  if (available.length === 0) {
-                    toast.error("Không có thuốc nào còn hàng để thêm!");
-                    return;
-                  }
-                  setRxLines((ls) => [
-                    ...ls,
-                    {
-                      drugId: available[0].id,
-                      dose: "",
-                      frequency: "",
-                      duration: "",
-                    },
-                  ]);
-                }}
+                onClick={handleAddRx}
                 disabled={!hasAvailableMedicines}
                 className="cursor-pointer px-3 py-1.5 rounded-[var(--rounded)] bg-primary-linear text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >

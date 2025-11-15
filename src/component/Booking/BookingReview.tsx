@@ -173,10 +173,9 @@ export const BookingReview = () => {
       };
 
       const result = await createAppointment(appointmentData);
-      console.log("✅ Đặt lịch thành công:", result);
 
       toast.success("Đặt lịch thành công! Vui lòng kiểm tra lịch hẹn của bạn.");
-      setTimeout(() => navigate("/user/appointments"), 2000);
+      setTimeout(() => navigate("/user/appointment-shedule"), 2000);
     } catch (error) {
       toast.error(
         (error as Error).message || "Đặt lịch thất bại. Vui lòng thử lại!"
@@ -255,7 +254,7 @@ export const BookingReview = () => {
             Vui lòng kiểm tra kỹ thông tin trước khi xác nhận
           </p>
         </div>
-      </div>
+      </div>  
 
       {/* Review Info */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

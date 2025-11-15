@@ -114,9 +114,6 @@ export async function apiGetEncounterDetail(
     }
   }
 
-  console.log("🔍 Fetching encounter detail for:", codeOrId);
-  console.log("📍 URL:", `/api/v1/encounters/details/${normalized}`);
-
   try {
     const { data } = await authHttp.get<{
       success: boolean;
@@ -124,15 +121,12 @@ export async function apiGetEncounterDetail(
       data: EncounterDetail;
     }>(`/api/v1/encounters/details/${normalized}`);
 
-    console.log("✅ Encounter detail fetched successfully:", data.data);
     return data.data;
-  } catch (error: any) {
-    console.error("❌ Failed to fetch encounter detail:");
-    console.error("  - CodeOrId:", codeOrId);
-    console.error("  - Status:", error?.response?.status);
-    console.error("  - Message:", error?.response?.data?.message);
-    console.error("  - Full error:", error);
-    throw error;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to fetch encounter detail");
   }
 }
 
