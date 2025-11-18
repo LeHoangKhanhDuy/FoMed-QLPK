@@ -83,7 +83,7 @@ export const MedicalHistory = () => {
             ) {
               return {
                 ...encounter,
-                status: "finalized", 
+                status: "finalized",
               };
             }
 
@@ -308,7 +308,7 @@ export const MedicalHistory = () => {
                   <td className="px-4 py-4 font-medium text-gray-800">
                     {encounter.encounterCode}
                   </td>
-                  <td className="px-4 py-4 text-gray-600">
+                  <td className="px-4 py-4 text-center text-gray-600">
                     <div>{formatDateOnly(encounter.encounterDate) || "-"}</div>
                     <div className="text-xs text-slate-500">
                       {formatTimeOnly(encounter.encounterDate) || ""}
