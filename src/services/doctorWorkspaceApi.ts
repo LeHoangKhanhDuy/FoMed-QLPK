@@ -1,4 +1,3 @@
-// src/services/doctorWorkspaceApi.ts
 import { authHttp } from "./http";
 import { getErrorMessage } from "../Utils/errorHepler";
 import type {
@@ -13,24 +12,58 @@ import type {
 
 const PREFIX = "/api/doctor-workspace";
 
+// ==================== INTERNAL INTERFACES (Response Types) ====================
+
+// Response từ BE: GET /lab-tests
+interface LabTestResponse {
+  labTestId: number;
+  code: string | null;
+  name: string;
+}
+
+// Response từ BE: GET /medicines
+interface MedicineResponse {
+  medicineId: number;
+  name: string;
+  unit: string | null;
+  isActive: boolean;
+  stock: number;
+}
+
+// Response từ BE: POST /encounters/start
+interface StartEncounterResponse {
+  appointmentId: number;
+  status: string;
+}
+
+// Response từ BE: POST /encounters/complete
+interface CompleteEncounterResponse {
+  appointmentId: number;
+  status: string;
+  invoiceId: number;
+  invoiceCode: string;
+}
+
+// ==================== API FUNCTIONS ====================
+
 /** Lấy danh mục xét nghiệm */
 export async function apiGetLabTests(): Promise<LabItem[]> {
   try {
     const { data } = await authHttp.get<{
       success: boolean;
       message: string;
-      data: any;
+      data: LabTestResponse[]; // Định nghĩa chặt chẽ thay vì any
     }>(`${PREFIX}/lab-tests`);
-    // Backend may return different shapes. Normalize to LabItem[] when possible.
-    const d = data.data;
-    if (Array.isArray(d)) return d as LabItem[];
-    if (!d) return [];
-    if (Array.isArray(d.labTests)) return d.labTests as LabItem[];
-    if (Array.isArray(d.items)) return d.items as LabItem[];
-    // If data is an object with numeric keys or wrapped structure, try to extract arrays
-    const maybeArray = Object.values(d).find((v) => Array.isArray(v));
-    if (Array.isArray(maybeArray)) return maybeArray as LabItem[];
-    return [];
+
+    const items = data.data || [];
+
+    // Map từ backend (labTestId) sang frontend (id)
+    return items.map((item) => ({
+      id: item.labTestId,
+      code: item.code || "",
+      name: item.name,
+      price: 0, // Backend chưa trả về giá ở API này, set mặc định hoặc update BE nếu cần
+    }));
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không tải được danh mục xét nghiệm"));
   }
@@ -50,13 +83,7 @@ export async function apiGetMedicines(): Promise<
     const { data } = await authHttp.get<{
       success: boolean;
       message: string;
-      data: Array<{
-        medicineId: number;
-        name: string;
-        unit?: string;
-        isActive: boolean;
-        stock: number;
-      }>;
+      data: MedicineResponse[];
     }>(`${PREFIX}/medicines`);
 
     return (data.data || []).map((med) => ({
@@ -64,7 +91,7 @@ export async function apiGetMedicines(): Promise<
       name: med.name,
       unit: med.unit ?? "",
       isActive: med.isActive,
-      stock: med.stock ?? 0,
+      stock: med.stock,
     }));
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không tải được danh mục thuốc"));
@@ -90,7 +117,7 @@ export async function apiStartEncounter(payload: StartEncounterPayload) {
     const { data } = await authHttp.post<{
       success: boolean;
       message: string;
-      data: { encounterId: number };
+      data: StartEncounterResponse;
     }>(`${PREFIX}/encounters/start`, payload);
     return data.data;
   } catch (e) {
@@ -101,11 +128,12 @@ export async function apiStartEncounter(payload: StartEncounterPayload) {
 /** Lưu chẩn đoán */
 export async function apiSubmitDiagnosis(payload: DiagnosisPayload) {
   try {
+    // Backend C# map tự động camelCase -> PascalCase
     const transformedPayload = {
-      AppointmentId: payload.appointmentId,
-      Symptoms: payload.symptoms,
-      Diagnosis: payload.diagnosis,
-      Note: payload.note,
+      appointmentId: payload.appointmentId,
+      symptoms: payload.symptoms,
+      diagnosis: payload.diagnosis,
+      note: payload.note,
     };
     await authHttp.post(`${PREFIX}/encounters/diagnosis`, transformedPayload);
   } catch (e) {
@@ -116,26 +144,15 @@ export async function apiSubmitDiagnosis(payload: DiagnosisPayload) {
 /** Lưu chỉ định xét nghiệm */
 export async function apiSubmitLabOrder(payload: LabOrderPayload) {
   try {
-    const transformedPayload: any = {
-      AppointmentId: payload.appointmentId,
-      TestIds: payload.items, // ← Backend expects TestIds
-      Note: payload.note,
-      Priority: payload.priority,
+    // Backend LabOrderReq chỉ cần: { AppointmentId, TestIds, Note, Priority }
+    const transformedPayload = {
+      appointmentId: payload.appointmentId,
+      testIds: payload.items, // List<int> TestIds
+      note: payload.note,
+      priority: payload.priority,
     };
 
-    // If frontend provides full test details, attach them as well.
-    if (
-      payload.tests &&
-      Array.isArray(payload.tests) &&
-      payload.tests.length > 0
-    ) {
-      transformedPayload.Tests = payload.tests.map((t) => ({
-        Id: t.id,
-        Code: t.code,
-        Name: t.name,
-        Note: t.note?.trim() || null,
-      }));
-    }
+    // Đã xóa phần map 'Tests' vì backend không nhận, chỉ nhận danh sách ID
     await authHttp.post(`${PREFIX}/encounters/lab-orders`, transformedPayload);
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không thể lưu chỉ định xét nghiệm"));
@@ -161,28 +178,28 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
     });
 
     const transformedPayload = {
-      AppointmentId: payload.appointmentId,
-      Lines: payload.lines.map((line) => ({
-        MedicineId: line.drugId,
-        Dose: line.dose.trim(),
-        Frequency: line.frequency.trim(),
-        Duration: line.duration.trim(),
-        Note: line.note?.trim() || null,
+      appointmentId: payload.appointmentId,
+      lines: payload.lines.map((line) => ({
+        medicineId: line.drugId,
+        dose: line.dose.trim(),
+        frequency: line.frequency.trim(),
+        duration: line.duration.trim(),
+        note: line.note?.trim() || null,
       })),
-      Advice: payload.advice?.trim() || null,
+      advice: payload.advice?.trim() || null,
     };
 
-    // Tạo encounter nếu chưa có
+    // Tạo encounter ảo nếu chưa có (để đảm bảo integrity)
     try {
       const encounterPayload = {
-        AppointmentId: payload.appointmentId,
-        Symptoms: "Khám bệnh",
-        Diagnosis: "Chẩn đoán ban đầu",
-        Note: "Tự động tạo để kê toa",
+        appointmentId: payload.appointmentId,
+        symptoms: "Khám bệnh",
+        diagnosis: "Chẩn đoán ban đầu",
+        note: "Tự động tạo để kê toa",
       };
       await authHttp.post(`${PREFIX}/encounters/diagnosis`, encounterPayload);
     } catch {
-      // Ignore: có thể đã tồn tại
+      // Ignore: Nếu đã có encounter rồi thì backend sẽ bỏ qua hoặc update nhẹ, không sao
     }
 
     const response = await authHttp.post(
@@ -198,7 +215,12 @@ export async function apiSubmitPrescription(payload: PrescriptionPayload) {
 /** Hoàn tất khám */
 export async function apiCompleteEncounter(payload: CompleteEncounterPayload) {
   try {
-    await authHttp.post(`${PREFIX}/encounters/complete`, payload);
+    const { data } = await authHttp.post<{
+      success: boolean;
+      message: string;
+      data: CompleteEncounterResponse;
+    }>(`${PREFIX}/encounters/complete`, payload);
+    return data.data;
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không thể hoàn tất phiên khám"));
   }
