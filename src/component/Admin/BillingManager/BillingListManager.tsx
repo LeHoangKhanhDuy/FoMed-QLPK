@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Plus, Search, Funnel, Wallet } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { Plus, Search, Funnel, Wallet, RefreshCw } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { type PaymentMethod } from "../../../types/billing/billing";
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 import {
@@ -98,6 +98,9 @@ const cx = (...a: Array<string | false | undefined>) =>
 
 export default function BillingListManager() {
   const nav = useNavigate();
+  const location = useLocation();
+  const prevLocationRef = useRef<string>(location.pathname);
+  const lastRefreshTimeRef = useRef<number>(0);
   // tab hiện tại
   const [tab, setTab] = useState<"invoices" | "pending">("pending");
   // filter
@@ -146,11 +149,79 @@ export default function BillingListManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, status]);
 
+  // Tự động refresh khi quay lại từ trang thanh toán hoặc các trang khác
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const prevPath = prevLocationRef.current;
+    
+    // Nếu quay lại trang billing từ trang payment hoặc details
+    if (
+      currentPath === "/cms/billing" &&
+      prevPath !== currentPath &&
+      (prevPath?.includes("/cms/billing/payment") ||
+        prevPath?.includes("/cms/billing/details") ||
+        prevPath?.includes("/cms/billing/new"))
+    ) {
+      // Refresh dữ liệu khi quay lại
+      if (tab === "invoices") {
+        loadInvoices();
+      } else {
+        loadPending();
+      }
+    }
+    
+    prevLocationRef.current = currentPath;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, tab]);
+
+  // Refresh khi tab/window được focus lại (với debounce để tránh refresh quá thường xuyên)
+  useEffect(() => {
+    const MIN_REFRESH_INTERVAL = 5000; // 5 giây
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const now = Date.now();
+        // Chỉ refresh nếu đã qua ít nhất 5 giây kể từ lần refresh cuối
+        if (now - lastRefreshTimeRef.current > MIN_REFRESH_INTERVAL) {
+          lastRefreshTimeRef.current = now;
+          // Refresh dữ liệu khi tab được focus lại
+          if (tab === "invoices") {
+            loadInvoices();
+          } else {
+            loadPending();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
   return (
     <section className="space-y-4">
-      <header className="flex items-center gap-2">
-        <Wallet className="w-6 h-6 text-sky-500" />
-        <h1 className="text-xl font-bold">Quản lý thanh toán</h1>
+      <header className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Wallet className="w-6 h-6 text-sky-500" />
+          <h1 className="text-xl font-bold">Quản lý thanh toán</h1>
+        </div>
+        <button
+          onClick={() => {
+            if (tab === "invoices") {
+              loadInvoices();
+            } else {
+              loadPending();
+            }
+          }}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--rounded)] border bg-white hover:bg-slate-50 cursor-pointer"
+          title="Làm mới dữ liệu"
+        >
+          <RefreshCw className="w-4 h-4" />
+          <span className="hidden sm:inline">Làm mới</span>
+        </button>
       </header>
 
       <div className="rounded-xl border bg-white p-4 shadow-xs space-y-3">

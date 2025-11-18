@@ -24,7 +24,17 @@ export default function AppointmentSchedule() {
         page,
         limit,
       });
-      setItems(data.items);
+      // Sort items so newest visit datetime (date + time) appears first
+      const toDate = (it: BEAppointment) => {
+        const date = it.visitDate ?? "";
+        const time = it.visitTime ?? "00:00";
+        // Construct an ISO-like string. If either is missing, Date will handle it.
+        return new Date(`${date}T${time}`);
+      };
+      const sorted = (data.items ?? []).slice().sort((a, b) => {
+        return +toDate(b) - +toDate(a);
+      });
+      setItems(sorted);
       setTotalPages(data.totalPages);
       setTotal(data.total);
     } catch (err) {

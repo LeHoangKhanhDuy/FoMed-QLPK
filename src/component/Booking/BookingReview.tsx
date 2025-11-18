@@ -18,6 +18,13 @@ import { createAppointment } from "../../services/appointmentsApi";
 import { apiGetMyPatientId } from "../../services/patientsApi";
 
 export const BookingReview = () => {
+  type UserInfo = {
+    name?: string;
+    email?: string;
+    phone?: string;
+    patientId?: number;
+    [k: string]: unknown;
+  };
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -83,9 +90,14 @@ export const BookingReview = () => {
         const doctor: DoctorDetail = await apiGetDoctorDetail(Number(doctorId));
 
         // 3. Lấy thông tin user đang đăng nhập
-        const currentUser = JSON.parse(
-          localStorage.getItem("userInfo") || "{}"
-        );
+        let currentUser: Record<string, unknown> = {};
+        try {
+          const raw = localStorage.getItem("userInfo");
+          currentUser = raw ? JSON.parse(raw) : {};
+        } catch {
+          currentUser = {};
+        }
+        const userInfo = currentUser as UserInfo;
 
         setBookingInfo({
           service: {
@@ -103,11 +115,11 @@ export const BookingReview = () => {
             room: doctor.roomName || "Chưa xác định",
           },
           date: visitDate,
-          time: visitTime.substring(0, 5),
+          time: visitTime ? visitTime.substring(0, 5) : "",
           user: {
-            name: currentUser.name || "Chưa xác định",
-            email: currentUser.email || "Chưa xác định",
-            phone: currentUser.phone || "Chưa xác định",
+            name: (userInfo.name as string) || "Chưa xác định",
+            email: (userInfo.email as string) || "Chưa xác định",
+            phone: (userInfo.phone as string) || "Chưa xác định",
           },
         });
       } catch (error) {
@@ -128,7 +140,14 @@ export const BookingReview = () => {
     try {
       setSubmitting(true);
 
-      const currentUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      let currentUser: Record<string, unknown> = {};
+      try {
+        const raw = localStorage.getItem("userInfo");
+        currentUser = raw ? JSON.parse(raw) : {};
+      } catch {
+        currentUser = {};
+      }
+      const userInfo = currentUser as UserInfo;
       const token = localStorage.getItem("userToken");
 
       if (!token) {
@@ -137,7 +156,7 @@ export const BookingReview = () => {
         return;
       }
 
-      let patientId = currentUser.patientId;
+      let patientId = userInfo.patientId;
 
       // Nếu chưa có patientId, gọi API để lấy/tạo
       if (!patientId) {
@@ -146,8 +165,8 @@ export const BookingReview = () => {
           patientId = patientInfo.patientId;
 
           // Cập nhật localStorage
-          currentUser.patientId = patientId;
-          localStorage.setItem("userInfo", JSON.stringify(currentUser));
+          const updated = { ...userInfo, patientId } as UserInfo;
+          localStorage.setItem("userInfo", JSON.stringify(updated));
 
           if (patientInfo.isNew) {
             toast.success("Đã tạo hồ sơ bệnh nhân");
@@ -172,11 +191,10 @@ export const BookingReview = () => {
         reason: `Đặt khám ${bookingInfo.service.name}`,
       };
 
-      const result = await createAppointment(appointmentData);
-      console.log("✅ Đặt lịch thành công:", result);
+      await createAppointment(appointmentData);
 
       toast.success("Đặt lịch thành công! Vui lòng kiểm tra lịch hẹn của bạn.");
-      setTimeout(() => navigate("/user/appointments"), 2000);
+      setTimeout(() => navigate("/user/appointment-shedule"), 2000);
     } catch (error) {
       toast.error(
         (error as Error).message || "Đặt lịch thất bại. Vui lòng thử lại!"
@@ -187,7 +205,10 @@ export const BookingReview = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split("-");
+    if (!dateStr || typeof dateStr !== "string") return "—";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    const [year, month, day] = parts;
     return `${day}/${month}/${year}`;
   };
 

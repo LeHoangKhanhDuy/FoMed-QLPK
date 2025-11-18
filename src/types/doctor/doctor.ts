@@ -207,6 +207,13 @@ export interface LabOrderPayload {
   appointmentId: number;
   patientId: number;
   items: number[]; // danh sách id xét nghiệm
+  // Optional: đầy đủ thông tin xét nghiệm để gửi kèm (id, code, name)
+  tests?: Array<{
+    id: number;
+    code: string;
+    name: string;
+    note?: string | null;
+  }>;
   note?: string | null;
   priority?: "normal" | "urgent";
 }
