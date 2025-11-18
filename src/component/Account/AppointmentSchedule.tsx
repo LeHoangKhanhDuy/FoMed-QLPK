@@ -118,6 +118,26 @@ export default function AppointmentSchedule() {
     }
   };
 
+  const formatDateString = (dateStr?: string) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) {
+        // try basic YYYY-MM-DD parsing if Date failed
+        const parts = dateStr.split("T")[0].split("-");
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return dateStr;
+      }
+      return d.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   return (
     <div className="md:flex-row min-h-screen p-4 mx-auto max-w-screen-2xl px-0 lg:px-0 gap-6">
       <h2 className="text-2xl font-bold text-center md:text-left">
@@ -159,7 +179,7 @@ export default function AppointmentSchedule() {
                     {a.code}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <div>{a.visitDate}</div>
+                    <div>{formatDateString(a.visitDate) || "-"}</div>
                     <div className="text-xs text-slate-500">{a.visitTime}</div>
                   </td>
                   <td className="px-6 py-4 text-center">
