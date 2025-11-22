@@ -5,7 +5,6 @@ import ServiceClinicCard from "../Card/ServiceCard";
 import AuthModal from "../Auth/AuthModalProps";
 import defaultImage from "../../assets/images/khamtongquat.jpg";
 import type { ServiceItem } from "../../types/serviceType/service";
-import type { AppUser } from "../../types/auth/login";
 import { getService } from "../../services/service";
 import SkeletonHomeService from "../../Utils/SkeletonHomeService";
 
@@ -128,7 +127,7 @@ export default function ServiceClinic() {
   }, [activeTab]);
 
   // Handler khi đăng nhập thành công
-  const handleLoginSuccess = (u: AppUser) => {
+  const handleLoginSuccess = () => {
     setLoginOpen(false);
 
     // Lấy URL lưu trong localStorage và điều hướng đến đó
