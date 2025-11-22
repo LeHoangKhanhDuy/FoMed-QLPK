@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import defaultImage from "../../assets/images/khamtongquat.jpg";
 
 export interface ServiceClinicCardProps {
@@ -14,6 +15,7 @@ export interface ServiceClinicCardProps {
   className?: string;
   onBook?: () => void;
   linkTo?: string;
+  onLoginRequired?: () => void; // ✅ Callback để hiển thị modal đăng nhập
 }
 
 const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
@@ -26,7 +28,32 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
   actionLabel = "Đặt lịch ngay",
   className = "",
   linkTo = "/booking-doctor", // <-- default route
+  onLoginRequired,
 }) => {
+  const navigate = useNavigate();
+  const handleBookClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    // Kiểm tra đăng nhập
+    const userInfo = localStorage.getItem("userInfo");
+    const userToken = localStorage.getItem("userToken");
+
+    if (!userInfo || !userToken) {
+      // Chưa đăng nhập - hiển thị modal
+      toast.error("Vui lòng đăng nhập để đặt lịch khám!");
+      localStorage.setItem("redirectAfterLogin", linkTo);
+      onLoginRequired?.();
+      return;
+    }
+
+    // Đã đăng nhập - gọi callback hoặc navigate
+    if (onBook) {
+      onBook();
+    } else {
+      navigate(linkTo);
+    }
+  };
+
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating); // số sao đầy
@@ -106,10 +133,7 @@ const ServiceClinicCard: React.FC<ServiceClinicCardProps> = ({
       <div className="p-4 pt-0 mt-auto">
         <button
           type="button"
-          onClick={(e) => {
-            e.preventDefault(); // Ngăn Link navigate
-            onBook?.();
-          }}
+          onClick={handleBookClick}
           className="w-full cursor-pointer rounded-xl bg-primary-linear text-white font-semibold py-3 active:scale-[0.98] transition"
         >
           {actionLabel}

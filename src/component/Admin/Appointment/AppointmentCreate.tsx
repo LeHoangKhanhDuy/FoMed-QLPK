@@ -1,5 +1,13 @@
 // src/components/Admin/Appointment/AppointmentCreate.tsx
-import { CalendarPlus, Hash, PhoneIcon, User2, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CalendarPlus,
+  Hash,
+  PhoneIcon,
+  User2,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   Appointment,
@@ -122,41 +130,41 @@ type PatientExtra = {
 
 function validatePatientExtra(extra: PatientExtra): PatientExtraErrors {
   const err: PatientExtraErrors = {};
-  
+
   if (!extra.gender) {
     err.gender = "Vui lòng chọn giới tính.";
   }
-  
+
   if (!extra.dob.trim()) {
     err.dob = "Vui lòng nhập ngày sinh.";
   } else if (!isPastOrToday(extra.dob)) {
     err.dob = "Ngày sinh phải bé hơn hoặc bằng hôm nay.";
   }
-  
+
   if (!extra.address.trim()) {
     err.address = "Vui lòng nhập địa chỉ.";
   }
-  
+
   if (!extra.district.trim()) {
     err.district = "Vui lòng nhập phường/xã.";
   }
-  
+
   if (!extra.city.trim()) {
     err.city = "Vui lòng nhập tỉnh/thành phố.";
   }
-  
+
   if (!extra.nationalId.trim()) {
     err.nationalId = "Vui lòng nhập CCCD.";
   } else if (!/^\d{9}$|^\d{12}$/.test(extra.nationalId)) {
     err.nationalId = "CMND/CCCD phải gồm 9 hoặc 12 chữ số.";
   }
-  
+
   if (!extra.email.trim()) {
     err.email = "Vui lòng nhập email.";
   } else if (!isEmail(extra.email)) {
     err.email = "Email không hợp lệ.";
   }
-  
+
   return err;
 }
 
@@ -192,8 +200,10 @@ export default function AppointmentCreate() {
   });
   const [touched, setTouched] = useState<Touched>({});
   const [errors, setErrors] = useState<Errors>({});
-  const [patientExtraTouched, setPatientExtraTouched] = useState<PatientExtraTouched>({});
-  const [patientExtraErrors, setPatientExtraErrors] = useState<PatientExtraErrors>({});
+  const [patientExtraTouched, setPatientExtraTouched] =
+    useState<PatientExtraTouched>({});
+  const [patientExtraErrors, setPatientExtraErrors] =
+    useState<PatientExtraErrors>({});
   const [services, setServices] = useState<ServiceOption[]>([]);
 
   const [doctors, setDoctors] = useState<BEDoctor[]>([]);
@@ -202,7 +212,7 @@ export default function AppointmentCreate() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const [dobInputValue, setDobInputValue] = useState("");
   // Calendar state for date of birth picker
   const [dobCalOpen, setDobCalOpen] = useState(false);
   const [dobViewYear, setDobViewYear] = useState<number>(() =>
@@ -271,13 +281,14 @@ export default function AppointmentCreate() {
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
-      
+
       // Gọi tất cả API ĐỒNG THỜI thay vì tuần tự
-      const [doctorsResult, doctorUsersResult, servicesResult] = await Promise.allSettled([
-        apiListDoctors({ page: 1, limit: 200 }),
-        apiListUsersByRoleDoctor({ page: 1, limit: 200, isActive: true }),
-        getService({ page: 1, pageSize: 200, isActive: true })
-      ]);
+      const [doctorsResult, doctorUsersResult, servicesResult] =
+        await Promise.allSettled([
+          apiListDoctors({ page: 1, limit: 200 }),
+          apiListUsersByRoleDoctor({ page: 1, limit: 200, isActive: true }),
+          getService({ page: 1, pageSize: 200, isActive: true }),
+        ]);
 
       // Xử lý kết quả doctors
       if (doctorsResult.status === "fulfilled") {
@@ -292,10 +303,15 @@ export default function AppointmentCreate() {
         const users = doctorUsersResult.value.items ?? [];
         setDoctorUsers(users);
         if (!users.length) {
-          console.warn("⚠️ Không có user role=DOCTOR. Kiểm tra roles ở BE hoặc dữ liệu mẫu.");
+          console.warn(
+            "⚠️ Không có user role=DOCTOR. Kiểm tra roles ở BE hoặc dữ liệu mẫu."
+          );
         }
       } else {
-        console.error("❌ Error loading doctor users:", doctorUsersResult.reason);
+        console.error(
+          "❌ Error loading doctor users:",
+          doctorUsersResult.reason
+        );
         toast.error("Không tải được danh sách người dùng (DOCTOR)");
       }
 
@@ -317,6 +333,15 @@ export default function AppointmentCreate() {
 
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    if (patientExtra.dob) {
+      setDobInputValue(ymdToDmy(patientExtra.dob));
+    } else {
+      // Nếu data rỗng thì reset input rỗng
+      setDobInputValue("");
+    }
+  }, [patientExtra.dob]);
 
   // ⬇️ Join logic: ƯU TIÊN Doctors table (có doctorId thật), fallback về Users
   const doctorOptions = useMemo(() => {
@@ -429,15 +454,27 @@ export default function AppointmentCreate() {
     return t <= today;
   };
 
-  const gotoDobPrevMonth = () =>
-    setDobViewMonth((m) => (m === 0 ? (setDobViewYear((y) => y - 1), 11) : m - 1));
-  const gotoDobNextMonth = () =>
-    setDobViewMonth((m) => (m === 11 ? (setDobViewYear((y) => y + 1), 0) : m - 1));
+  const gotoDobPrevMonth = () => {
+    if (dobViewMonth === 0) {
+      setDobViewYear((y) => y - 1);
+      setDobViewMonth(11);
+    } else {
+      setDobViewMonth((m) => m - 1);
+    }
+  };
+  const gotoDobNextMonth = () => {
+    if (dobViewMonth === 11) {
+      setDobViewYear((y) => y + 1);
+      setDobViewMonth(0);
+    } else {
+      setDobViewMonth((m) => m + 1);
+    }
+  };
 
   const handleCreate = async () => {
     const v = validate(form);
     const vExtra = validatePatientExtra(patientExtra);
-    
+
     setErrors(v);
     setPatientExtraErrors(vExtra);
     setTouched({
@@ -458,7 +495,7 @@ export default function AppointmentCreate() {
       nationalId: true,
       email: true,
     });
-    
+
     if (Object.keys(v).length > 0 || Object.keys(vExtra).length > 0) {
       toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
@@ -535,7 +572,7 @@ export default function AppointmentCreate() {
 
       // Chỉ gửi reason nếu có giá trị
       if (form.reason?.trim()) {
-         payload.reason = form.reason.trim();
+        payload.reason = form.reason.trim();
       }
 
       const created = await createAppointment(payload);
@@ -563,18 +600,26 @@ export default function AppointmentCreate() {
       resetForm();
     } catch (err) {
       console.error("❌ Lỗi tạo appointment:", err);
-      
+
       // Lấy thông tin chi tiết từ response
-      const errorWithResponse = err as { response?: { data?: { message?: string; Message?: string; errors?: Record<string, string | string[]> } } };
+      const errorWithResponse = err as {
+        response?: {
+          data?: {
+            message?: string;
+            Message?: string;
+            errors?: Record<string, string | string[]>;
+          };
+        };
+      };
       const responseData = errorWithResponse?.response?.data;
       console.error("❌ Response data:", responseData);
-      
+
       let msg = "Không thể tạo lịch. Vui lòng thử lại.";
-      
+
       if (responseData) {
         // Trích xuất message từ response
         msg = responseData.message || responseData.Message || msg;
-        
+
         // Nếu có validation errors
         if (responseData.errors) {
           const errorMessages = Object.entries(responseData.errors)
@@ -588,7 +633,7 @@ export default function AppointmentCreate() {
       } else if (err instanceof Error) {
         msg = err.message;
       }
-      
+
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -658,10 +703,12 @@ export default function AppointmentCreate() {
               />
             </FormField>
 
-            <FormField 
-              label="Giới tính" 
+            <FormField
+              label="Giới tính"
               required
-              error={patientExtraTouched.gender ? patientExtraErrors.gender : ""}
+              error={
+                patientExtraTouched.gender ? patientExtraErrors.gender : ""
+              }
             >
               <SelectMenu<GenderOpt>
                 value={patientExtra.gender}
@@ -673,28 +720,58 @@ export default function AppointmentCreate() {
                   { value: "M", label: "Nam" },
                   { value: "F", label: "Nữ" },
                 ]}
-                invalid={!!(patientExtraTouched.gender && patientExtraErrors.gender)}
+                invalid={
+                  !!(patientExtraTouched.gender && patientExtraErrors.gender)
+                }
               />
             </FormField>
 
-            <FormField 
-              label="Ngày sinh" 
+            <FormField
+              label="Ngày sinh"
               required
               error={patientExtraTouched.dob ? patientExtraErrors.dob : ""}
             >
               <div className="relative">
                 <div className="mt-1 flex gap-2">
                   <input
-                    value={patientExtra.dob ? ymdToDmy(patientExtra.dob) : ""}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={dobInputValue}
                     onChange={(e) => {
-                      const ymd = dmyToYmd(e.target.value);
+                      const input = e.target.value;
+                      // Chỉ cho phép nhập số
+                      let filtered = input.replace(/\D/g, "");
+
+                      // Tự động thêm dấu / khi đủ 2 hoặc 4 chữ số
+                      if (filtered.length > 2) {
+                        // Thêm / sau 2 chữ số đầu (dd/)
+                        filtered =
+                          filtered.slice(0, 2) + "/" + filtered.slice(2);
+                      }
+                      if (filtered.length > 5) {
+                        // Thêm / sau 4 chữ số (mm/)
+                        const parts = filtered.split("/");
+                        filtered =
+                          parts[0] +
+                          "/" +
+                          parts[1].slice(0, 2) +
+                          "/" +
+                          parts[1].slice(2);
+                      }
+
+                      // LUÔN LUÔN cập nhật giá trị hiển thị
+                      setDobInputValue(filtered);
+
+                      // Kiểm tra format dd/mm/yyyy
+                      const ymd = dmyToYmd(filtered);
                       if (ymd) {
                         updatePatientExtra("dob", ymd);
                         const d = new Date(ymd);
                         setDobViewYear(d.getFullYear());
                         setDobViewMonth(d.getMonth());
-                      } else if (e.target.value === "") {
-                        updatePatientExtra("dob", "");
+                      } else {
+                        if (patientExtra.dob) updatePatientExtra("dob", "");
                       }
                     }}
                     onBlur={() => markPatientExtraTouched("dob")}
@@ -770,9 +847,11 @@ export default function AppointmentCreate() {
                             className={cn(
                               "cursor-pointer h-9 rounded-md text-sm",
                               "hover:bg-slate-100",
-                              selected && "bg-sky-500 text-white hover:bg-sky-500",
+                              selected &&
+                                "bg-sky-500 text-white hover:bg-sky-500",
                               !selected && today && "ring-1 ring-sky-400",
-                              !pastOrToday && "opacity-40 cursor-not-allowed hover:bg-transparent"
+                              !pastOrToday &&
+                                "opacity-40 cursor-not-allowed hover:bg-transparent"
                             )}
                             title={ymdToDmy(ymd)}
                           >
@@ -786,36 +865,46 @@ export default function AppointmentCreate() {
               </div>
             </FormField>
 
-            <FormField 
-              label="Địa chỉ" 
+            <FormField
+              label="Địa chỉ"
               required
-              error={patientExtraTouched.address ? patientExtraErrors.address : ""}
+              error={
+                patientExtraTouched.address ? patientExtraErrors.address : ""
+              }
             >
               <Input
                 value={patientExtra.address}
                 onChange={(e) => updatePatientExtra("address", e.target.value)}
                 onBlur={() => markPatientExtraTouched("address")}
                 placeholder="Số nhà, đường…"
-                invalid={!!(patientExtraTouched.address && patientExtraErrors.address)}
+                invalid={
+                  !!(patientExtraTouched.address && patientExtraErrors.address)
+                }
               />
             </FormField>
 
-            <FormField 
-              label="Phường/Xã" 
+            <FormField
+              label="Phường/Xã"
               required
-              error={patientExtraTouched.district ? patientExtraErrors.district : ""}
+              error={
+                patientExtraTouched.district ? patientExtraErrors.district : ""
+              }
             >
               <Input
                 value={patientExtra.district}
                 onChange={(e) => updatePatientExtra("district", e.target.value)}
                 onBlur={() => markPatientExtraTouched("district")}
                 placeholder="VD: Phường Bến Thành"
-                invalid={!!(patientExtraTouched.district && patientExtraErrors.district)}
+                invalid={
+                  !!(
+                    patientExtraTouched.district && patientExtraErrors.district
+                  )
+                }
               />
             </FormField>
 
-            <FormField 
-              label="Tỉnh/Thành phố" 
+            <FormField
+              label="Tỉnh/Thành phố"
               required
               error={patientExtraTouched.city ? patientExtraErrors.city : ""}
             >
@@ -824,29 +913,43 @@ export default function AppointmentCreate() {
                 onChange={(e) => updatePatientExtra("city", e.target.value)}
                 onBlur={() => markPatientExtraTouched("city")}
                 placeholder="VD: TP.HCM"
-                invalid={!!(patientExtraTouched.city && patientExtraErrors.city)}
+                invalid={
+                  !!(patientExtraTouched.city && patientExtraErrors.city)
+                }
               />
             </FormField>
 
-            <FormField 
-              label="CCCD" 
+            <FormField
+              label="CCCD"
               required
-              error={patientExtraTouched.nationalId ? patientExtraErrors.nationalId : ""}
+              error={
+                patientExtraTouched.nationalId
+                  ? patientExtraErrors.nationalId
+                  : ""
+              }
             >
               <Input
                 value={patientExtra.nationalId}
                 onChange={(e) =>
-                  updatePatientExtra("nationalId", e.target.value.replace(/\D/g, "").slice(0, 12))
+                  updatePatientExtra(
+                    "nationalId",
+                    e.target.value.replace(/\D/g, "").slice(0, 12)
+                  )
                 }
                 onBlur={() => markPatientExtraTouched("nationalId")}
                 placeholder="12 số"
                 inputMode="numeric"
-                invalid={!!(patientExtraTouched.nationalId && patientExtraErrors.nationalId)}
+                invalid={
+                  !!(
+                    patientExtraTouched.nationalId &&
+                    patientExtraErrors.nationalId
+                  )
+                }
               />
             </FormField>
 
-            <FormField 
-              label="Email" 
+            <FormField
+              label="Email"
               required
               error={patientExtraTouched.email ? patientExtraErrors.email : ""}
             >
@@ -857,7 +960,9 @@ export default function AppointmentCreate() {
                 placeholder="example@mail.com"
                 type="email"
                 autoComplete="email"
-                invalid={!!(patientExtraTouched.email && patientExtraErrors.email)}
+                invalid={
+                  !!(patientExtraTouched.email && patientExtraErrors.email)
+                }
               />
             </FormField>
 
@@ -886,7 +991,9 @@ export default function AppointmentCreate() {
             >
               <SelectMenu<number>
                 value={
-                  typeof form.serviceId === "number" ? form.serviceId : undefined
+                  typeof form.serviceId === "number"
+                    ? form.serviceId
+                    : undefined
                 }
                 options={services.map((s) => ({
                   value: s.serviceId,
@@ -929,7 +1036,7 @@ export default function AppointmentCreate() {
                 invalid={!!(touched.date && errors.date)}
               />
             </FormField>
-            
+
             <FormField
               label="Giờ khám"
               required
@@ -948,26 +1055,26 @@ export default function AppointmentCreate() {
           </div>
 
           <FormField
-              label="Lý do"
-              required
-              error={touched.reason ? errors.reason : ""}
-              className="md:col-span-2"
-            >
-              <textarea
-                {...markFirstAttr("reason")}
-                value={form.reason ?? ""}
-                onChange={(e) => update("reason", e.target.value.slice(0, 255))}
-                onBlur={() => markTouched("reason")}
-                rows={3}
-                placeholder="Triệu chứng, yêu cầu đặc biệt..."
-                className={cn(
-                  "w-full rounded-[var(--rounded)] border px-3 py-2 text-[16px] outline-none focus:ring-2 shadow-xs",
-                  touched.reason && errors.reason
-                    ? "border-red-400 focus:ring-red-300"
-                    : "border-slate-200 focus:ring-sky-400"
-                )}
-              />
-            </FormField>
+            label="Lý do"
+            required
+            error={touched.reason ? errors.reason : ""}
+            className="md:col-span-2"
+          >
+            <textarea
+              {...markFirstAttr("reason")}
+              value={form.reason ?? ""}
+              onChange={(e) => update("reason", e.target.value.slice(0, 255))}
+              onBlur={() => markTouched("reason")}
+              rows={3}
+              placeholder="Triệu chứng, yêu cầu đặc biệt..."
+              className={cn(
+                "w-full rounded-[var(--rounded)] border px-3 py-2 text-[16px] outline-none focus:ring-2 shadow-xs",
+                touched.reason && errors.reason
+                  ? "border-red-400 focus:ring-red-300"
+                  : "border-slate-200 focus:ring-sky-400"
+              )}
+            />
+          </FormField>
 
           <div className="mt-4 flex justify-center md:justify-start gap-3">
             <button
