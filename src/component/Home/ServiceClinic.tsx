@@ -2,8 +2,10 @@ import { useRef, useEffect, useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ServiceClinicCard from "../Card/ServiceCard";
+import AuthModal from "../Auth/AuthModalProps";
 import defaultImage from "../../assets/images/khamtongquat.jpg";
 import type { ServiceItem } from "../../types/serviceType/service";
+import type { AppUser } from "../../types/auth/login";
 import { getService } from "../../services/service";
 import SkeletonHomeService from "../../Utils/SkeletonHomeService";
 
@@ -24,37 +26,38 @@ export default function ServiceClinic() {
   const [activeTab, setActiveTab] = useState<TabKey>("goi");
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoginOpen, setLoginOpen] = useState(false);
 
   // Lấy dữ liệu từ API với cache
   useEffect(() => {
     const fetchServices = async () => {
       try {
         setLoading(true);
-        
+
         // Kiểm tra cache trong sessionStorage (cache 5 phút)
-        const cacheKey = 'home_services_cache';
-        const cacheTimeKey = 'home_services_cache_time';
+        const cacheKey = "home_services_cache";
+        const cacheTimeKey = "home_services_cache_time";
         const cached = sessionStorage.getItem(cacheKey);
         const cacheTime = sessionStorage.getItem(cacheTimeKey);
-        
+
         const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
         const now = Date.now();
-        
-        if (cached && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
+
+        if (cached && cacheTime && now - parseInt(cacheTime) < CACHE_DURATION) {
           // Dùng cache
           setServices(JSON.parse(cached));
           setLoading(false);
           return;
         }
-        
+
         // Fetch từ API - giảm xuống 20 items (đủ cho carousel)
         const res = await getService({
           pageSize: 20,
           isActive: true,
         });
-        
+
         setServices(res.data.items);
-        
+
         // Lưu vào cache
         sessionStorage.setItem(cacheKey, JSON.stringify(res.data.items));
         sessionStorage.setItem(cacheTimeKey, now.toString());
@@ -111,7 +114,7 @@ export default function ServiceClinic() {
         services: s.name,
         price:
           s.basePrice != null ? `${s.basePrice.toLocaleString()} đ` : "Liên hệ",
-        logo: s.imageUrl || s.category?.imageUrl || defaultImage, 
+        logo: s.imageUrl || s.category?.imageUrl || defaultImage,
         verified: s.isActive,
       })
     );
@@ -123,6 +126,18 @@ export default function ServiceClinic() {
       scrollerRef.current.scrollTo({ left: 0, behavior: "auto" });
     }
   }, [activeTab]);
+
+  // Handler khi đăng nhập thành công
+  const handleLoginSuccess = (u: AppUser) => {
+    setLoginOpen(false);
+
+    // Lấy URL lưu trong localStorage và điều hướng đến đó
+    const redirectUrl = localStorage.getItem("redirectAfterLogin");
+    if (redirectUrl) {
+      navigate(redirectUrl);
+      localStorage.removeItem("redirectAfterLogin");
+    }
+  };
 
   // Scroll tự động
   useEffect(() => {
@@ -288,6 +303,7 @@ export default function ServiceClinic() {
                     verified={c.verified}
                     linkTo={`/booking-doctor?serviceId=${c.id}`}
                     onBook={() => navigate(`/booking-doctor?serviceId=${c.id}`)}
+                    onLoginRequired={() => setLoginOpen(true)}
                   />
                 </div>
               ))
@@ -305,6 +321,13 @@ export default function ServiceClinic() {
           </button>
         </div>
       </section>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isLoginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }
