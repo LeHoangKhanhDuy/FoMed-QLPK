@@ -10,10 +10,23 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../../common/ConfirmModal";
-import { apiActivateDoctor, apiCreateDoctor, apiDeactivateDoctor, apiGetDoctors, apiUpdateDoctor } from "../../../services/doctorMApi";
-import type { CreateDoctorPayload, DoctorItem, UpdateDoctorPayload } from "../../../types/doctor/doctor";
+import {
+  apiActivateDoctor,
+  apiCreateDoctor,
+  apiDeactivateDoctor,
+  apiGetDoctors,
+  apiUpdateDoctor,
+} from "../../../services/doctorMApi";
+import type {
+  CreateDoctorPayload,
+  DoctorItem,
+  UpdateDoctorPayload,
+} from "../../../types/doctor/doctor";
 import DoctorModal from "./DoctorModal";
-import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../../Utils/avatarHelper";
+import {
+  getFullAvatarUrl,
+  DEFAULT_AVATAR_URL,
+} from "../../../Utils/avatarHelper";
 import { buildDoctorUpdatePayload } from "../../../Utils/buildDoctorUpdatePayload";
 
 // ===================== MAIN COMPONENT =====================
@@ -40,22 +53,22 @@ export default function DoctorManager() {
   const fetchData = async (opts?: { keepPage?: boolean }) => {
     try {
       setLoading(true);
-      
+
       // Đảm bảo page là số hợp lệ trước khi gửi request
       let currentPage = opts?.keepPage ? page : 1;
       if (isNaN(currentPage) || currentPage < 1) {
         currentPage = 1;
       }
-      
+
       const res = await apiGetDoctors({
         page: currentPage,
         limit: pageSize,
         search: query.trim() || undefined,
       });
-      
+
       setItems(res.items || []);
       setTotal(res.totalItems || 0);
-      
+
       if (!opts?.keepPage) {
         // Đảm bảo page từ response là số hợp lệ
         const newPage = Number(res.page);
@@ -116,11 +129,12 @@ export default function DoctorManager() {
     try {
       setLoading(true);
       if (editing) {
+        // Build partial payload comparing changed primitive fields
         const partial = buildDoctorUpdatePayload(
           payload as UpdateDoctorPayload,
           {
             title: editing.title,
-            primarySpecialtyId: null, // nếu bạn có initial khác, truyền đúng vào đây
+            primarySpecialtyId: null,
             licenseNo: editing.licenseNo,
             roomName: editing.roomName,
             experienceYears: editing.experienceYears ?? undefined,
@@ -128,12 +142,20 @@ export default function DoctorManager() {
             intro: null,
             isActive: editing.isActive,
             avatarUrl: editing.avatarUrl ?? undefined,
-            // nếu form modal có mảng hiện tại, truyền vào initial tương ứng
-            educations: (payload as UpdateDoctorPayload).educations,
-            expertises: (payload as UpdateDoctorPayload).expertises,
-            achievements: (payload as UpdateDoctorPayload).achievements,
+            // For arrays we don't have full initial here (list item), so use empty defaults
+            educations: [],
+            expertises: [],
+            achievements: [],
           }
         );
+
+        // If modal passed collections explicitly, force-include them in request
+        const up = payload as UpdateDoctorPayload;
+        if (up.educations !== undefined) partial.educations = up.educations;
+        if (up.expertises !== undefined) partial.expertises = up.expertises;
+        if (up.achievements !== undefined)
+          partial.achievements = up.achievements;
+
         await apiUpdateDoctor(editing.doctorId, partial);
         toast.success("Đã cập nhật hồ sơ bác sĩ");
       } else {
