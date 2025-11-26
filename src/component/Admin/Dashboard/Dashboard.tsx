@@ -304,7 +304,7 @@ export const Dashboard = () => {
           {/* Chart container cần relative để đặt tooltip */}
           <div className="relative" ref={chartRef}>
             {/* Bars */}
-            <div className="h-80 flex items-end justify-between gap-4 px-4">
+            <div className="h-64 sm:h-80 md:h-96 flex items-end justify-between gap-4 px-2 sm:px-4">
               {(bars.length
                 ? bars
                 : Array.from({ length: 12 }, (_, i) => ({
@@ -315,10 +315,10 @@ export const Dashboard = () => {
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div
                     className="w-full flex items-end justify-center"
-                    style={{ height: "320px" }}
+                    style={{ height: "100%" }}
                   >
                     <div
-                      className="w-6 bg-blue-500 rounded-t-lg hover:bg-blue-600 transition-all cursor-pointer"
+                      className="w-6 sm:w-8 md:w-10 bg-blue-500 rounded-t-lg hover:bg-blue-600 transition-all cursor-pointer"
                       style={{
                         height:
                           maxValue > 0
@@ -355,9 +355,7 @@ export const Dashboard = () => {
                         setTooltip({
                           x,
                           y: barRect.top - contRect.top - 8,
-                          text: `${fmtVND(
-                            Math.round(data.revenue ?? 0)
-                          )}`,
+                          text: `${fmtVND(Math.round(data.revenue ?? 0))}`,
                         });
                       }}
                       onMouseLeave={() => setTooltip(null)}
@@ -405,7 +403,9 @@ export const Dashboard = () => {
         {/* Monthly Target (từ API) */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Mục tiêu tháng này</h2>
+            <h2 className="text-lg font-bold text-gray-900">
+              Mục tiêu tháng này
+            </h2>
             <button
               className="text-gray-400 hover:text-gray-600 cursor-pointer"
               title="Tùy chọn"
@@ -432,7 +432,11 @@ export const Dashboard = () => {
 
           {/* Doughnut tiến độ */}
           <div className="relative h-48 mb-6 flex items-center justify-center">
-            <svg className="w-40 h-40 transform -rotate-90">
+            <svg
+              className="w-32 h-32 sm:w-40 sm:h-40 transform -rotate-90"
+              viewBox="0 0 160 160"
+              preserveAspectRatio="xMidYMid meet"
+            >
               <circle
                 cx="80"
                 cy="80"

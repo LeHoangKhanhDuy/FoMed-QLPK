@@ -1,5 +1,21 @@
 import { authHttp } from "./http";
 
+// Vietnamese month names used as fallback when API doesn't provide MonthName
+const VN_MONTHS = [
+  "Tháng 1",
+  "Tháng 2",
+  "Tháng 3",
+  "Tháng 4",
+  "Tháng 5",
+  "Tháng 6",
+  "Tháng 7",
+  "Tháng 8",
+  "Tháng 9",
+  "Tháng 10",
+  "Tháng 11",
+  "Tháng 12",
+];
+
 // =================== TYPES ===================
 export interface VisitDailyPoint {
   date: string;
@@ -174,12 +190,34 @@ export async function getMonthlySales(params?: {
   const raw = rawAny ?? {};
 
   const monthlyRaw = raw.monthly ?? raw.Monthly ?? [];
-  const monthly: MonthlySalePoint[] = monthlyRaw.map((m: RawMonthlyItem) => ({
-    month: m.month ?? m.Month ?? 0,
-    monthName: m.monthName ?? m.MonthName ?? "",
-    revenue: m.revenue ?? m.Revenue ?? 0,
-    visitCount: m.visitCount ?? m.VisitCount ?? 0,
-  }));
+  const parseNumber = (v: unknown): number => {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const cleaned = v.replace(/[^0-9.-]+/g, "");
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+    return 0;
+  };
+
+  const monthly: MonthlySalePoint[] = monthlyRaw.map((m: RawMonthlyItem) => {
+    // normalize month into 1..12
+    let mm = m.month ?? m.Month ?? 0;
+    mm = Number(mm) || 0;
+    if (mm < 1 || mm > 12) mm = 0;
+    const monthName =
+      m.monthName ?? m.MonthName ?? (mm ? VN_MONTHS[mm - 1] : "");
+    return {
+      month: mm,
+      monthName,
+      revenue: parseNumber(m.revenue ?? m.Revenue),
+      visitCount: Math.max(
+        0,
+        Math.floor(parseNumber(m.visitCount ?? m.VisitCount))
+      ),
+    } as MonthlySalePoint;
+  });
 
   return {
     success: raw.success ?? raw.Success ?? true,
