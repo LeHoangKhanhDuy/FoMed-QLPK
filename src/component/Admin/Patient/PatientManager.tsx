@@ -133,7 +133,7 @@ export default function PatientManager() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-white">
-              <th className="py-2 px-3 text-left">Mã</th>
+              {/* <th className="py-2 px-3 text-left">Mã</th> */}
               <th className="py-2 px-3 text-left">Họ tên</th>
               <th className="py-2 px-3">Giới tính</th>
               <th className="py-2 px-3">Ngày sinh</th>
@@ -151,22 +151,22 @@ export default function PatientManager() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={13} className="py-6 text-center text-slate-500">
+                <td colSpan={12} className="py-6 text-center text-slate-500">
                   Đang tải dữ liệu…
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={13} className="py-6 text-center text-slate-500">
+                <td colSpan={12} className="py-6 text-center text-slate-500">
                   Không có dữ liệu
                 </td>
               </tr>
             ) : (
               items.map((p) => (
                 <tr key={p.patientId} className="border-b last:border-none">
-                  <td className="py-2 px-3 font-semibold">
+                  {/* <td className="py-2 px-3 font-semibold">
                     {p.patientCode ?? "-"}
-                  </td>
+                  </td> */}
                   <td className="py-2 px-3 font-bold">{p.fullName}</td>
                   <td className="py-2 px-3 text-center">
                     {genderLabel(p.gender)}

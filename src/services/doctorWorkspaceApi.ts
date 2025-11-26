@@ -27,7 +27,7 @@ interface MedicineResponse {
   name: string;
   unit: string | null;
   isActive: boolean;
-  stock: number;
+  stock: number | string | null;
 }
 
 // Response từ BE: POST /encounters/start
@@ -86,12 +86,23 @@ export async function apiGetMedicines(): Promise<
       data: MedicineResponse[];
     }>(`${PREFIX}/medicines`);
 
+    const toNumber = (value: unknown): number => {
+      if (value === null || value === undefined) return 0;
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+      if (typeof value === "string") {
+        const cleaned = value.replace(/[^0-9.-]+/g, "");
+        const parsed = Number(cleaned);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+      return 0;
+    };
+
     return (data.data || []).map((med) => ({
       id: med.medicineId,
       name: med.name,
       unit: med.unit ?? "",
       isActive: med.isActive,
-      stock: med.stock,
+      stock: toNumber(med.stock),
     }));
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không tải được danh mục thuốc"));

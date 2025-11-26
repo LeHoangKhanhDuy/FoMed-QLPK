@@ -63,6 +63,27 @@ type CreateDrugResp = {
   data?: { medicineId?: number; id?: number };
 };
 
+/* ===== TYPE DEFINITIONS BỔ SUNG CHO LÔ ===== */
+export type DrugLot = {
+  lotId: number;
+  lotNumber: string;
+  expiryDate: string | null;
+  quantity: number;
+  createdAt: string;
+};
+
+type LotCreateResp = {
+  success?: boolean;
+  message?: string;
+  data?: { lotId: number; lotNumber: string };
+};
+
+type LotListResp = {
+  success?: boolean;
+  message?: string;
+  data?: DrugLot[];
+};
+
 /* ===== Chuẩn hoá về DrugItem ===== */
 const normalize = (r: RawMedicine): DrugItem => {
   const id = r.medicineId ?? r.MedicineId ?? r.id ?? 0;
@@ -79,13 +100,22 @@ const normalize = (r: RawMedicine): DrugItem => {
       : 0
   ) as number;
 
-  const stock = (
-    typeof r.stock === "number"
-      ? r.stock
-      : typeof r.Stock === "number"
-      ? r.Stock
-      : 0
-  ) as number;
+  const stock = (() => {
+    const raw =
+      r.stock ??
+      r.Stock ??
+      (typeof (r as Record<string, unknown>).stock === "string"
+        ? (r as Record<string, unknown>).stock
+        : undefined);
+
+    if (typeof raw === "number") return raw;
+    if (typeof raw === "string") {
+      const cleaned = raw.replace(/[^0-9.-]+/g, "");
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+  })();
 
   const isActive = (r.isActive ?? r.IsActive) === true;
 
@@ -177,13 +207,13 @@ export async function apiUpdateDrug(
     // KHÔNG gửi stock - BE không nhận field này
     isActive: payload.isActive,
   };
-  
+
   // Gửi request update
   await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
-  
+
   // Lấy lại thông tin chi tiết từ server để có stock mới nhất
   const updated = await apiGetDrugDetails(id);
-  
+
   return updated;
 }
 
@@ -193,8 +223,8 @@ export async function apiUpdateDrugInventory(
   params: {
     txnType: "in" | "out" | "adjust";
     quantity: number;
+    lotId: number;
     unitCost?: number | null;
-    lotId?: number | null;
     refNote?: string | null;
   }
 ): Promise<{ medicineId: number; stock: number }> {
@@ -202,7 +232,7 @@ export async function apiUpdateDrugInventory(
     txnType: params.txnType,
     quantity: params.quantity,
     unitCost: params.unitCost ?? null,
-    lotId: params.lotId ?? null,
+    lotId: params.lotId,
     refNote: params.refNote ?? null,
   };
 
@@ -235,4 +265,40 @@ export async function apiDeleteDrug(id: number): Promise<void> {
     }
     throw e;
   }
+}
+
+/* ===== API QUẢN LÝ LÔ THUỐC ===== */
+
+// 1. Lấy danh sách lô của 1 thuốc
+export async function apiGetDrugLots(drugId: number): Promise<DrugLot[]> {
+  const { data } = await authHttp.get<LotListResp>(
+    `/api/v1/admin/medicines/${drugId}/lots`
+  );
+  return data?.data ?? [];
+}
+
+// 2. Tạo lô mới
+export async function apiCreateDrugLot(
+  drugId: number,
+  payload: { lotNumber: string; expiryDate?: string | null; quantity?: number }
+): Promise<DrugLot> {
+  const body = {
+    lotNumber: payload.lotNumber,
+    expiryDate: payload.expiryDate ?? null,
+    quantity: payload.quantity ?? 0, // Thường là 0, nhập kho sau
+  };
+
+  const { data } = await authHttp.post<LotCreateResp>(
+    `/api/v1/admin/medicines/${drugId}/lots`,
+    body
+  );
+
+  // Trả về object DrugLot giả lập để UI dùng ngay (vì BE chỉ trả ID)
+  return {
+    lotId: data?.data?.lotId ?? 0,
+    lotNumber: body.lotNumber,
+    expiryDate: body.expiryDate || null,
+    quantity: body.quantity,
+    createdAt: new Date().toISOString(),
+  };
 }

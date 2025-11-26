@@ -156,7 +156,7 @@ export default function DoctorPatientWorkspace() {
                 : m.status
                 ? m.status.toLowerCase() !== "inactive"
                 : true,
-            stock: typeof m.stock === "number" ? m.stock : 0,
+            stock: Number(m.stock ?? 0),
           }))
         );
       } catch (e) {
