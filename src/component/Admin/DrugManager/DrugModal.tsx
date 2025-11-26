@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import type React from "react";
 import {
   Save,
   X,
@@ -62,23 +61,21 @@ export default function DrugModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isEditing = !!initial?.id;
 
-  /* --- STATE INVENTORY (MODAL CON) --- */
+  /* --- STATE INVENTORY --- */
   const [showInventory, setShowInventory] = useState(false);
   const [invLoading, setInvLoading] = useState(false);
-
-  // Các field nhập liệu
   const [invType, setInvType] = useState<"in" | "out" | "adjust">("in");
   const [invQuantity, setInvQuantity] = useState<string>("");
   const [invUnitCost, setInvUnitCost] = useState<string>("");
 
   // Quản lý Lô (Lot)
   const [lots, setLots] = useState<DrugLot[]>([]);
-  const [selectedLotId, setSelectedLotId] = useState<string | number | "">(""); // "" | number | "NEW"
+  const [selectedLotId, setSelectedLotId] = useState<string | number | "">("");
   const [newLotNumber, setNewLotNumber] = useState("");
   const [newExpiry, setNewExpiry] = useState("");
   const [newExpiryText, setNewExpiryText] = useState("");
 
-  // Calendar state for expiry (dd/mm/yyyy input + popup like ShiftModal)
+  /* --- CALENDAR STATE & LOGIC (ĐÃ FIX) --- */
   const [calOpenExpiry, setCalOpenExpiry] = useState(false);
   const [viewYearExpiry, setViewYearExpiry] = useState<number>(() =>
     new Date().getFullYear()
@@ -87,22 +84,26 @@ export default function DrugModal({
     new Date().getMonth()
   );
 
+  // Hàm Helper Calendar
   const pad = (n: number) => n.toString().padStart(2, "0");
+
   const ymdToDmy = (ymd: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd;
     const [y, m, d] = ymd.split("-");
     return `${d}/${m}/${y}`;
   };
+
   const dmyToYmd = (dmy: string) => {
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dmy)) return null;
     const [d, m, y] = dmy.split("/");
     return `${y}-${m}-${d}`;
   };
 
-  const daysExpiry = (() => {
+  // Logic tạo Grid ngày tháng
+  const daysExpiry = useMemo(() => {
     const first = new Date(viewYearExpiry, viewMonthExpiry, 1);
     const last = new Date(viewYearExpiry, viewMonthExpiry + 1, 0);
-    const startIdx = (first.getDay() + 6) % 7;
+    const startIdx = (first.getDay() + 6) % 7; // T2 là 0
     const total = last.getDate();
     const arr: Array<{ d: number; ymd: string }> = [];
     for (let i = 1; i <= total; i++) {
@@ -110,30 +111,35 @@ export default function DrugModal({
       arr.push({ d: i, ymd });
     }
     return { startIdx, arr };
-  })();
-
-  const isTodayExpiry = (ymd: string) => {
-    const now = new Date();
-    const t = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-      now.getDate()
-    )}`;
-    return ymd === t;
-  };
+  }, [viewYearExpiry, viewMonthExpiry]);
 
   const isSelectedExpiry = (ymd: string) => newExpiry === ymd;
 
-  const gotoPrevMonthExpiry = () =>
-    setViewMonthExpiry((m) =>
-      m === 0 ? (setViewYearExpiry((y) => y - 1), 11) : m - 1
-    );
-  const gotoNextMonthExpiry = () =>
-    setViewMonthExpiry((m) =>
-      m === 11 ? (setViewYearExpiry((y) => y + 1), 0) : m + 1
-    );
+  // FIX: Logic chuyển tháng an toàn, không dùng lồng nhau
+  const gotoPrevMonthExpiry = (e: React.MouseEvent) => {
+    e.preventDefault(); // Chặn submit form
+    e.stopPropagation();
+    if (viewMonthExpiry === 0) {
+      setViewMonthExpiry(11);
+      setViewYearExpiry((y) => y - 1);
+    } else {
+      setViewMonthExpiry((m) => m - 1);
+    }
+  };
 
-  /* --- VALIDATORS --- */
+  const gotoNextMonthExpiry = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (viewMonthExpiry === 11) {
+      setViewMonthExpiry(0);
+      setViewYearExpiry((y) => y + 1);
+    } else {
+      setViewMonthExpiry((m) => m + 1);
+    }
+  };
+
+  /* --- VALIDATORS & EFFECTS (Giữ nguyên) --- */
   const validateField = (field: Field, value: unknown): string => {
-    // (Giữ nguyên logic validate cũ của bạn)
     const str = String(value);
     const num = Number(value);
     switch (field) {
@@ -170,7 +176,6 @@ export default function DrugModal({
     [validateForm]
   );
 
-  /* --- EFFECTS --- */
   useEffect(() => {
     if (open) {
       setForm({
@@ -182,19 +187,16 @@ export default function DrugModal({
       });
       setErrors({});
       setSubmitError(null);
-
-      // Reset inventory state
       setShowInventory(false);
       resetInventoryForm();
     }
   }, [open, initial]);
 
-  // Load danh sách Lô khi mở modal tồn kho
   useEffect(() => {
     if (showInventory && initial?.id) {
       apiGetDrugLots(initial.id)
         .then(setLots)
-        .catch(() => toast.error("Không tải được danh sách lô"));
+        .catch(() => toast.error("Lỗi tải lô"));
     }
   }, [showInventory, initial?.id]);
 
@@ -207,41 +209,27 @@ export default function DrugModal({
     setNewLotNumber("");
     setNewExpiry("");
     setNewExpiryText("");
+    setCalOpenExpiry(false);
     setLots([]);
   };
 
   const handleInvTypeChange = (val: "in" | "out" | "adjust") => {
     setInvType(val);
-    // Nếu chuyển sang xuất kho mà đang chọn "Tạo mới", reset về rỗng
-    if (val === "out" && selectedLotId === "NEW") {
-      setSelectedLotId("");
-    }
+    if (val === "out" && selectedLotId === "NEW") setSelectedLotId("");
   };
 
-  // Logic cập nhật tồn kho (Quan trọng)
   const handleInventoryUpdate = async () => {
     if (!initial?.id) return;
-
-    // 1. Validate Số lượng
     const qty = Number(invQuantity);
-    if (!Number.isFinite(qty) || qty <= 0) {
+    if (!Number.isFinite(qty) || qty <= 0)
       return toast.error("Số lượng phải lớn hơn 0");
-    }
-
-    // 2. Validate Lô
-    if (!selectedLotId) {
-      return toast.error("Vui lòng chọn lô thuốc");
-    }
-
-    if (invType === "in" && selectedLotId === "NEW") {
-      if (!newLotNumber.trim()) return toast.error("Vui lòng nhập số lô mới");
-    }
+    if (!selectedLotId) return toast.error("Vui lòng chọn lô thuốc");
+    if (invType === "in" && selectedLotId === "NEW" && !newLotNumber.trim())
+      return toast.error("Vui lòng nhập số lô mới");
 
     setInvLoading(true);
     try {
       let finalLotId = 0;
-
-      // A. Nếu chọn tạo lô mới -> Gọi API tạo trước
       if (selectedLotId === "NEW") {
         const newLot = await apiCreateDrugLot(initial.id, {
           lotNumber: newLotNumber,
@@ -252,8 +240,6 @@ export default function DrugModal({
         finalLotId = Number(selectedLotId);
       }
 
-      // B. Gọi API cập nhật tồn kho
-      // Logic BE: in -> dương, out -> âm
       const realQty = invType === "out" ? -qty : qty;
       const unitCostVal = invUnitCost ? Number(invUnitCost) : undefined;
 
@@ -270,14 +256,13 @@ export default function DrugModal({
       toast.success(
         `Cập nhật thành công. Tồn mới: ${result.stock.toLocaleString("vi-VN")}`
       );
-
-      setForm((f) => ({ ...f, stock: result.stock })); // Update UI cha
-      onInventoryUpdated?.(); // Refresh list cha
+      setForm((f) => ({ ...f, stock: result.stock }));
+      onInventoryUpdated?.();
       setShowInventory(false);
       resetInventoryForm();
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      toast.error(msg || "Thất bại");
+      const msg = error instanceof Error ? error.message : "Lỗi cập nhật";
+      toast.error(msg);
     } finally {
       setInvLoading(false);
     }
@@ -312,7 +297,6 @@ export default function DrugModal({
     }
   };
 
-  // Styles
   const inputClass = (err?: string) =>
     `mt-1 block w-full rounded-[var(--rounded)] border bg-white px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-sky-500 ${
       err ? "border-rose-400 focus:ring-rose-400" : ""
@@ -325,7 +309,7 @@ export default function DrugModal({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* --- MODAL CHÍNH --- */}
-      <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-2xl mx-3 sm:mx-0 bg-white rounded-xl shadow-lg p-5">
         {submitError && (
           <div className="mb-3 p-3 bg-rose-100 text-rose-600 text-sm rounded">
             {submitError}
@@ -342,7 +326,7 @@ export default function DrugModal({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Mã thuốc */}
+          {/* Form Fields (Giữ nguyên) */}
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
               Mã thuốc <span className="text-red-500">*</span>
@@ -361,7 +345,6 @@ export default function DrugModal({
             )}
           </label>
 
-          {/* Tên thuốc */}
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
               Tên thuốc <span className="text-red-500">*</span>
@@ -380,8 +363,7 @@ export default function DrugModal({
             )}
           </label>
 
-          {/* Đơn vị */}
-          <div>
+          <div className="relative z-20">
             <SelectMenu<Unit>
               label="Đơn vị"
               required
@@ -391,8 +373,7 @@ export default function DrugModal({
             />
           </div>
 
-          {/* Giá */}
-          <label className="block">
+          <label className="block relative z-10">
             <span className="text-sm font-medium text-slate-700">
               Giá bán (VNĐ) <span className="text-red-500">*</span>
             </span>
@@ -407,7 +388,6 @@ export default function DrugModal({
             )}
           </label>
 
-          {/* Tồn kho (Readonly) */}
           {isEditing && (
             <div className="block sm:col-span-2 bg-slate-50 p-3 rounded border border-slate-200">
               <div className="flex justify-between items-center mb-2">
@@ -428,9 +408,6 @@ export default function DrugModal({
                   {form.unit}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                * Số lượng được tính tự động từ lịch sử giao dịch.
-              </p>
             </div>
           )}
         </div>
@@ -458,7 +435,7 @@ export default function DrugModal({
         </div>
       </div>
 
-      {/* --- MODAL INVENTORY (Cập nhật tồn kho) --- */}
+      {/* --- MODAL INVENTORY --- */}
       {showInventory && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white rounded-lg shadow-2xl p-6 mx-4 animate-in fade-in zoom-in duration-200">
@@ -475,7 +452,6 @@ export default function DrugModal({
             </div>
 
             <div className="space-y-4">
-              {/* Loại giao dịch */}
               <div className="flex bg-slate-100 p-1 rounded-lg">
                 <button
                   onClick={() => handleInvTypeChange("in")}
@@ -509,7 +485,6 @@ export default function DrugModal({
                 </button>
               </div>
 
-              {/* Chọn Lô (QUAN TRỌNG) */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Chọn Lô thuốc <span className="text-red-500">*</span>
@@ -518,7 +493,6 @@ export default function DrugModal({
                   value={selectedLotId as number | string}
                   onChange={(v) => setSelectedLotId(v as number | string)}
                   options={[
-                    // map lots
                     ...lots.map((lot) => ({
                       value: lot.lotId,
                       label: `${lot.lotNumber} (HSD: ${
@@ -527,17 +501,15 @@ export default function DrugModal({
                           : "N/A"
                       }) - Tồn: ${lot.quantity}`,
                     })),
-                    // tạo mới (chỉ hiển thị khi nhập kho)
                     ...(invType === "in"
                       ? [{ value: "NEW", label: "+ Tạo lô mới..." }]
                       : []),
                   ]}
                   placeholder="-- Chọn lô --"
-                  className="w-full"
+                  className="w-full relative z-20" // z-index cao cho dropdown
                 />
               </div>
 
-              {/* Form Tạo Lô Mới (Khi chọn "Tạo lô mới...") */}
               {selectedLotId === "NEW" && invType === "in" && (
                 <div className="bg-blue-50 p-3 rounded-md border border-blue-100 animate-in slide-in-from-top-2">
                   <div className="grid grid-cols-2 gap-3">
@@ -561,33 +533,28 @@ export default function DrugModal({
                           <input
                             value={newExpiryText}
                             onChange={(e) => {
-                              // Allow only digits and format as dd/mm/yyyy while typing
                               const raw = e.target.value.replace(/[^0-9]/g, "");
-                              const digits = raw.slice(0, 8); // ddmmyyyy max
-
+                              const digits = raw.slice(0, 8);
                               const formatDmy = (d: string) => {
-                                if (d.length <= 2) {
+                                if (d.length <= 2)
                                   return d + (d.length === 2 ? "/" : "");
-                                }
-                                if (d.length <= 4) {
-                                  const day = d.slice(0, 2);
-                                  const mon = d.slice(2);
+                                if (d.length <= 4)
                                   return (
-                                    day +
+                                    d.slice(0, 2) +
                                     "/" +
-                                    mon +
+                                    d.slice(2) +
                                     (d.length === 4 ? "/" : "")
                                   );
-                                }
-                                const day = d.slice(0, 2);
-                                const mon = d.slice(2, 4);
-                                const year = d.slice(4);
-                                return `${day}/${mon}/${year}`;
+                                return (
+                                  d.slice(0, 2) +
+                                  "/" +
+                                  d.slice(2, 4) +
+                                  "/" +
+                                  d.slice(4)
+                                );
                               };
-
                               const formatted = formatDmy(digits);
                               setNewExpiryText(formatted);
-
                               if (digits.length === 8) {
                                 const ymd = dmyToYmd(formatted);
                                 if (ymd) {
@@ -595,8 +562,6 @@ export default function DrugModal({
                                   const dt = new Date(ymd);
                                   setViewYearExpiry(dt.getFullYear());
                                   setViewMonthExpiry(dt.getMonth());
-                                } else {
-                                  setNewExpiry("");
                                 }
                               } else {
                                 setNewExpiry("");
@@ -609,29 +574,49 @@ export default function DrugModal({
                             type="button"
                             onClick={() => setCalOpenExpiry((s) => !s)}
                             className="px-2 rounded border hover:bg-gray-50 inline-flex items-center"
-                            title="Chọn trên lịch"
                           >
                             <CalendarDays className="w-4 h-4 text-sky-500" />
                           </button>
                         </div>
 
+                        {/* --- CALENDAR POPUP (FIXED) --- */}
                         {calOpenExpiry && (
-                          <div className="absolute z-10 mt-2 w-[300px] rounded-xl border bg-white shadow-lg p-3">
+                          <div className="absolute top-full mt-1 right-0 z-50 w-[280px] rounded-xl border bg-white shadow-2xl p-3">
                             <div className="flex items-center justify-between mb-2">
                               <button
+                                type="button"
                                 onClick={gotoPrevMonthExpiry}
-                                className="p-2 rounded-md hover:bg-slate-100"
-                                title="Tháng trước"
+                                className="p-1 hover:bg-slate-100 rounded"
                               >
                                 <ChevronLeft className="w-4 h-4" />
                               </button>
-                              <div className="font-medium">{`${pad(
-                                viewMonthExpiry + 1
-                              )}/${viewYearExpiry}`}</div>
+
+                              {/* Năm + Tháng Header */}
+                              <div className="flex items-center gap-1 font-medium text-sm">
+                                <span>Tháng {pad(viewMonthExpiry + 1)} / </span>
+                                {/* Dropdown chọn năm nhanh */}
+                                <select
+                                  value={viewYearExpiry}
+                                  onChange={(e) =>
+                                    setViewYearExpiry(Number(e.target.value))
+                                  }
+                                  className="border-none bg-transparent outline-none cursor-pointer font-bold hover:text-sky-600"
+                                >
+                                  {Array.from(
+                                    { length: 10 },
+                                    (_, i) => new Date().getFullYear() - 2 + i
+                                  ).map((y) => (
+                                    <option key={y} value={y}>
+                                      {y}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
                               <button
+                                type="button"
                                 onClick={gotoNextMonthExpiry}
-                                className="p-2 rounded-md hover:bg-slate-100"
-                                title="Tháng sau"
+                                className="p-1 hover:bg-slate-100 rounded"
                               >
                                 <ChevronRight className="w-4 h-4" />
                               </button>
@@ -646,51 +631,40 @@ export default function DrugModal({
                               <div>T7</div>
                               <div>CN</div>
                             </div>
-
                             <div className="grid grid-cols-7 gap-1">
                               {Array.from({ length: daysExpiry.startIdx }).map(
                                 (_, i) => (
-                                  <div key={`emp-e-${i}`} />
+                                  <div key={`e-${i}`} />
                                 )
                               )}
-                              {daysExpiry.arr.map(({ d, ymd }) => {
-                                const selected = isSelectedExpiry(ymd);
-                                const today = isTodayExpiry(ymd);
-                                return (
-                                  <button
-                                    key={ymd}
-                                    onClick={() => {
-                                      setNewExpiry(ymd);
-                                      setNewExpiryText(ymdToDmy(ymd));
-                                      setCalOpenExpiry(false);
-                                    }}
-                                    className={[
-                                      "cursor-pointer h-8 rounded-md text-sm",
-                                      "hover:bg-slate-100",
-                                      selected &&
-                                        "bg-sky-500 text-white hover:bg-sky-500",
-                                      !selected &&
-                                        today &&
-                                        "ring-1 ring-sky-400",
-                                    ]
-                                      .filter(Boolean)
-                                      .join(" ")}
-                                    title={ymdToDmy(ymd)}
-                                  >
-                                    {d}
-                                  </button>
-                                );
-                              })}
+                              {daysExpiry.arr.map(({ d, ymd }) => (
+                                <button
+                                  key={ymd}
+                                  type="button"
+                                  onClick={() => {
+                                    setNewExpiry(ymd);
+                                    setNewExpiryText(ymdToDmy(ymd));
+                                    setCalOpenExpiry(false);
+                                  }}
+                                  className={`h-7 rounded text-xs hover:bg-slate-100 ${
+                                    isSelectedExpiry(ymd)
+                                      ? "bg-sky-500 text-white"
+                                      : ""
+                                  }`}
+                                >
+                                  {d}
+                                </button>
+                              ))}
                             </div>
                           </div>
                         )}
+                        {/* -------------------------- */}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Số lượng & Đơn giá */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -701,7 +675,7 @@ export default function DrugModal({
                     min="1"
                     value={invQuantity}
                     onChange={(e) => setInvQuantity(e.target.value)}
-                    className="w-full border border-slate-300 rounded-md p-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-sky-500 outline-none"
+                    className="w-full border border-slate-300 rounded-md p-2.5 text-sm font-bold text-slate-800 outline-none"
                     placeholder="0"
                   />
                 </div>
@@ -718,14 +692,13 @@ export default function DrugModal({
                       onChange={(e) =>
                         setInvUnitCost(e.target.value.replace(/\D/g, ""))
                       }
-                      className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none"
+                      className="w-full border border-slate-300 rounded-md p-2.5 text-sm outline-none"
                       placeholder="VD: 5.000"
                     />
                   </div>
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div className="flex justify-end gap-2 mt-6 pt-2 border-t">
                 <button
                   onClick={() => setShowInventory(false)}
