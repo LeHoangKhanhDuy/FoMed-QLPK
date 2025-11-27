@@ -1,3 +1,4 @@
+// components/Admin/DrugModal.tsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Save,
@@ -55,6 +56,7 @@ export default function DrugModal({
     unit: normalizeUnit(initial?.unit),
     price: initial?.price ?? 0,
     stock: initial?.stock ?? 0,
+    physicalStock: initial?.physicalStock ?? 0,
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
@@ -75,7 +77,7 @@ export default function DrugModal({
   const [newExpiry, setNewExpiry] = useState("");
   const [newExpiryText, setNewExpiryText] = useState("");
 
-  /* --- CALENDAR STATE & LOGIC (ĐÃ FIX) --- */
+  /* --- CALENDAR STATE & LOGIC --- */
   const [calOpenExpiry, setCalOpenExpiry] = useState(false);
   const [viewYearExpiry, setViewYearExpiry] = useState<number>(() =>
     new Date().getFullYear()
@@ -84,7 +86,6 @@ export default function DrugModal({
     new Date().getMonth()
   );
 
-  // Hàm Helper Calendar
   const pad = (n: number) => n.toString().padStart(2, "0");
 
   const ymdToDmy = (ymd: string) => {
@@ -99,11 +100,10 @@ export default function DrugModal({
     return `${y}-${m}-${d}`;
   };
 
-  // Logic tạo Grid ngày tháng
   const daysExpiry = useMemo(() => {
     const first = new Date(viewYearExpiry, viewMonthExpiry, 1);
     const last = new Date(viewYearExpiry, viewMonthExpiry + 1, 0);
-    const startIdx = (first.getDay() + 6) % 7; // T2 là 0
+    const startIdx = (first.getDay() + 6) % 7;
     const total = last.getDate();
     const arr: Array<{ d: number; ymd: string }> = [];
     for (let i = 1; i <= total; i++) {
@@ -115,9 +115,8 @@ export default function DrugModal({
 
   const isSelectedExpiry = (ymd: string) => newExpiry === ymd;
 
-  // FIX: Logic chuyển tháng an toàn, không dùng lồng nhau
   const gotoPrevMonthExpiry = (e: React.MouseEvent) => {
-    e.preventDefault(); // Chặn submit form
+    e.preventDefault();
     e.stopPropagation();
     if (viewMonthExpiry === 0) {
       setViewMonthExpiry(11);
@@ -138,7 +137,7 @@ export default function DrugModal({
     }
   };
 
-  /* --- VALIDATORS & EFFECTS (Giữ nguyên) --- */
+  /* --- VALIDATORS --- */
   const validateField = (field: Field, value: unknown): string => {
     const str = String(value);
     const num = Number(value);
@@ -184,6 +183,7 @@ export default function DrugModal({
         unit: normalizeUnit(initial?.unit),
         price: initial?.price ?? 0,
         stock: initial?.stock ?? 0,
+        physicalStock: initial?.physicalStock ?? 0,
       });
       setErrors({});
       setSubmitError(null);
@@ -256,6 +256,8 @@ export default function DrugModal({
       toast.success(
         `Cập nhật thành công. Tồn mới: ${result.stock.toLocaleString("vi-VN")}`
       );
+      // NOTE: Ở đây chỉ cập nhật stock local, physicalStock cần refresh từ API cha
+      // Nhưng để UI phản hồi nhanh, ta có thể cập nhật tạm
       setForm((f) => ({ ...f, stock: result.stock }));
       onInventoryUpdated?.();
       setShowInventory(false);
@@ -287,7 +289,8 @@ export default function DrugModal({
         name: form.name,
         unit: form.unit,
         price: form.price,
-        stock: form.stock,
+        stock: 0, // Mock, BE sẽ tính
+        physicalStock: 0, // Mock
       });
       onClose();
     } catch {
@@ -320,13 +323,15 @@ export default function DrugModal({
           <h3 className="font-semibold text-xl uppercase text-slate-700">
             {initial?.id ? "Cập nhật thuốc" : "Thêm thuốc mới"}
           </h3>
-          <button onClick={onClose} className="p-2 rounded hover:bg-slate-100">
+          <button
+            onClick={onClose}
+            className="p-2 rounded hover:bg-slate-100 cursor-pointer"
+          >
             <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Form Fields (Giữ nguyên) */}
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
               Mã thuốc <span className="text-red-500">*</span>
@@ -392,7 +397,7 @@ export default function DrugModal({
             <div className="block sm:col-span-2 bg-slate-50 p-3 rounded border border-slate-200">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <Package className="w-4 h-4" /> Tồn kho hiện tại
+                  <Package className="w-4 h-4" /> Tồn kho khả dụng
                 </span>
                 <button
                   type="button"
@@ -402,11 +407,25 @@ export default function DrugModal({
                   Nhập / Xuất kho
                 </button>
               </div>
-              <div className="text-2xl font-bold text-green-500">
-                {formatNumber(form.stock)}{" "}
-                <span className="text-sm font-normal text-slate-500">
-                  {form.unit}
-                </span>
+              <div className="flex items-end gap-3">
+                <div className="text-2xl font-bold text-green-500">
+                  {formatNumber(form.stock)}{" "}
+                  <span className="text-sm font-normal text-slate-500">
+                    {form.unit}
+                  </span>
+                </div>
+                {/* HIỂN THỊ CẢNH BÁO HẾT HẠN TRONG MODAL */}
+                {form.physicalStock > form.stock && (
+                  <div className="mb-1 text-xs text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100">
+                    (Thực tế:{" "}
+                    <strong>{formatNumber(form.physicalStock)}</strong> — Hết
+                    hạn:{" "}
+                    <strong>
+                      {formatNumber(form.physicalStock - form.stock)}
+                    </strong>
+                    )
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -437,7 +456,7 @@ export default function DrugModal({
 
       {/* --- MODAL INVENTORY --- */}
       {showInventory && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md bg-white rounded-lg shadow-2xl p-6 mx-4 animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center mb-4 border-b pb-2">
               <h4 className="font-bold text-lg text-slate-800">
@@ -445,9 +464,9 @@ export default function DrugModal({
               </h4>
               <button
                 onClick={() => setShowInventory(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="p-2 rounded hover:bg-slate-100 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
 
@@ -455,7 +474,7 @@ export default function DrugModal({
               <div className="flex bg-slate-100 p-1 rounded-lg">
                 <button
                   onClick={() => handleInvTypeChange("in")}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-[var(--rounded)] transition-all cursor-pointer ${
                     invType === "in"
                       ? "bg-white text-emerald-600 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
@@ -465,7 +484,7 @@ export default function DrugModal({
                 </button>
                 <button
                   onClick={() => handleInvTypeChange("out")}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-[var(--rounded)] transition-all cursor-pointer ${
                     invType === "out"
                       ? "bg-white text-rose-600 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
@@ -475,7 +494,7 @@ export default function DrugModal({
                 </button>
                 <button
                   onClick={() => handleInvTypeChange("adjust")}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-[var(--rounded)] transition-all cursor-pointer ${
                     invType === "adjust"
                       ? "bg-white text-blue-600 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
@@ -506,7 +525,7 @@ export default function DrugModal({
                       : []),
                   ]}
                   placeholder="-- Chọn lô --"
-                  className="w-full relative z-20" // z-index cao cho dropdown
+                  className="w-full relative z-20"
                 />
               </div>
 
@@ -520,7 +539,7 @@ export default function DrugModal({
                       <input
                         value={newLotNumber}
                         onChange={(e) => setNewLotNumber(e.target.value)}
-                        className="w-full text-sm border border-blue-200 rounded p-1.5 focus:border-blue-400 outline-none"
+                        className="w-full text-sm border border-blue-200 rounded-[var(--rounded)] p-1.5 focus:border-blue-400 outline-none"
                         placeholder="VD: LOT2603"
                       />
                     </div>
@@ -568,18 +587,17 @@ export default function DrugModal({
                               }
                             }}
                             placeholder="dd/mm/yyyy"
-                            className="w-full text-sm border border-blue-200 rounded p-1.5 focus:border-blue-400 outline-none"
+                            className="w-full text-sm border border-blue-200 rounded-[var(--rounded)] p-1.5 focus:border-blue-400 outline-none"
                           />
                           <button
                             type="button"
                             onClick={() => setCalOpenExpiry((s) => !s)}
-                            className="px-2 rounded border hover:bg-gray-50 inline-flex items-center"
+                            className="px-2 rounded-[var(--rounded)] border hover:bg-gray-50 inline-flex items-center cursor-pointer"
                           >
                             <CalendarDays className="w-4 h-4 text-sky-500" />
                           </button>
                         </div>
 
-                        {/* --- CALENDAR POPUP (FIXED) --- */}
                         {calOpenExpiry && (
                           <div className="absolute top-full mt-1 right-0 z-50 w-[280px] rounded-xl border bg-white shadow-2xl p-3">
                             <div className="flex items-center justify-between mb-2">
@@ -591,10 +609,8 @@ export default function DrugModal({
                                 <ChevronLeft className="w-4 h-4" />
                               </button>
 
-                              {/* Năm + Tháng Header */}
                               <div className="flex items-center gap-1 font-medium text-sm">
                                 <span>Tháng {pad(viewMonthExpiry + 1)} / </span>
-                                {/* Dropdown chọn năm nhanh */}
                                 <select
                                   value={viewYearExpiry}
                                   onChange={(e) =>
@@ -658,7 +674,6 @@ export default function DrugModal({
                             </div>
                           </div>
                         )}
-                        {/* -------------------------- */}
                       </div>
                     </div>
                   </div>
@@ -675,7 +690,7 @@ export default function DrugModal({
                     min="1"
                     value={invQuantity}
                     onChange={(e) => setInvQuantity(e.target.value)}
-                    className="w-full border border-slate-300 rounded-md p-2.5 text-sm font-bold text-slate-800 outline-none"
+                    className="w-full border border-slate-300 rounded-[var(--rounded)] p-2.5 text-sm font-bold text-slate-800 outline-none"
                     placeholder="0"
                   />
                 </div>

@@ -1,3 +1,4 @@
+// services/drugApi.ts
 import axios from "axios";
 import { authHttp } from "../services/http";
 import type { DrugItem } from "../types/drug/drug";
@@ -12,9 +13,9 @@ type RawMedicine = {
   name?: string;
   Name?: string;
   strength?: string;
-  Strength?: string; // không dùng nhưng giữ phòng sau
+  Strength?: string;
   form?: string;
-  Form?: string; // không dùng nhưng giữ phòng sau
+  Form?: string;
   unit?: string;
   Unit?: string;
   note?: string;
@@ -24,8 +25,12 @@ type RawMedicine = {
   BasePrice?: number;
   price?: number;
   Price?: number;
+
   stock?: number;
   Stock?: number;
+
+  physicalStock?: number;
+  PhysicalStock?: number;
 
   isActive?: boolean;
   IsActive?: boolean;
@@ -100,22 +105,21 @@ const normalize = (r: RawMedicine): DrugItem => {
       : 0
   ) as number;
 
-  const stock = (() => {
-    const raw =
-      r.stock ??
-      r.Stock ??
-      (typeof (r as Record<string, unknown>).stock === "string"
-        ? (r as Record<string, unknown>).stock
-        : undefined);
-
-    if (typeof raw === "number") return raw;
-    if (typeof raw === "string") {
-      const cleaned = raw.replace(/[^0-9.-]+/g, "");
+  // Helper lấy số an toàn
+  const getNumber = (val: unknown) => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const cleaned = val.replace(/[^0-9.-]+/g, "");
       const parsed = Number(cleaned);
       return Number.isFinite(parsed) ? parsed : 0;
     }
     return 0;
-  })();
+  };
+
+  const stock = getNumber(
+    r.stock ?? r.Stock ?? (r as Record<string, unknown>).stock
+  );
+  const physicalStock = getNumber(r.physicalStock ?? r.PhysicalStock);
 
   const isActive = (r.isActive ?? r.IsActive) === true;
 
@@ -126,7 +130,8 @@ const normalize = (r: RawMedicine): DrugItem => {
     unit: r.unit ?? r.Unit ?? "",
     price,
     stock,
-    // Trạng thái tồn kho suy theo stock
+    // Đảm bảo physicalStock logic hợp lý
+    physicalStock: physicalStock > stock ? physicalStock : stock,
     status: stock > 0 ? "in stock" : "out of stock",
     isActive,
     createdAt: (r.createdAt ?? r.CreatedAt ?? null) || null,
@@ -170,7 +175,6 @@ export async function apiCreateDrug(
     name: payload.name,
     unit: payload.unit,
     basePrice: payload.price,
-    // KHÔNG gửi stock - BE không nhận field này
     isActive: payload.isActive,
   };
 
@@ -187,7 +191,8 @@ export async function apiCreateDrug(
     name: payload.name,
     unit: payload.unit,
     price: payload.price,
-    stock: 0, // Mới tạo luôn = 0
+    stock: 0,
+    physicalStock: 0,
     isActive: payload.isActive,
     status: "out of stock",
     createdAt: null,
@@ -204,16 +209,13 @@ export async function apiUpdateDrug(
     name: payload.name,
     unit: payload.unit,
     basePrice: payload.price,
-    // KHÔNG gửi stock - BE không nhận field này
     isActive: payload.isActive,
   };
 
-  // Gửi request update
   await authHttp.put(`/api/v1/admin/medicines/update/${id}`, body);
 
-  // Lấy lại thông tin chi tiết từ server để có stock mới nhất
+  // Gọi lại API chi tiết để lấy stock mới nhất
   const updated = await apiGetDrugDetails(id);
-
   return updated;
 }
 
@@ -268,8 +270,6 @@ export async function apiDeleteDrug(id: number): Promise<void> {
 }
 
 /* ===== API QUẢN LÝ LÔ THUỐC ===== */
-
-// 1. Lấy danh sách lô của 1 thuốc
 export async function apiGetDrugLots(drugId: number): Promise<DrugLot[]> {
   const { data } = await authHttp.get<LotListResp>(
     `/api/v1/admin/medicines/${drugId}/lots`
@@ -277,7 +277,6 @@ export async function apiGetDrugLots(drugId: number): Promise<DrugLot[]> {
   return data?.data ?? [];
 }
 
-// 2. Tạo lô mới
 export async function apiCreateDrugLot(
   drugId: number,
   payload: { lotNumber: string; expiryDate?: string | null; quantity?: number }
@@ -285,7 +284,7 @@ export async function apiCreateDrugLot(
   const body = {
     lotNumber: payload.lotNumber,
     expiryDate: payload.expiryDate ?? null,
-    quantity: payload.quantity ?? 0, // Thường là 0, nhập kho sau
+    quantity: payload.quantity ?? 0,
   };
 
   const { data } = await authHttp.post<LotCreateResp>(
@@ -293,7 +292,6 @@ export async function apiCreateDrugLot(
     body
   );
 
-  // Trả về object DrugLot giả lập để UI dùng ngay (vì BE chỉ trả ID)
   return {
     lotId: data?.data?.lotId ?? 0,
     lotNumber: body.lotNumber,

@@ -9,6 +9,7 @@ export interface DrugItem {
   unit: string;
   price: number;
   stock: number;
+  physicalStock: number;
   status: DrugStatus;
   isActive: boolean;
   createdAt: string | null;
