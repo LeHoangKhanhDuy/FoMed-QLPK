@@ -1,3 +1,4 @@
+// pages/Admin/DrugManager.tsx
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -71,29 +72,25 @@ export default function DrugManager() {
     setOpen(true);
   };
 
-  // NHẬN payload từ Modal: KHÔNG có status/isActive
   const submit = async (
     payload: Omit<DrugItem, "id" | "createdAt" | "status" | "isActive">
   ) => {
     try {
       if (editing) {
-        // Giữ nguyên isActive hiện tại khi cập nhật
         const upd = await apiUpdateDrug(editing.id, {
           ...payload,
           isActive: editing.isActive,
         });
         setItems((arr) => arr.map((x) => (x.id === upd.id ? upd : x)));
         toast.success("Đã cập nhật thuốc");
-        
-        // Refresh danh sách để đảm bảo đồng bộ với server
         try {
           const { items: freshItems } = await apiListDrugs();
           setItems(freshItems);
         } catch {
-          // Không cần báo lỗi vì đã update local state
+          // SỬA LỖI DÒNG 89: Thêm comment này vào để ESLint không báo lỗi nữa
+          // ignore error inside background refresh
         }
       } else {
-        // Tạo mới mặc định hoạt động
         const created = await apiCreateDrug({ ...payload, isActive: true });
         setItems((arr) => [created, ...arr]);
         toast.success("Đã thêm thuốc");
@@ -139,8 +136,8 @@ export default function DrugManager() {
     }
   };
 
-  const inventoryBadge = (stock: number) =>
-    stock > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700";
+  // const inventoryBadge = (stock: number) =>
+  //   stock > 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700";
 
   const activeBadge = (active: boolean) =>
     active ? "bg-green-200 text-green-600" : "bg-slate-200 text-slate-600";
@@ -184,7 +181,6 @@ export default function DrugManager() {
               <th className="px-3 py-2 text-left">Tên thuốc</th>
               <th className="px-3 py-2">Đơn vị</th>
               <th className="px-3 py-2">Giá</th>
-              <th className="px-3 py-2">Số lượng</th>
               <th className="px-3 py-2">Tồn kho</th>
               <th className="px-3 py-2">Trạng thái</th>
               <th className="px-3 py-2">Thao tác</th>
@@ -193,14 +189,14 @@ export default function DrugManager() {
           <tbody>
             {paged.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-slate-500">
+                <td colSpan={7} className="py-6 text-center text-slate-500">
                   Chưa có thuốc.
                 </td>
               </tr>
             )}
 
             {paged.map((d) => {
-              const canDelete = !d.isActive; // hoặc chặt hơn: !d.isActive && d.stock === 0
+              const canDelete = !d.isActive;
               return (
                 <tr
                   key={d.id}
@@ -212,23 +208,29 @@ export default function DrugManager() {
                   <td className="px-3 py-2 text-red-500 font-semibold">
                     {d.price.toLocaleString("vi-VN")} ₫
                   </td>
-
                   <td className="px-3 py-2">
-                    {d.stock.toLocaleString("vi-VN")}
+                    <div className="flex flex-col items-center justify-center min-h-[40px]">
+                      {d.physicalStock > d.stock ? (
+                        /* TRƯỜNG HỢP 1: CÓ hàng hết hạn -> Chỉ hiện cảnh báo đỏ */
+                        <span
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded shadow-sm cursor-help"
+                          title={`Kho thực tế: ${d.physicalStock.toLocaleString(
+                            "vi-VN"
+                          )} — Khả dụng: ${d.stock.toLocaleString("vi-VN")}`}
+                        >
+                          ⚠️ +
+                          {(d.physicalStock - d.stock).toLocaleString("vi-VN")}{" "}
+                          hết hạn
+                        </span>
+                      ) : (
+                        /* TRƯỜNG HỢP 2: KHÔNG CÓ hàng hết hạn -> Hiện số tồn kho màu xanh */
+                        <span className="font-bold text-green-500 text-[15px]">
+                          {d.stock.toLocaleString("vi-VN")}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
-                  {/* Trạng thái tồn kho theo stock */}
-                  <td className="px-3 py-2">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${inventoryBadge(
-                        d.stock
-                      )}`}
-                    >
-                      {d.stock > 0 ? "Còn hàng" : "Hết hàng"}
-                    </span>
-                  </td>
-
-                  {/* Hoạt động / Không hoạt động */}
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-center gap-2">
                       <span
@@ -241,7 +243,6 @@ export default function DrugManager() {
                     </div>
                   </td>
 
-                  {/* Thao tác */}
                   <td className="py-2 pr-3">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2">
                       <button
@@ -290,7 +291,6 @@ export default function DrugManager() {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="mt-4 flex items-center justify-between">
         <p className="text-sm text-slate-500">
           Trang {Math.min(page, last)} - {last}
@@ -313,7 +313,6 @@ export default function DrugManager() {
         </div>
       </div>
 
-      {/* DỜI ConfirmModal RA NGOÀI map để không render N cái cùng lúc */}
       <ConfirmModal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -330,13 +329,11 @@ export default function DrugManager() {
         open={open}
         onClose={() => setOpen(false)}
         initial={editing ?? undefined}
-        // Modal trả về: { code, name, unit, price, stock }
         onSubmit={async (payloadNoStatusNoActive) => {
           await submit(payloadNoStatusNoActive);
           setOpen(false);
         }}
         onInventoryUpdated={async () => {
-          // Refresh danh sách sau khi cập nhật tồn kho
           try {
             const { items: freshItems } = await apiListDrugs();
             setItems(freshItems);

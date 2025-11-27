@@ -90,13 +90,13 @@ export async function apiGetMedicines(): Promise<
       if (value === null || value === undefined) return 0;
       if (typeof value === "number") return Number.isFinite(value) ? value : 0;
       if (typeof value === "string") {
-        const cleaned = value.replace(/[^0-9.-]+/g, "");
+        const cleaned = value.replace(/\./g, "").replace(/[^0-9-]/g, "");
         const parsed = Number(cleaned);
         return Number.isFinite(parsed) ? parsed : 0;
       }
       return 0;
     };
-
+ 
     return (data.data || []).map((med) => ({
       id: med.medicineId,
       name: med.name,
