@@ -201,9 +201,9 @@ function normalizeLogin(response: BeLoginResponse): LoginNormalized {
 /* ============ API CALLS ============ */
 export async function register(email: string, password: string, name: string) {
   const payload = {
-    FullName: name.trim(),
-    Email: email.trim(),
-    Password: password,
+    fullName: name.trim(), 
+    email: email.trim(), 
+    password: password, 
   };
 
   try {
@@ -212,20 +212,32 @@ export async function register(email: string, password: string, name: string) {
       payload
     );
     return data;
-  } catch (error) {
+  } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       const data = error.response?.data as
-        | { message?: string; errors?: Record<string, string[]> }
+        | {
+            message?: string;
+            Message?: string;
+            errors?: Record<string, string[]>;
+            Errors?: Record<string, string[]>;
+          }
         | undefined;
+
+      const serializeErrors = (errObj?: Record<string, string[]>) =>
+        errObj ? Object.values(errObj).flat().join("; ") : undefined;
 
       const msg =
         data?.message ??
-        (data?.errors
-          ? Object.values(data.errors).flat().join("; ")
-          : undefined) ??
+        data?.Message ??
+        serializeErrors(data?.errors) ??
+        serializeErrors(data?.Errors) ??
         "Đăng ký thất bại.";
 
-      throw new Error(msg);
+      if (msg) {
+        error.message = msg;
+      }
+
+      throw error;
     }
     throw error;
   }
@@ -357,7 +369,7 @@ export async function updateProfile(payload: {
   if (payload.phone && payload.phone.trim()) {
     requestPayload.Phone = payload.phone.trim();
   }
-  
+
   // AvatarUrl, Address, Bio: chỉ gửi nếu có giá trị
   // Backend sẽ update chúng nếu có trong request
   // KHÔNG GỬI nếu null/empty để backend không overwrite với null
@@ -371,14 +383,12 @@ export async function updateProfile(payload: {
     requestPayload.Bio = payload.bio.trim();
   }
 
-  console.log("Update profile request payload:", JSON.stringify(requestPayload, null, 2));
-  console.log("Authorization header:", authHttp.defaults.headers.common.Authorization ? "SET" : "NOT SET");
-
   try {
-    const response = await authHttp.post("/api/v1/accounts/update-profile", requestPayload);
+    const response = await authHttp.post(
+      "/api/v1/accounts/update-profile",
+      requestPayload
+    );
     const { data } = response;
-
-    console.log("Update profile response:", data);
 
     if (!data?.success && !data?.data) {
       throw new Error(data?.message || "Cập nhật thông tin thất bại.");
@@ -419,13 +429,17 @@ export async function updateProfile(payload: {
         requestData: error.config?.data,
       });
 
-      const beData = error.response?.data as { message?: string; Message?: string; error?: string; Error?: string; errors?: Record<string, string[]> };
-      
+      const beData = error.response?.data as {
+        message?: string;
+        Message?: string;
+        error?: string;
+        Error?: string;
+        errors?: Record<string, string[]>;
+      };
+
       // Xử lý validation errors từ backend
       if (beData?.errors) {
-        const validationErrors = Object.values(beData.errors)
-          .flat()
-          .join("; ");
+        const validationErrors = Object.values(beData.errors).flat().join("; ");
         console.error("Validation errors:", validationErrors);
         throw new Error(validationErrors || "Dữ liệu không hợp lệ.");
       }
@@ -435,7 +449,7 @@ export async function updateProfile(payload: {
         beData?.Message ||
         beData?.error ||
         beData?.Error ||
-        (error.response?.status === 500 
+        (error.response?.status === 500
           ? "Lỗi server. Vui lòng kiểm tra số điện thoại hoặc thử lại sau."
           : "Cập nhật thông tin thất bại.");
       throw new Error(message);
@@ -464,24 +478,29 @@ export async function uploadAvatar(file: File): Promise<string> {
 
   // tạo form data
   const formData = new FormData();
-  formData.append("File", file); // Backend expects "File" with capital F ([FromForm] AvatarUploadRequest)
-
-  // axios instance có header Authorization sẵn
+  formData.append("File", file); 
   setAuthToken(token);
 
   try {
-    // Không set Content-Type, để axios tự set với boundary
-    const { data } = await authHttp.post("/api/v1/accounts/avatar", formData);
+    const { data } = await authHttp.post("/api/v1/accounts/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-    // Log để debug
     console.log("Upload avatar response:", data);
-
-    // Backend response format: { message, data: { avatarUrl } }
-    const avatarUrl = data?.data?.avatarUrl || data?.data?.AvatarUrl || data?.avatarUrl || data?.AvatarUrl;
     
+    const avatarUrl =
+      data?.data?.avatarUrl ||
+      data?.data?.AvatarUrl ||
+      data?.avatarUrl ||
+      data?.AvatarUrl;
+
     if (!avatarUrl) {
       console.error("Invalid response structure:", data);
-      throw new Error(data?.message || data?.Message || "Không nhận được URL ảnh từ server.");
+      throw new Error(
+        data?.message || data?.Message || "Không nhận được URL ảnh từ server."
+      );
     }
 
     // lưu avatar mới vào localStorage (nếu muốn cập nhật UI tức thì)
@@ -500,14 +519,19 @@ export async function uploadAvatar(file: File): Promise<string> {
         data: error.response?.data,
         headers: error.response?.headers,
       });
-      
-      const beData = error.response?.data as { message?: string; Message?: string; error?: string; Error?: string };
+
+      const beData = error.response?.data as {
+        message?: string;
+        Message?: string;
+        error?: string;
+        Error?: string;
+      };
       const message =
-        beData?.message || 
-        beData?.Message || 
+        beData?.message ||
+        beData?.Message ||
         beData?.error ||
         beData?.Error ||
-        (error.response?.status === 500 
+        (error.response?.status === 500
           ? "Lỗi server. Có thể file quá lớn hoặc định dạng không hợp lệ."
           : "Tải ảnh thất bại từ server.");
       throw new Error(message);

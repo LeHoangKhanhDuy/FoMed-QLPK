@@ -7,7 +7,9 @@ import { login, register, saveAuth } from "../../services/auth";
 
 type ErrorResponse = {
   message?: string;
+  Message?: string;
   errors?: Record<string, string[]>;
+  Errors?: Record<string, string[]>;
 };
 
 export default function SignUpForm({
@@ -43,13 +45,22 @@ export default function SignUpForm({
     if (isAxiosError(error)) {
       const data = error.response?.data as ErrorResponse | undefined;
 
-      // Ưu tiên lỗi "message"
-      if (data?.message) return data.message;
+      const flattenErrors = (obj?: Record<string, string[]>) =>
+        obj ? Object.values(obj).flat().join("; ") : undefined;
 
-      // Nếu có ModelState errors => gộp lại
-      if (data?.errors) {
-        return Object.values(data.errors).flat().join("; ");
+      if (data?.message || data?.Message) {
+        return data.message ?? data.Message!;
       }
+
+      const errorList =
+        flattenErrors(data?.errors) ?? flattenErrors(data?.Errors);
+      if (errorList) {
+        return errorList;
+      }
+    }
+
+    if (error instanceof Error && error.message) {
+      return error.message;
     }
 
     return "Có lỗi xảy ra.";
@@ -126,7 +137,7 @@ export default function SignUpForm({
         saveAuth(logged.token!, logged.user, logged.refreshToken);
       }
       toast.success("Đăng ký thành công!");
-      onSuccess?.(); 
+      onSuccess?.();
       setTimeout(() => {
         window.location.reload();
       }, 2000);

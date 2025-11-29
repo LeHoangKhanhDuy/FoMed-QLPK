@@ -1,95 +1,79 @@
-// src/pages/Account/UserPrescriptionDetailPage.tsx
-import { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import UserLayout from "../../layouts/UserLayout";
-import type { PrescriptionDetail } from "../../component/Account/PrescriptionDetail";
 import PrescriptionDetails from "../../component/Account/PrescriptionDetail";
-
-
-// Fake data (tối thiểu đủ field theo type)
-const FAKE_DETAILS: PrescriptionDetail[] = [
-  {
-    id: 5534,
-    rx_code: "DTFM-5534",
-    issued_at: "2025/08/01 10:30",
-    valid_until: "2025/09/01 23:59",
-    status: "issued",
-    record_code: "HSFM-ABCDEF",
-    doctor_name: "TS.BS Nguyễn Văn A",
-    service_name: "Gói khám tổng quát",
-    department: "Nội tổng quát",
-    patient: {
-      code: "BN000567",
-      full_name: "Nguyễn Minh K",
-      dob: "1995-04-12",
-      sex: "M",
-      diagnosis: "Cảm cúm",
-      allergies: ["Penicillin"],
-    },
-    items: [
-      {
-        id: 1,
-        drugName: "Paracetamol",
-        strength: "500mg",
-        form: "viên",
-        route: "PO",
-        dosageText: "1 viên x 3 lần/ngày",
-        durationDays: 5,
-        quantityPrescribed: 15,
-        instructions: "Uống sau ăn, cách nhau ≥ 4 giờ.",
-      },
-    ],
-    notes: "Uống nhiều nước, nghỉ ngơi.",
-    warnings: ["Bệnh nhân dị ứng Penicillin – tránh nhóm beta-lactam."],
-  },
-  {
-    id: 1234,
-    rx_code: "DTFM-1234",
-    issued_at: "2025/08/03 15:05",
-    status: "dispensed",
-    record_code: "HSFM-ABEREF",
-    doctor_name: "TS.BS Nguyễn Văn A",
-    service_name: "Gói khám tổng quát",
-    department: "Hô hấp",
-    patient: { full_name: "Lê Hoàng D", sex: "M", diagnosis: "Viêm họng cấp" },
-    items: [
-      {
-        id: 1,
-        drugName: "Azithromycin",
-        strength: "500mg",
-        form: "viên",
-        route: "PO",
-        dosageText: "1 viên/ngày",
-        durationDays: 3,
-        quantityPrescribed: 3,
-        instructions: "Uống sau ăn, cách nhau ≥ 4 giờ.",
-      },
-    ],
-    notes: "Uống nhiều nước, nghỉ ngơi.",
-    warnings: ["Bệnh nhân dị ứng Penicillin – tránh nhóm beta-lactam."],
-  },
-];
+import { apiGetPrescriptionDetail } from "../../services/prescriptionApi";
+import type { PrescriptionDetailData } from "../../component/Account/PrescriptionDetail";
 
 export default function UserPrescriptionDetailPage() {
-  const { rxId } = useParams<{ rxId: string }>();
+  const { rxCode } = useParams<{ rxCode: string }>();
   const navigate = useNavigate();
+  const [detail, setDetail] = useState<PrescriptionDetailData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const rx = useMemo(
-    () =>
-      FAKE_DETAILS.find((d) => String(d.id) === String(rxId)) ??
-      FAKE_DETAILS[0],
-    [rxId]
-  );
+  useEffect(() => {
+    if (!rxCode) {
+      setError("Thiếu mã đơn thuốc");
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const loadDetail = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await apiGetPrescriptionDetail(rxCode, controller.signal);
+        if (!isMounted) return;
+        setDetail(data);
+      } catch (err) {
+        if (!isMounted) return;
+        const message = (err as Error).message || "Không thể tải đơn thuốc";
+        setError(message);
+        toast.error(message);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadDetail();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [rxCode]);
 
   return (
     <UserLayout>
-      <PrescriptionDetails
-        rx={rx}
-        onBack={() => navigate("/user/prescriptions")}
-        onPrint={() => window.print()}
-        onDownloadPdf={() => alert("Tải PDF (mock)")}
-      />
+      {loading ? (
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="w-10 h-10 text-sky-400 animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center">
+          <p className="text-slate-600">{error}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 rounded-full border border-slate-300 text-sm font-semibold text-slate-600 hover:border-sky-400 hover:text-sky-500 transition"
+          >
+            Quay lại
+          </button>
+        </div>
+      ) : detail ? (
+        <PrescriptionDetails
+          rx={detail}
+          onBack={() => navigate("/user/prescriptions")}
+        />
+      ) : (
+        <div className="text-center text-slate-500">Không có dữ liệu</div>
+      )}
     </UserLayout>
   );
 }
