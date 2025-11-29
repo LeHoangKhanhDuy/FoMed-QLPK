@@ -50,6 +50,7 @@ const readUserFromStorage = (): AppUser | null => {
         name: u.name,
         phone: u.phone,
         roles: Array.isArray(u.roles) ? u.roles : [],
+        avatarUrl: u.avatarUrl ?? null,
       };
     }
     return null;
@@ -144,7 +145,12 @@ export default function Navbar() {
   };
 
   const displayName = user?.name?.trim() || user?.email || "User";
-  const userAvatar = "https://cdn-icons-png.flaticon.com/512/219/219983.png";
+  const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/219/219983.png";
+  const userAvatar = user?.avatarUrl
+    ? user.avatarUrl.startsWith("http")
+      ? user.avatarUrl
+      : `${import.meta.env.VITE_API_BASE_URL}${user.avatarUrl}`
+    : defaultAvatar;
   const canAccessAdmin = Boolean(
     user &&
       Array.isArray(user.roles) &&

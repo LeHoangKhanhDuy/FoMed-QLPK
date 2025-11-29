@@ -383,23 +383,12 @@ export async function updateProfile(payload: {
     requestPayload.Bio = payload.bio.trim();
   }
 
-  console.log(
-    "Update profile request payload:",
-    JSON.stringify(requestPayload, null, 2)
-  );
-  console.log(
-    "Authorization header:",
-    authHttp.defaults.headers.common.Authorization ? "SET" : "NOT SET"
-  );
-
   try {
     const response = await authHttp.post(
       "/api/v1/accounts/update-profile",
       requestPayload
     );
     const { data } = response;
-
-    console.log("Update profile response:", data);
 
     if (!data?.success && !data?.data) {
       throw new Error(data?.message || "Cập nhật thông tin thất bại.");
@@ -489,19 +478,18 @@ export async function uploadAvatar(file: File): Promise<string> {
 
   // tạo form data
   const formData = new FormData();
-  formData.append("File", file); // Backend expects "File" with capital F ([FromForm] AvatarUploadRequest)
-
-  // axios instance có header Authorization sẵn
+  formData.append("File", file); 
   setAuthToken(token);
 
   try {
-    // Không set Content-Type, để axios tự set với boundary
-    const { data } = await authHttp.post("/api/v1/accounts/avatar", formData);
+    const { data } = await authHttp.post("/api/v1/accounts/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-    // Log để debug
     console.log("Upload avatar response:", data);
-
-    // Backend response format: { message, data: { avatarUrl } }
+    
     const avatarUrl =
       data?.data?.avatarUrl ||
       data?.data?.AvatarUrl ||
