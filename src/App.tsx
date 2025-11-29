@@ -78,7 +78,7 @@ function App() {
         <Route path="/user/medical-history" element={<UserMedicalHistoryPage />}/>
         <Route path="/user/medical-history/:rxId" element={<UserMedicalHistoryDetailPage />}/>
         <Route path="/user/prescriptions" element={<UserPrescriptionPage />} />
-        <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />}/>
+        <Route path="/user/prescriptions/details/:rxCode" element={<UserPrescriptionDetailPage />}/>
         <Route path="/user/lab-result" element={<UserLabResultListPage />} />
         <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />}/>
         <Route path="/user/appointment-shedule" element={<UserAppointmentSchedulePage />}/>

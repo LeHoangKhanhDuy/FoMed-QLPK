@@ -1,84 +1,136 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import SkeletonRow from "../../Utils/SkeletonRow";
+import { apiGetMyPatientId } from "../../services/patientsApi";
+import {
+  apiGetPrescriptions,
+  type PrescriptionSummary,
+} from "../../services/prescriptionApi";
 
-interface PrescriptionItem {
-  id: number;
-  rx_code: string; // Mã đơn thuốc
-  issued_at: string; // Ngày kê (hiển thị)
-  doctor: string;
-  diagnosis: string; // Chẩn đoán
-}
+const PAGE_SIZE = 20;
 
-// ====== Fake data: chỉ những đơn của bệnh nhân đã khám xong ======
-const fakePrescriptions: PrescriptionItem[] = [
-  {
-    id: 101,
-    rx_code: "DTFM-5534",
-    issued_at: "2025/08/01 10:30",
-    doctor: "TS.BS Nguyễn Văn A",
-    diagnosis: "Cảm cúm",
-  },
-  {
-    id: 102,
-    rx_code: "DTFM-1234",
-    issued_at: "2025/08/03 15:05",
-    doctor: "TS.BS Nguyễn Văn A",
-    diagnosis: "Viêm họng cấp",
-  },
-  {
-    id: 103,
-    rx_code: "DTFM-4334",
-    issued_at: "2025/08/06 09:20",
-    doctor: "TS.BS Nguyễn Văn A",
-    diagnosis: "Tăng huyết áp độ 1",
-  },
-  {
-    id: 104,
-    rx_code: "DTFM-1287",
-    issued_at: "2025/07/01 08:10",
-    doctor: "TS.BS Nguyễn Văn A",
-    diagnosis: "Dị ứng thời tiết",
-  },
-  {
-    id: 105,
-    rx_code: "DTFM-1353",
-    issued_at: "2025-08-10 11:45",
-    doctor: "TS.BS Nguyễn Văn A",
-    diagnosis: "Viêm da cơ địa",
-  },
-];
+const formatDateOnly = (value: string | undefined) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${pad(date.getDate())}/${pad(
+    date.getMonth() + 1
+  )}/${date.getFullYear()}`;
+};
 
 export default function PrescriptionList() {
-  const [loading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [patientId, setPatientId] = useState<number | null>(null);
+  const [prescriptions, setPrescriptions] = useState<PrescriptionSummary[]>([]);
+  const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  // --- Search
-  const filtered = (fakePrescriptions ?? []).filter((rx) => {
-    const searchString = Object.values(rx).join(" ").toLowerCase();
-    return searchString.includes(searchTerm.toLowerCase());
-  });
+  const parseStoredUser = () => {
+    try {
+      const raw = localStorage.getItem("userInfo");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
 
-  // --- Pagination
-  const pageSize = 10;
-  const totalPages = Math.ceil(filtered.length / pageSize); // 0, 1, 2, ...
+  useEffect(() => {
+    let isMounted = true;
 
-  // nếu đang ở trang > totalPages thì kéo về trang hợp lệ
+    const ensurePatientId = async () => {
+      const stored = parseStoredUser();
+      if (stored?.patientId) {
+        setPatientId(Number(stored.patientId));
+        return;
+      }
+
+      try {
+        const info = await apiGetMyPatientId();
+        if (!isMounted) return;
+        setPatientId(info.patientId);
+
+        if (stored) {
+          localStorage.setItem(
+            "userInfo",
+            JSON.stringify({ ...stored, patientId: info.patientId })
+          );
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        const message =
+          (err as Error).message || "Không thể lấy thông tin bệnh nhân";
+        setError(message);
+        toast.error(message);
+      }
+    };
+
+    ensurePatientId();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!patientId) return;
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const pageData = await apiGetPrescriptions({
+          patientId,
+          page: currentPage,
+          limit: PAGE_SIZE,
+          signal: controller.signal,
+        });
+
+        if (!isMounted) return;
+        setPrescriptions(pageData.items ?? []);
+        setTotalPages(pageData.totalPages);
+      } catch (err) {
+        if (!isMounted) return;
+        const message = (err as Error).message || "Không thể tải đơn thuốc";
+        setError(message);
+        toast.error(message);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [patientId, currentPage]);
+
   useEffect(() => {
     if (totalPages === 0 && currentPage !== 1) setCurrentPage(1);
     else if (totalPages > 0 && currentPage > totalPages)
       setCurrentPage(totalPages);
   }, [totalPages, currentPage]);
 
-  const startIdx = (currentPage - 1) * pageSize;
-  const pagedItems = filtered.slice(startIdx, startIdx + pageSize);
+  useEffect(() => {
+    if (searchTerm.trim()) setCurrentPage(1);
+  }, [searchTerm]);
 
-  const handlePageChange = (pageNumber: number) => {
-    if (totalPages < 2) return; // < 2 trang thì không đổi
-    if (pageNumber < 1 || pageNumber > totalPages) return;
-    setCurrentPage(pageNumber);
-  };
+  const filtered = useMemo(() => {
+    if (!searchTerm.trim()) return prescriptions;
+    return prescriptions.filter((rx) => {
+      const searchString = Object.values(rx).join(" ").toLowerCase();
+      return searchString.includes(searchTerm.toLowerCase());
+    });
+  }, [prescriptions, searchTerm]);
 
   const buildPageItems = (current: number, total: number, maxButtons = 7) => {
     if (maxButtons % 2 === 0) maxButtons += 1;
@@ -87,7 +139,6 @@ export default function PrescriptionList() {
 
     const items: (number | "...")[] = [];
     const side = Math.floor(maxButtons / 2);
-
     let start = Math.max(2, current - side);
     let end = Math.min(total - 1, current + side);
 
@@ -108,6 +159,12 @@ export default function PrescriptionList() {
     return items;
   };
 
+  const handlePageChange = (pageNumber: number) => {
+    if (totalPages < 2) return;
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+    setCurrentPage(pageNumber);
+  };
+
   const pageItems =
     totalPages >= 2 ? buildPageItems(currentPage, totalPages, 7) : [];
 
@@ -117,7 +174,6 @@ export default function PrescriptionList() {
         Danh sách đơn thuốc
       </h2>
 
-      {/* Ô tìm kiếm */}
       <div className="mt-4">
         <input
           type="text"
@@ -128,7 +184,6 @@ export default function PrescriptionList() {
         />
       </div>
 
-      {/* Bảng đơn thuốc */}
       <div className="max-w-full mt-6 overflow-x-auto rounded-sm border border-gray-200">
         <table className="min-w-[900px] w-full text-left text-sm text-gray-700">
           <thead className="bg-sky-500 text-white">
@@ -147,18 +202,22 @@ export default function PrescriptionList() {
                   <SkeletonRow key={i} columns={7} />
                 ))}
               </>
-            ) : pagedItems.length > 0 ? (
-              pagedItems.map((rx) => (
-                <tr key={rx.id} className="hover:bg-gray-50">
+            ) : filtered.length > 0 ? (
+              filtered.map((rx) => (
+                <tr key={rx.code} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-800">
-                    {rx.rx_code}
+                    {rx.code}
                   </td>
-                  <td className="px-6 py-4">{rx.issued_at}</td>
-                  <td className="px-6 py-4">{rx.doctor}</td>
+                  <td className="px-6 py-4">
+                    {formatDateOnly(rx.prescribedAt)}
+                  </td>
+                  <td className="px-6 py-4">{rx.doctorName}</td>
                   <td className="px-6 py-4">{rx.diagnosis}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
-                      to="/user/prescriptions/details"
+                      to={`/user/prescriptions/details/${encodeURIComponent(
+                        rx.code
+                      )}`}
                       className="bg-primary-linear text-white text-sm px-3 py-2 rounded-[var(--rounded)] cursor-pointer"
                     >
                       Chi tiết
@@ -168,8 +227,8 @@ export default function PrescriptionList() {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-gray-600">
-                  Không có đơn thuốc nào
+                <td colSpan={5} className="px-6 py-4 text-center text-gray-600">
+                  {error || "Không có đơn thuốc nào"}
                 </td>
               </tr>
             )}
@@ -177,12 +236,12 @@ export default function PrescriptionList() {
         </table>
       </div>
 
-      {/* Pagination: chỉ hiển thị khi >= 2 trang */}
       {totalPages >= 2 && (
         <div className="flex items-center justify-between py-4">
           <p className="font-semibold px-4 text-black">
             Trang{" "}
-            <span className="font-semibold text-black">{currentPage}</span> -{" "}
+            <span className="font-semibold text-black">{currentPage}</span>
+            {" - "}
             <span className="font-semibold text-black">{totalPages}</span>
           </p>
 
