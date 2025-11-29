@@ -63,11 +63,17 @@ function App() {
 
         {/* BOOKING */}
         <Route path="/booking-doctor" element={<BookingDoctorPage />} />
-        <Route path="/booking-doctor/booking-date" element={<BookingDatePage />}/>
+        <Route
+          path="/booking-doctor/booking-date"
+          element={<BookingDatePage />}
+        />
         <Route path="/booking-package" element={<BookingPackagePage />} />
-        <Route path="/booking/select-service" element={<BookingSelectServicePage />}/>
-        <Route path="/booking-service" element={<BookingSelectServicePage />}/>
-        <Route path="/booking-doctor/review" element={<BookingReviewPage />}/>
+        <Route
+          path="/booking/select-service"
+          element={<BookingSelectServicePage />}
+        />
+        <Route path="/booking-service" element={<BookingSelectServicePage />} />
+        <Route path="/booking-doctor/review" element={<BookingReviewPage />} />
 
         {/* PATIENT PORTAL */}
         <Route path="/patient-portal-login" element={<PatientPortalPage />} />
@@ -75,13 +81,28 @@ function App() {
 
         {/* USER PROFILE */}
         <Route path="/user/profile" element={<UserProfilePage />} />
-        <Route path="/user/medical-history" element={<UserMedicalHistoryPage />}/>
-        <Route path="/user/medical-history/:rxId" element={<UserMedicalHistoryDetailPage />}/>
+        <Route
+          path="/user/medical-history"
+          element={<UserMedicalHistoryPage />}
+        />
+        <Route
+          path="/user/medical-history/:rxId"
+          element={<UserMedicalHistoryDetailPage />}
+        />
         <Route path="/user/prescriptions" element={<UserPrescriptionPage />} />
-        <Route path="/user/prescriptions/details" element={<UserPrescriptionDetailPage />}/>
+        <Route
+          path="/user/prescriptions/details"
+          element={<UserPrescriptionDetailPage />}
+        />
         <Route path="/user/lab-result" element={<UserLabResultListPage />} />
-        <Route path="/user/lab-result/detail" element={<UserLabResultDetailPage />}/>
-        <Route path="/user/appointment-shedule" element={<UserAppointmentSchedulePage />}/>
+        <Route
+          path="/user/lab-result/detail"
+          element={<UserLabResultDetailPage />}
+        />
+        <Route
+          path="/user/appointment-shedule"
+          element={<UserAppointmentSchedulePage />}
+        />
 
         {/* DOCTOR */}
         <Route path="/user/doctor/:id" element={<DoctorProfilePage />} />
@@ -93,17 +114,29 @@ function App() {
         {/* CSM ADMIN */}
         <Route path="/cms" element={<CmsGuard />}>
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="create-appointments" element={<AppointmentCreatePage />} />
+          <Route
+            path="create-appointments"
+            element={<AppointmentCreatePage />}
+          />
           <Route path="doctor-schedule" element={<DoctorScheduleAdminPage />} />
           <Route path="patient-list-today" element={<AppointmentListPage />} />
-          <Route path="patient-list/workspace" element={<DoctorPatientListWorkspacePage />} />
+          <Route
+            path="patient-list/workspace"
+            element={<DoctorPatientListWorkspacePage />}
+          />
           <Route path="patient-manager" element={<PatientManagerPage />} />
           <Route path="users-manager" element={<UserManagerPage />} />
           <Route path="service-manager" element={<ServiceManagerPage />} />
           <Route path="drug-manager" element={<DrugManagerPage />} />
           <Route path="billing" element={<BillingManagerPage />} />
-          <Route path="billing/payment/:invoiceId" element={<InvoicePaymentManagerPage />} />
-          <Route path="billing/details" element={<InvoiceDetailPaymentPage />} />
+          <Route
+            path="billing/payment/:invoiceId"
+            element={<InvoicePaymentManagerPage />}
+          />
+          <Route
+            path="billing/details/:invoiceId"
+            element={<InvoiceDetailPaymentPage />}
+          />
           <Route path="doctor-manager" element={<DoctorManagerPage />} />
           <Route path="specialty-manager" element={<SpecialtyManagerPage />} />
         </Route>
