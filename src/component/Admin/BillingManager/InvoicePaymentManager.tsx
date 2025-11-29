@@ -20,7 +20,6 @@ import {
 import {
   apiInvoiceAddPayment,
   apiInvoiceGet,
-  apiInvoiceUpdateStatus,
 } from "../../../services/billingApi";
 
 import {
@@ -29,12 +28,12 @@ import {
   calcSubTotal,
   type Invoice,
   type PaymentMethod,
-  type InvoiceStatus,
 } from "../../../types/billing/billing";
 
 import { SelectMenu, type SelectOption } from "../../ui/select-menu";
 import { QRCodeCanvas } from "qrcode.react";
 import { useLocation } from "react-router-dom";
+import toast from "react-hot-toast";
 /* ===== Helpers ===== */
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: "Tiền mặt",
@@ -124,13 +123,22 @@ export default function InvoicePaymentManager() {
 
       const fresh = await apiInvoiceGet(idToLoad);
 
+      // Nếu API không trả items/payments thì giữ lại thông tin tạm từ pending
       setInv((prev) => {
+        // Ưu tiên dữ liệu từ API, nhưng nếu thiếu thì giữ prev
         return {
-          ...prev,
           ...fresh,
-          code: prev?.code ?? fresh.code,
-          patientName: prev?.patientName ?? fresh.patientName,
-          createdAt: prev?.createdAt ?? fresh.createdAt,
+          code: fresh.code || prev?.code || "",
+          patientName: fresh.patientName || prev?.patientName || "",
+          createdAt: fresh.createdAt || prev?.createdAt || "",
+          items:
+            fresh.items && fresh.items.length > 0
+              ? fresh.items
+              : prev?.items || [],
+          payments:
+            fresh.payments && fresh.payments.length > 0
+              ? fresh.payments
+              : prev?.payments || [],
         };
       });
 
@@ -238,30 +246,33 @@ export default function InvoicePaymentManager() {
     // số tiền thực tế sẽ thu
     const pay = Math.min(payAmount, due);
 
-    // Gửi payment lên BE
-    await apiInvoiceAddPayment(inv.id, method, pay);
+    try {
+      setLoading(true);
 
-    // Nếu sau thanh toán đã trả hết thì update status "Đã thanh toán"
-    const afterPaid = calcPaid([
-      ...inv.payments,
-      {
-        id: -1,
-        invoiceId: inv.id,
-        method,
-        paidAmount: pay,
-        paidAt: new Date().toISOString(),
-      },
-    ]);
+      // 1. Gửi payment lên BE (BE sẽ tự động cập nhật status thành "paid" nếu đủ tiền)
+      await apiInvoiceAddPayment(inv.id, method, pay);
 
-    const subTotal = calcSubTotal(inv.items);
+      toast.success("Thanh toán thành công!");
 
-    if (afterPaid >= subTotal && inv.status !== "Đã thanh toán") {
-      // gọi API đổi trạng thái
-      await apiInvoiceUpdateStatus(inv.id, "Đã thanh toán" as InvoiceStatus);
+      // 2. Tính toán xem đã trả hết tiền chưa
+      const currentPaid = calcPaid(inv.payments);
+      const newTotalPaid = currentPaid + pay;
+      const totalCost = calcSubTotal(inv.items);
+
+      // 3. Logic điều hướng
+      if (newTotalPaid >= totalCost) {
+        // TRƯỜNG HỢP 1: Đã trả hết tiền -> Quay về danh sách sau 1.5  giây
+        setTimeout(() => {
+          nav("/cms/billing");
+        }, 1500);
+      } else {
+        // TRƯỜNG HỢP 2: Mới trả 1 phần -> Reload để ở lại trang thu tiếp
+        await load();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi thanh toán. Vui lòng thử lại.");
     }
-
-    // reload bill sau khi thêm payment
-    await load();
   };
 
   const createPaymentCode = () => {
@@ -435,20 +446,29 @@ export default function InvoicePaymentManager() {
               {isCash && (
                 <>
                   {/* Input tiền khách đưa */}
-                  <label className="relative">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Số tiền khách trả"
-                      value={payDisplay}
-                      onChange={(e) => handlePayInput(e.target.value)}
-                      onBlur={handlePayBlur}
-                      className="mt-1 text-right rounded-[var(--rounded)] border px-4 py-3 text-[16px] w-full pr-8"
-                    />
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                      ₫
-                    </span>
-                  </label>
+                  <div className="flex gap-2">
+                    <label className="relative flex-1">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Khách trả"
+                        value={payDisplay}
+                        onChange={(e) => handlePayInput(e.target.value)}
+                        onBlur={handlePayBlur}
+                        className="mt-1 text-right rounded-[var(--rounded)] border px-4 py-3 text-[16px] w-full pr-8"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        ₫
+                      </span>
+                    </label>
+                    <button
+                      onClick={() => setPayByNumber(due)}
+                      className="mt-1 px-2 py-3 text-[14px] rounded-[var(--rounded)] border bg-emerald-50 text-emerald-600 hover:bg-emerald-100 cursor-pointer whitespace-nowrap font-medium"
+                      title="Điền đủ số tiền cần thanh toán"
+                    >
+                      Đủ tiền
+                    </button>
+                  </div>
 
                   {/* Tiền thối */}
                   <div className="mt-1 w-full rounded-[var(--rounded)] border px-4 py-3 text-[16px] flex items-center justify-between bg-slate-50">

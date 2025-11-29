@@ -16,9 +16,9 @@ const PREFIX = "/api/doctor-workspace";
 
 // Response từ BE: GET /lab-tests
 interface LabTestResponse {
-  labTestId: number;
-  code: string | null;
-  name: string;
+  labTestId: number | string;
+  code?: string | null;
+  name?: string | null;
 }
 
 // Response từ BE: GET /medicines
@@ -48,22 +48,40 @@ interface CompleteEncounterResponse {
 
 /** Lấy danh mục xét nghiệm */
 export async function apiGetLabTests(): Promise<LabItem[]> {
+  const toNumber = (value: unknown): number => {
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    if (typeof value === "string") {
+      const parsed = Number(value.trim());
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+  };
+
+  const toString = (value: unknown): string => {
+    if (typeof value === "string") return value.trim();
+    if (value === null || value === undefined) return "";
+    return String(value).trim();
+  };
+
   try {
     const { data } = await authHttp.get<{
       success: boolean;
       message: string;
-      data: LabTestResponse[]; // Định nghĩa chặt chẽ thay vì any
+      data: LabTestResponse[];
     }>(`${PREFIX}/lab-tests`);
 
-    const items = data.data || [];
+    const items = Array.isArray(data.data) ? data.data : [];
 
-    // Map từ backend (labTestId) sang frontend (id)
-    return items.map((item) => ({
-      id: item.labTestId,
-      code: item.code || "",
-      name: item.name,
-      price: 0, // Backend chưa trả về giá ở API này, set mặc định hoặc update BE nếu cần
-    }));
+    return items
+      .map((item) => {
+        const id = toNumber(item.labTestId);
+        return {
+          id,
+          code: toString(item.code),
+          name: toString(item.name) || `Xét nghiệm #${id || "?"}`,
+        } satisfies LabItem;
+      })
+      .filter((item) => item.id > 0 && item.name.length > 0);
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không tải được danh mục xét nghiệm"));
   }
@@ -96,7 +114,7 @@ export async function apiGetMedicines(): Promise<
       }
       return 0;
     };
- 
+
     return (data.data || []).map((med) => ({
       id: med.medicineId,
       name: med.name,
