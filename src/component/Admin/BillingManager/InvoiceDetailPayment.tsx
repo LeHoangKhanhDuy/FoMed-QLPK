@@ -1,77 +1,81 @@
 // InvoiceView.tsx
 import { Printer, ArrowLeft } from "lucide-react";
-import React from "react";
-import { useNavigate } from "react-router-dom";
-
-/* ===== Types ===== */
-type InvoiceItem = {
-  id: number;
-  name: string;
-  category: "Exam" | "Service" | "Drug" | "Package";
-  qty: number;
-  price: number;
-  imageUrl?: string;
-};
-
-type PatientInfo = {
-  fullName: string;
-  email?: string;
-  phone?: string;
-  note?: string;
-  code?: string; // mã hồ sơ / bệnh án
-  dob?: string; // dd/mm/yyyy
-  gender?: "Nam" | "Nữ" | "Khác";
-};
-
-type DoctorInfo = {
-  fullName: string;
-  specialty?: string;
-  clinicName?: string;
-  phone?: string;
-  email?: string;
-};
-
-type PaymentInfo = {
-  subTotal: number;
-  discount: number;
-  total: number;
-  method?: "Tiền mặt" | "Chuyển khoản" | "Thẻ ngân hàng" | "Ví điện tử";
-  status: "Đã thanh toán" | "Chưa thanh toán" | "Thanh toán một phần";
-  paidAt?: string; // "HH:mm:ss dd/MM/yyyy"
-};
-
-type InvoiceData = {
-  id: string; // e.g. INV-0008
-  createdAt: string; // "HH:mm:ss dd/MM/yyyy"
-  items: InvoiceItem[];
-  patient: PatientInfo;
-  doctor: DoctorInfo;
-  payment: PaymentInfo;
-};
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  apiInvoiceGetDetail,
+  type InvoiceDetailResponse,
+} from "../../../services/billingApi";
 
 /* ===== Helpers ===== */
 const vnd = (n: number) =>
   n.toLocaleString("vi-VN", { maximumFractionDigits: 0 }) + " đ";
 
-const pillClassByStatus = (s: PaymentInfo["status"]) => {
+const pillClassByStatus = (s: string) => {
   if (s === "Đã thanh toán")
     return "bg-green-50 text-green-500 border-green-200";
-  if (s === "Thanh toán một phần")
+  if (s === "Thanh toán một phần" || s === "Chưa thanh toán")
     return "bg-amber-50 text-amber-600 border-amber-200";
   return "bg-rose-50 text-rose-600 border-rose-200";
 };
 
+const METHOD_LABEL: Record<string, string> = {
+  cash: "Tiền mặt",
+  card: "Thẻ ngân hàng",
+  transfer: "Chuyển khoản",
+  wallet: "Ví điện tử",
+  "e-wallet": "Ví điện tử",
+};
+
 /* ===== Component ===== */
-export default function InvoiceView({
-  data = demoData,
-}: {
-  data?: InvoiceData;
-  onBack?: () => void;
-  onPrint?: () => void;
-  onDownload?: () => void;
-}) {
-  const { id, createdAt, items, patient, doctor, payment } = data;
+export default function InvoiceDetailPayment() {
+  const { invoiceId } = useParams();
   const nav = useNavigate();
+  const [data, setData] = useState<InvoiceDetailResponse["data"] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!invoiceId) return;
+      try {
+        setLoading(true);
+        const detail = await apiInvoiceGetDetail(Number(invoiceId));
+        setData(detail);
+      } catch (err) {
+        console.error("Failed to load invoice detail:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [invoiceId]);
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border bg-white p-6 shadow-xs">
+        <div className="animate-pulse space-y-3">
+          <div className="h-6 w-40 rounded bg-slate-200" />
+          <div className="h-4 w-3/5 rounded bg-slate-200" />
+          <div className="h-4 w-2/5 rounded bg-slate-200" />
+          <div className="h-48 w-full rounded bg-slate-100" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return <p className="text-slate-500">Không tìm thấy dữ liệu hoá đơn.</p>;
+  }
+
+  const {
+    invoiceCode,
+    createdAtText,
+    statusLabel,
+    items,
+    patientInfo,
+    doctorInfo,
+    paymentInfo,
+  } = data;
 
   return (
     <section className="space-y-4">
@@ -84,7 +88,7 @@ export default function InvoiceView({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <h1 className="text-lg sm:text-xl font-semibold">
-            Hoá đơn <span className="text-slate-500">#{id}</span>
+            Hoá đơn <span className="text-slate-500">#{invoiceCode}</span>
           </h1>
         </div>
         <button
@@ -100,25 +104,25 @@ export default function InvoiceView({
         <div className="grid md:grid-cols-3 gap-4 p-3">
           <div className="flex items-center gap-2">
             <p className="text-sm">Mã hoá đơn: </p>
-            <p className="font-semibold text-sky-400">#{id}</p>
+            <p className="font-semibold text-sky-400">#{invoiceCode}</p>
           </div>
           <div className="flex items-center gap-2">
             <p className="text-sm">Ngày tạo:</p>
-            <p className="font-semibold">{createdAt}</p>
+            <p className="font-semibold">{createdAtText}</p>
           </div>
           <div className="flex items-center gap-2">
             <p className="text-sm">Trạng thái:</p>
             <span
               className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm border ${pillClassByStatus(
-                payment.status
+                statusLabel
               )}`}
             >
-              {payment.status}
+              {statusLabel}
             </span>
           </div>
         </div>
       </div>
-      {/* Product / service block (giống layout mẫu) */}
+
       {/* Bảng chi tiết dịch vụ/thuốc */}
       <div className="overflow-x-auto rounded-xl border border-gray-200">
         <table className="min-w-full text-sm bg-white">
@@ -142,16 +146,16 @@ export default function InvoiceView({
             ) : (
               items.map((it, idx) => (
                 <tr
-                  key={it.id}
+                  key={it.lineNo}
                   className="text-center border-b last:border-none"
                 >
                   <td className="py-2 pr-3">{idx + 1}</td>
-                  <td className="py-2 pr-3 font-medium">{it.name}</td>
-                  <td className="py-2 pr-3">{it.category}</td>
-                  <td className="py-2 pr-3">{it.qty}</td>
-                  <td className="py-2 pr-3">{vnd(it.price)}</td>
+                  <td className="py-2 pr-3 font-medium">{it.itemName}</td>
+                  <td className="py-2 pr-3 capitalize">{it.itemType}</td>
+                  <td className="py-2 pr-3">{it.quantity}</td>
+                  <td className="py-2 pr-3">{vnd(it.unitPrice)}</td>
                   <td className="py-2 pr-3 text-red-500 font-bold">
-                    {vnd(it.price * it.qty)}
+                    {vnd(it.lineTotal)}
                   </td>
                 </tr>
               ))
@@ -160,19 +164,23 @@ export default function InvoiceView({
         </table>
       </div>
 
-      {/* 2 cột info + payment info giống layout mẫu */}
+      {/* 3 cột info */}
       <div className="grid md:grid-cols-3 gap-4">
         {/* Thông tin bệnh nhân */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 md:col-span-1">
           <h3 className="font-semibold">Thông tin bệnh nhân</h3>
           <div className="mt-3 space-y-2 text-sm">
-            <Row label="Họ và tên" value={patient.fullName} />
-            {patient.code && <Row label="Mã hồ sơ" value={patient.code} />}
-            {patient.dob && <Row label="Ngày sinh" value={patient.dob} />}
-            {patient.gender && <Row label="Giới tính" value={patient.gender} />}
-            <Row label="Email" value={patient.email ?? "-"} />
-            <Row label="Số điện thoại" value={patient.phone ?? "-"} />
-            <Row label="Ghi chú" value={patient.note ?? "-"} />
+            <Row label="Họ và tên" value={patientInfo.fullName} />
+            <Row label="Mã hồ sơ" value={patientInfo.caseCode} />
+            {patientInfo.dateOfBirth && (
+              <Row label="Ngày sinh" value={patientInfo.dateOfBirth} />
+            )}
+            {patientInfo.gender && (
+              <Row label="Giới tính" value={patientInfo.gender} />
+            )}
+            <Row label="Email" value={patientInfo.email || "-"} />
+            <Row label="Số điện thoại" value={patientInfo.phone || "-"} />
+            <Row label="Ghi chú" value={patientInfo.note || "-"} />
           </div>
         </div>
 
@@ -180,11 +188,11 @@ export default function InvoiceView({
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 md:col-span-1">
           <h3 className="font-semibold">Thông tin bác sĩ</h3>
           <div className="mt-3 space-y-2 text-sm">
-            <Row label="Họ và tên" value={doctor.fullName} />
-            <Row label="Chuyên khoa" value={doctor.specialty ?? "-"} />
-            <Row label="Cơ sở" value={doctor.clinicName ?? "-"} />
-            <Row label="Email" value={doctor.email ?? "-"} />
-            <Row label="Số điện thoại" value={doctor.phone ?? "-"} />
+            <Row label="Họ và tên" value={doctorInfo.fullName} />
+            <Row label="Chuyên khoa" value={doctorInfo.specialtyName || "-"} />
+            <Row label="Cơ sở" value={doctorInfo.clinicName || "-"} />
+            <Row label="Email" value={doctorInfo.email || "-"} />
+            <Row label="Số điện thoại" value={doctorInfo.phone || "-"} />
           </div>
         </div>
 
@@ -192,22 +200,38 @@ export default function InvoiceView({
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 md:col-span-1">
           <h3 className="font-semibold">Thông tin thanh toán</h3>
           <div className="mt-3 space-y-2 text-sm">
-            <Row label="Tiền dịch vụ" value={vnd(payment.subTotal)} />
-            <Row label="Giảm giá" value={vnd(payment.discount)} />
+            <Row label="Tiền dịch vụ" value={vnd(paymentInfo.subtotal)} />
+            <Row label="Giảm giá" value={vnd(paymentInfo.discount)} />
+            <Row label="Thuế" value={vnd(paymentInfo.tax)} />
             <Row
               label={<span className="font-medium">Tổng thanh toán</span>}
               value={
                 <span className="text-red-500 font-bold">
-                  {vnd(payment.total)}
+                  {vnd(paymentInfo.totalAmount)}
                 </span>
               }
             />
-            {payment.method && (
-              <Row label="Phương thức" value={payment.method} />
-            )}
-            {payment.paidAt && (
-              <Row label="Thời gian thanh toán" value={payment.paidAt} />
-            )}
+            <Row
+              label="Đã thanh toán"
+              value={
+                <span className="text-green-600 font-semibold">
+                  {vnd(paymentInfo.paidAmount)}
+                </span>
+              }
+            />
+            <Row
+              label="Còn thiếu"
+              value={
+                <span className="text-orange-500 font-semibold">
+                  {vnd(paymentInfo.remainingAmount)}
+                </span>
+              }
+            />
+            <Row
+              label="Phương thức"
+              value={METHOD_LABEL[paymentInfo.method] || paymentInfo.method}
+            />
+            <Row label="Thời gian thanh toán" value={paymentInfo.paidAtText} />
           </div>
         </div>
       </div>
@@ -230,51 +254,3 @@ function Row({
     </div>
   );
 }
-
-/* ===== Demo data (thay bằng API của bạn) ===== */
-const demoData: InvoiceData = {
-  id: "INV-0008",
-  createdAt: "18:24:01 19/09/2025",
-  items: [
-    {
-      id: 9,
-      name: "Khám tổng quát",
-      category: "Exam",
-      qty: 1,
-      price: 100_000,
-      imageUrl:
-        "https://cdn.nhathuoclongchau.com.vn/unsafe/https://cms-prod.s3-sgn09.fptcloud.com/kham_suc_khoe_tong_quat_gom_nhung_gi_ban_da_biet_chua_yc_Ef_I_1663470300_a1b3bcd6aa.jpg",
-    },
-    {
-      id: 10,
-      name: "Paracetamol 500mg",
-      category: "Drug",
-      qty: 2,
-      price: 15_000,
-    },
-  ],
-  patient: {
-    fullName: "Trần Văn H",
-    email: "bestyasuo31@gmail.com",
-    phone: "0855565715",
-    note: "-",
-    code: "#5003",
-    dob: "01/01/1998",
-    gender: "Nam",
-  },
-  doctor: {
-    fullName: "BS. Nguyễn Minh An",
-    specialty: "Chẩn đoán hình ảnh",
-    clinicName: "Phòng khám FoMed",
-    email: "doctor.an@example.com",
-    phone: "0901 234 567",
-  },
-  payment: {
-    subTotal: 130_000,
-    discount: 0,
-    total: 130_000,
-    status: "Đã thanh toán",
-    method: "Ví điện tử",
-    paidAt: "18:25:03 19/09/2025",
-  },
-};

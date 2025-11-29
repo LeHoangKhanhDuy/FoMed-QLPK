@@ -153,12 +153,12 @@ export async function apiInvoiceGet(id: number): Promise<Invoice> {
       statusLabel: string;
 
       items?: Array<{
-        lineNo: number; 
+        lineNo: number;
         itemType: string;
-        itemName: string; 
+        itemName: string;
         quantity: number;
         unitPrice: number;
-        lineTotal: number; 
+        lineTotal: number;
       }>;
 
       payments?: Array<{
@@ -179,10 +179,10 @@ export async function apiInvoiceGet(id: number): Promise<Invoice> {
     id: it.lineNo,
     type: (it.itemType as "exam" | "service" | "drug") ?? "service",
     refId: undefined,
-    name: it.itemName, 
+    name: it.itemName,
     qty: Number(it.quantity),
     unitPrice: it.unitPrice,
-    amount: it.lineTotal, 
+    amount: it.lineTotal,
   }));
 
   const mappedPays: Payment[] = (raw.payments ?? []).map((p) => ({
@@ -207,7 +207,6 @@ export async function apiInvoiceGet(id: number): Promise<Invoice> {
     note: raw.note ?? "",
   };
 }
-
 
 /* ========================================
    4) Thanh toán hoá đơn
@@ -269,4 +268,58 @@ export async function apiInvoiceUpdateStatus(
   await authHttp.patch("/api/v1/admin/billing/invoices/" + invoiceId, {
     status: status,
   });
+}
+
+/* ================== CHI TIẾT HÓA ĐƠN (FULL) ================= */
+export type InvoiceDetailResponse = {
+  success: boolean;
+  data: {
+    invoiceId: number;
+    invoiceCode: string;
+    createdAtText: string;
+    statusLabel: string;
+    items: Array<{
+      lineNo: number;
+      itemName: string;
+      itemType: string;
+      quantity: number;
+      unitPrice: number;
+      lineTotal: number;
+    }>;
+    patientInfo: {
+      fullName: string;
+      caseCode: string;
+      dateOfBirth: string;
+      gender: string;
+      email: string;
+      phone: string;
+      note: string;
+    };
+    doctorInfo: {
+      fullName: string;
+      specialtyName: string;
+      clinicName: string;
+      email: string;
+      phone: string;
+    };
+    paymentInfo: {
+      subtotal: number;
+      discount: number;
+      tax: number;
+      totalAmount: number;
+      paidAmount: number;
+      remainingAmount: number;
+      method: string;
+      paidAtText: string;
+    };
+  };
+};
+
+export async function apiInvoiceGetDetail(
+  id: number
+): Promise<InvoiceDetailResponse["data"]> {
+  const { data } = await authHttp.get<InvoiceDetailResponse>(
+    `/api/v1/admin/billing/invoices/${id}`
+  );
+  return data.data;
 }
