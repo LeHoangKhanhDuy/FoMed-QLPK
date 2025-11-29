@@ -507,7 +507,7 @@ export default function Navbar() {
             <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold">
               <MedServiceDropdownMenu />
               <Link
-                to="/user/specialties"
+                to="/specialties"
                 className="hover:text-[var(--hover)] flex justify-center items-center gap-1 cursor-pointer"
               >
                 <Hospital className="w-5 h-5" />

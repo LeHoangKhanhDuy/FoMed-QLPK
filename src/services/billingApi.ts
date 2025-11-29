@@ -153,12 +153,12 @@ export async function apiInvoiceGet(id: number): Promise<Invoice> {
       statusLabel: string;
 
       items?: Array<{
-        invoiceItemId: number;
+        lineNo: number; 
         itemType: string;
-        description: string;
+        itemName: string; 
         quantity: number;
         unitPrice: number;
-        amount: number;
+        lineTotal: number; 
       }>;
 
       payments?: Array<{
@@ -176,13 +176,13 @@ export async function apiInvoiceGet(id: number): Promise<Invoice> {
   const raw = data.data;
 
   const mappedItems = (raw.items ?? []).map((it) => ({
-    id: it.invoiceItemId,
+    id: it.lineNo,
     type: (it.itemType as "exam" | "service" | "drug") ?? "service",
     refId: undefined,
-    name: it.description,
+    name: it.itemName, 
     qty: Number(it.quantity),
     unitPrice: it.unitPrice,
-    amount: it.amount,
+    amount: it.lineTotal, 
   }));
 
   const mappedPays: Payment[] = (raw.payments ?? []).map((p) => ({

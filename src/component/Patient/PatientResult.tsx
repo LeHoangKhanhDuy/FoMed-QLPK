@@ -25,6 +25,8 @@ export const PatientResult = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
+  const [codeError, setCodeError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const pageLimit = 10;
 
@@ -49,14 +51,16 @@ export const PatientResult = () => {
   const handleLookupByCode = async (code: string) => {
     try {
       setLoading(true);
+      setCodeError("");
       const result = await apiLookupResultByCode(code);
       setCodeResult(result);
       toast.success("Tìm thấy thông tin hồ sơ");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Không tìm thấy hồ sơ";
+      const errorMessage =
+        error instanceof Error ? error.message : "Không tìm thấy hồ sơ";
       toast.error(errorMessage);
       setCodeResult(null);
-      setTimeout(() => navigate("/patient-portal-login"), 2000);
+      setCodeError("Không tìm thấy hồ sơ.");
     } finally {
       setLoading(false);
     }
@@ -66,6 +70,7 @@ export const PatientResult = () => {
   const handleLookupByPhone = async (phone: string, page: number = 0) => {
     try {
       setLoading(true);
+      setPhoneError("");
       const result = await apiLookupResultByPhone(phone, page, pageLimit);
       setPhoneResults(result.items || []);
       setTotal(result.total || 0);
@@ -74,17 +79,18 @@ export const PatientResult = () => {
 
       if (result.items.length === 0) {
         toast.error("Không tìm thấy hồ sơ nào");
-        setTimeout(() => navigate("/patient-portal-login"), 2000);
+        setPhoneError("Không tìm thấy hồ sơ nào cho số điện thoại này.");
       } else {
         toast.success(`Tìm thấy ${result.total} hồ sơ`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Không thể tra cứu";
+      const errorMessage =
+        error instanceof Error ? error.message : "Không thể tra cứu";
       toast.error(errorMessage);
       setPhoneResults([]);
       setTotal(0);
       setTotalPages(0);
-      setTimeout(() => navigate("/patient-portal-login"), 2000);
+      setPhoneError("Có lỗi xảy ra khi tra cứu.");
     } finally {
       setLoading(false);
     }
@@ -212,6 +218,21 @@ export const PatientResult = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {state?.type === "code" && !codeResult && codeError && (
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <p className="text-xl font-semibold text-slate-700">
+              {codeError}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/patient-portal-login")}
+              className="mt-4 inline-flex items-center justify-center rounded-[var(--rounded)] bg-primary-linear px-4 py-2 text-white font-semibold cursor-pointer hover:bg-sky-600 transition"
+            >
+              Quay lại tra cứu
+            </button>
           </div>
         )}
 
@@ -377,6 +398,21 @@ export const PatientResult = () => {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {state?.type === "phone" && phoneResults.length === 0 && phoneError && (
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <p className="text-xl font-semibold text-slate-700">
+              {phoneError}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/patient-portal-login")}
+              className="mt-4 inline-flex items-center justify-center rounded-xl bg-sky-500 px-4 py-2 text-white font-semibold cursor-pointer hover:bg-sky-600 transition"
+            >
+              Quay lại tra cứu
+            </button>
           </div>
         )}
       </div>

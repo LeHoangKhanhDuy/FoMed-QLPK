@@ -16,8 +16,12 @@ import bvTD from "../../assets/images/bvTuDu.png";
 import bvVM from "../../assets/images/bvVinMec.png";
 import bvMat from "../../assets/images/bvMat.webp";
 import vnvc from "../../assets/images/vnvc.png";
+import { useState } from "react";
 import { BriefcaseMedical, Calendar, HeartPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useAuth } from "../../auth/auth";
+import AuthModal from "../Auth/AuthModalProps";
 
 type Service = {
   label: string;
@@ -30,11 +34,11 @@ const services: Service[] = [
   { label: "Đặt lịch khám bệnh", icon: prescription },
   { label: "Đặt lịch xét nghiệm", icon: medical },
   { label: "Đặt lịch tiêm chủng", icon: injection },
-  { label: "Xem đơn thuốc", icon: medicin },
-  { label: "Khám Tai - Mũi - Họng", icon: hospital },
-  { label: "Đặt theo gói khám bệnh", icon: clinic },
+  { label: "Khám bệnh nam khoa", icon: medicin },
+  { label: "Khám bệnh phụ khoa", icon: hospital },
+  { label: "Xét nghiệm sinh hóa", icon: clinic },
   { label: "Đặt lịch theo bác sĩ", icon: doctor },
-  { label: "Khám sức khỏe sinh sản", icon: health },
+  { label: "Khám sức khỏe xin việc", icon: health },
 ];
 
 const logos: Logo[] = [
@@ -78,8 +82,34 @@ const logos: Logo[] = [
 
 export default function HeroHeader() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isLoginOpen, setLoginOpen] = useState(false);
+
+  const handleServiceClick = () => {
+    const userInfo = localStorage.getItem("userInfo");
+    const userToken = localStorage.getItem("userToken");
+
+    if (!user || !userInfo || !userToken) {
+      toast.error("Vui lòng đăng nhập để đặt lịch gói dịch vụ!");
+      localStorage.setItem("redirectAfterLogin", "/booking-package");
+      setLoginOpen(true);
+      return;
+    }
+
+    navigate("/booking-package");
+  };
+
+  const handleLoginSuccess = () => {
+    setLoginOpen(false);
+    const redirectUrl = localStorage.getItem("redirectAfterLogin");
+    if (redirectUrl) {
+      navigate(redirectUrl);
+      localStorage.removeItem("redirectAfterLogin");
+    }
+  };
   return (
-    <section className="relative overflow-hidden">
+    <>
+      <section className="relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-sky-200" />
       <div className="pointer-events-none absolute -z-10 inset-0 opacity-40">
@@ -175,7 +205,7 @@ export default function HeroHeader() {
                 key={i}
                 className="w-full bg-white rounded-xl p-2 md:p-3 shadow-sm ring-1 ring-slate-100
                    hover:ring-sky-400 hover:shadow-lg transition-all duration-300 cursor-pointer text-left"
-                onClick={() => navigate("/booking-doctor")}
+                onClick={handleServiceClick}
                 aria-label={s.label}
               >
                 <div className="flex items-center gap-3 md:gap-4">
@@ -195,6 +225,12 @@ export default function HeroHeader() {
           </div>
         </div>
       </div>
-    </section>
+      </section>
+      <AuthModal
+        isOpen={isLoginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
+    </>
   );
 }

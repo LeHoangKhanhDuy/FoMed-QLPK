@@ -88,7 +88,7 @@ function App() {
         <Route path="/user/doctor-list" element={<DoctorListPage />} />
 
         {/* SPECIALTIES */}
-        <Route path="/user/specialties" element={<SpecialtyPage />} />
+        <Route path="specialties" element={<SpecialtyPage />} />
 
         {/* CSM ADMIN */}
         <Route path="/cms" element={<CmsGuard />}>

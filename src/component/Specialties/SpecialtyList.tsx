@@ -8,86 +8,56 @@ import {
   Syringe,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import type { SpecialtyItem } from "../../types/specialty/specialtyType";
+import { getPublicSpecialties } from "../../services/specialty";
 
-// NOTE: You can replace icons below per specialty if you have brand assets.
-// I used lucide-react for a clean minimal look similar to your screenshot.
+const ICON_ROTATION = [HeartPulse, Baby, Brain, Activity, Stethoscope, Syringe];
 
-type Specialty = {
-  key: string;
+const ICON_BY_CODE: Record<
+  string,
+  React.ComponentType<React.SVGProps<SVGSVGElement>>
+> = {
+  cardio: HeartPulse,
+  "tim-mach": HeartPulse,
+  gastro: Syringe,
+  "tieu-hoa": Syringe,
+  endocrine: Brain,
+  "noi-tiet": Brain,
+  andrology: Stethoscope,
+  "nam-khoa": Stethoscope,
+  gynecology: Baby,
+  "phu-khoa": Baby,
+};
+
+type SpecialtyCard = {
+  id: number;
   name: string;
   desc: string;
-  href: string; // route to detail page
+  href: string;
   Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 };
 
-const SPECIALTIES: Specialty[] = [
-  {
-    key: "chronic",
-    name: "Bệnh mãn tính",
-    desc: "Đánh giá, theo dõi và điều trị chuyên sâu các bệnh lý mãn tính, bao gồm bệnh tim mạch, chuyển hóa, xương khớp, tiêu hóa và bệnh gan, thận mãn tính",
-    href: "/chuyen-khoa/benh-man-tinh",
-    Icon: HeartPulse,
-  },
-  {
-    key: "andrology",
-    name: "Nam khoa",
-    desc: "Khám và điều trị các bệnh lý nam khoa như rối loạn cương dương, xuất tinh sớm, bệnh tuyến tiền liệt, vô sinh hiếm muộn",
-    href: "/chuyen-khoa/nam-khoa",
-    Icon: Stethoscope,
-  },
-  {
-    key: "gynecology",
-    name: "Phụ khoa",
-    desc: "Khám và điều trị toàn diện các bệnh lý phụ khoa như viêm nhiễm, rối loạn kinh nguyệt, u xơ tử cung cùng các loại ung thư ở nữ giới",
-    href: "/chuyen-khoa/phu-khoa",
-    Icon: Baby,
-  },
-  {
-    key: "cardio",
-    name: "Tim mạch",
-    desc: "Đánh giá chuyên sâu, phát hiện và điều trị kịp thời các bệnh lý tim mạch như bệnh động mạch vành, tăng huyết áp, rối loạn nhịp tim, suy tim",
-    href: "/chuyen-khoa/tim-mach",
-    Icon: Activity,
-  },
-  {
-    key: "gastro",
-    name: "Tiêu hóa",
-    desc: "Khám và chẩn đoán điều trị các bệnh đường tiêu hóa như viêm loét dạ dày, hội chứng ruột kích thích, nhiễm trùng, dị ứng thực phẩm cùng các bệnh lý gan-mật",
-    href: "/chuyen-khoa/tieu-hoa",
-    Icon: Syringe,
-  },
-  {
-    key: "endocrine",
-    name: "Nội tiết",
-    desc: "Điều trị chuyên sâu các bệnh lý liên quan đến hệ thống nội tiết như đái tháo đường, hội chứng chuyển hóa, rối loạn tuyến giáp, rối loạn hormone sinh dục nam/nữ",
-    href: "/chuyen-khoa/noi-tiet",
-    Icon: Brain,
-  },
-  {
-    key: "endocrine",
-    name: "Nội tiết",
-    desc: "Điều trị chuyên sâu các bệnh lý liên quan đến hệ thống nội tiết như đái tháo đường, hội chứng chuyển hóa, rối loạn tuyến giáp, rối loạn hormone sinh dục nam/nữ",
-    href: "/chuyen-khoa/noi-tiet",
-    Icon: Brain,
-  },
-  {
-    key: "endocrine",
-    name: "Nội tiết",
-    desc: "Điều trị chuyên sâu các bệnh lý liên quan đến hệ thống nội tiết như đái tháo đường, hội chứng chuyển hóa, rối loạn tuyến giáp, rối loạn hormone sinh dục nam/nữ",
-    href: "/chuyen-khoa/noi-tiet",
-    Icon: Brain,
-  },
-  {
-    key: "endocrine",
-    name: "Nội tiết",
-    desc: "Điều trị chuyên sâu các bệnh lý liên quan đến hệ thống nội tiết như đái tháo đường, hội chứng chuyển hóa, rối loạn tuyến giáp, rối loạn hormone sinh dục nam/nữ",
-    href: "/chuyen-khoa/noi-tiet",
-    Icon: Brain,
-  },
-];
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
 
-function Card({ s }: { s: Specialty }) {
+const pickIcon = (
+  code: string | null | undefined,
+  idx: number
+): React.ComponentType<React.SVGProps<SVGSVGElement>> => {
+  if (code) {
+    const normalized = toSlug(code);
+    if (ICON_BY_CODE[normalized]) return ICON_BY_CODE[normalized];
+  }
+  return ICON_ROTATION[idx % ICON_ROTATION.length] ?? Stethoscope;
+};
+
+function Card({ s }: { s: SpecialtyCard }) {
   return (
     <motion.article
       initial={{ opacity: 0, y: 10 }}
@@ -127,6 +97,69 @@ function Card({ s }: { s: Specialty }) {
 }
 
 export default function SpecialtyList() {
+  const [data, setData] = useState<SpecialtyItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await getPublicSpecialties();
+        if (!active) return;
+        setData(res);
+        setError(null);
+      } catch (err) {
+        if (!active) return;
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Không thể tải danh sách chuyên khoa";
+        setError(msg);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchData();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const cards = useMemo<SpecialtyCard[]>(() => {
+    return data.map((item, idx) => {
+      const slugSource = item.code || item.name || String(item.specialtyId);
+      const slug = toSlug(slugSource) || `specialty-${item.specialtyId}`;
+      return {
+        id: item.specialtyId,
+        name: item.name,
+        desc: item.description ?? "Đang cập nhật mô tả.",
+        href: `/chuyen-khoa/${slug}`,
+        Icon: pickIcon(item.code || item.name, idx),
+      } satisfies SpecialtyCard;
+    });
+  }, [data]);
+
+  let content: React.ReactNode;
+  if (loading) {
+    content = (
+      <p className="col-span-full text-center text-slate-500">
+        Đang tải danh sách chuyên khoa…
+      </p>
+    );
+  } else if (error) {
+    content = <p className="col-span-full text-center text-red-500">{error}</p>;
+  } else if (cards.length === 0) {
+    content = (
+      <p className="col-span-full text-center text-slate-500">
+        Chưa có chuyên khoa hoạt động.
+      </p>
+    );
+  } else {
+    content = cards.map((s) => <Card key={s.id} s={s} />);
+  }
+
   return (
     <main className="max-w-7xl mx-auto px-4 xl:px-0 py-8 md:py-14">
       <header className="mb-6">
@@ -136,9 +169,7 @@ export default function SpecialtyList() {
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {SPECIALTIES.map((s) => (
-          <Card key={s.key} s={s} />
-        ))}
+        {content}
       </section>
     </main>
   );

@@ -58,13 +58,13 @@ export default function PatientPortalLogin({
   const isValidOtp = /^\d{6}$/.test(otp);
 
   // --- Record code validation ---
-  // Format: PREFIX-XXXXXX
-  const recordPattern = /^[A-Z]{2,}-[A-Z0-9]{6}/;
+  // Format: PREFIX-XXXXX (tối thiểu 2 ký tự sau dấu -)
+  const recordPattern = /^[A-Z]{2,}-[A-Z0-9]{2,}$/;
   let recordError = "";
   if (recordCode.length > 0) {
     if (!recordPattern.test(recordCode)) {
       recordError =
-        "Mã hồ sơ không hợp lệ. Ví dụ: HSFM-ABCDEF (PREFIX-XXXXXX)";
+        "Mã hồ sơ không hợp lệ. Ví dụ: HSFM-12 hoặc HSFM-ABC123 (PREFIX-XXXX)";
     }
   }
   const isValidRecord = recordPattern.test(recordCode);
@@ -95,7 +95,7 @@ export default function PatientPortalLogin({
     if (tab === "record" && isValidRecord) {
       setSubmitting(true);
       try {
-        onSubmitRecord?.(recordCode.trim());
+        onSubmitRecord?.(recordCode.trim().toUpperCase());
       } finally {
         setSubmitting(false);
       }

@@ -428,7 +428,7 @@ export default function DoctorPatientWorkspace() {
                 <SelectMenu<number>
                   value={selectedLabId ?? undefined}
                   onChange={(v) =>
-                    setSelectedLabId(v != null ? Number(v) : null)
+                    setSelectedLabId(typeof v === "number" ? v : null)
                   }
                   placeholder={
                     labTests.length > 0 ? "Chọn xét nghiệm" : "Đang tải..."
