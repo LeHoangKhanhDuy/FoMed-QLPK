@@ -293,12 +293,12 @@ export default function BillingListManager() {
               </div>
 
               {/* phải: tạo hoá đơn desktop */}
-              <button
+              {/* <button
                 onClick={() => nav("/cms/billing/new")}
                 className="hidden sm:inline-flex cursor-pointer h-12 px-4 items-center justify-center gap-2 rounded-[var(--rounded)] bg-primary-linear text-white whitespace-nowrap shrink-0"
               >
                 + Tạo hoá đơn
-              </button>
+              </button> */}
 
               {/* mobile: gộp Lọc + Tạo hoá đơn */}
               <div className="grid grid-cols-2 gap-2 w-full sm:hidden">

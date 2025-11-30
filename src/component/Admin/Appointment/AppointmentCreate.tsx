@@ -777,7 +777,7 @@ export default function AppointmentCreate() {
                     onBlur={() => markPatientExtraTouched("dob")}
                     placeholder="dd/mm/yyyy"
                     className={cn(
-                      "w-full rounded-[var(--rounded)] border px-3 py-3.5 shadow-xs outline-none focus:ring-2",
+                      "w-full rounded-[var(--rounded)] border px-3 py-3 shadow-xs outline-none focus:ring-2",
                       patientExtraTouched.dob && patientExtraErrors.dob
                         ? "border-red-400 focus:ring-red-300"
                         : "border-slate-200 focus:ring-sky-500"

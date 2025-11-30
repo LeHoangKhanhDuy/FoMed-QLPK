@@ -164,7 +164,6 @@ export default function HeroHeader() {
               className="inline-flex items-center gap-2 rounded-lg bg-white/95 px-3.5 py-2
                  shadow-sm ring-1 ring-slate-200 hover:ring-sky-300 focus:outline-none
                  transition cursor-pointer"
-              onClick={() => navigate("/booking-doctor")}
               aria-label="Khám phá gói xét nghiệm"
             >
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-pink-100">
