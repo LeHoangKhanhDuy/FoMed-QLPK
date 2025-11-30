@@ -238,11 +238,11 @@ export default function DoctorClinic() {
           </div>
         </div>
 
-        <div className="mt-4 flex justify-center">
+        {/* <div className="mt-4 flex justify-center">
           <button className="rounded-[var(--rounded)] text-sky-400 hover:text-sky-500 text-md px-2 py-1 cursor-pointer">
             Xem thêm
           </button>
-        </div>
+        </div> */}
       </section>
     </div>
   );

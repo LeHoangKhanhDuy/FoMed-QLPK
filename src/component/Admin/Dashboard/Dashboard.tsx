@@ -465,7 +465,7 @@ export const Dashboard = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-500">Doanh thu hiện tại</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-green-500">
                 {fmtVND(monthRevenue)}
               </p>
               <p className="text-xs text-gray-400 mt-1">
