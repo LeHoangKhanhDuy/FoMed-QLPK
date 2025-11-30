@@ -206,7 +206,7 @@ export default function LoginForm({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full shadow-md py-2.5 px-4 text-md font-semibold rounded-lg text-white bg-primary-linear disabled:opacity-50"
+                  className="w-full shadow-md py-2.5 px-4 text-md font-semibold rounded-lg text-white bg-primary-linear disabled:opacity-50 cursor-pointer hover:shadow-lg transition-shadow duration-300"
                 >
                   {loading ? "Đang đăng nhập..." : "Đăng nhập"}
                 </button>

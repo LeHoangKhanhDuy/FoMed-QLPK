@@ -19,7 +19,6 @@ type ServiceListRaw = {
   data: unknown[];
 };
 
-
 // ---- helper: nhận cả camelCase lẫn PascalCase
 const normalizeServiceItem = (raw: unknown): ServiceItem => {
   if (typeof raw !== "object" || raw === null) {
@@ -127,7 +126,7 @@ export async function createService(payload: {
   isActive: boolean;
   imageUrl?: string | null;
 }): Promise<{ serviceId: number }> {
-  const { data } = await axios.post(`/api/v1/services/add`, payload, {
+  const { data } = await authHttp.post(`/api/v1/services/add`, payload, {
     headers: { "Content-Type": "application/json" },
   });
   return data?.data ?? data;
@@ -147,7 +146,7 @@ export async function updateService(
     imageUrl?: string | null;
   }
 ): Promise<void> {
-  await axios.put(`/api/v1/services/update/${id}`, payload, {
+  await authHttp.put(`/api/v1/services/update/${id}`, payload, {
     headers: { "Content-Type": "application/json" },
   });
 }
@@ -158,7 +157,7 @@ export async function toggleService(
   status: ServiceStatus
 ): Promise<void> {
   const isActive = status === "active";
-  await axios.patch(`/api/v1/services/status/${id}`, { isActive });
+  await authHttp.patch(`/api/v1/services/status/${id}`, { isActive });
 }
 
 /** Xoá dịch vụ */
