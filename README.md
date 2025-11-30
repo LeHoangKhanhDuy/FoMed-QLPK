@@ -1,188 +1,181 @@
-# 🏥 Quản lý Phòng Khám - Frontend
+![](https://user-images.githubusercontent.com/8027137/181298835-99af5b55-6fa6-45fc-9519-5b3e3eebf403.png)
 
-> React + TypeScript + Vite + TailwindCSS
+# 🏥 FoMed - Quản lý phòng khám (Frontend)
 
-## 🚀 Quick Start
+> Ứng dụng React + TypeScript kết nối với API để người dùng đặt lịch, xem bác sĩ và CMS nội bộ xử lý dịch vụ.
+
+## 🚀 Khởi động nhanh (Quick Start)
 
 ```bash
-# Install dependencies
+# Cài đặt thư viện cần thiết
 npm install
 
-# Run development server
+# Chạy môi trường phát triển (hot reload)
 npm run dev
 
-# Build for production
+# Tạo bản build tối ưu cho production
 npm run build
 
-# Preview production build
+# Xem thử bản build sản xuất
 npm run preview
 ```
 
-## 📚 Documentation
+## 📚 Tài liệu kèm theo
 
-**Xem tài liệu đầy đủ tại:** [`PROJECT_DOCUMENTATION.md`](./PROJECT_DOCUMENTATION.md)
+- **Đọc chi tiết**: [`PROJECT_DOCUMENTATION.md`](./PROJECT_DOCUMENTATION.md)
+- **Nội dung nổi bật**: Service Manager, Authentication, Booking, Dashboard, Testing Guide, Error Pages
 
-### Nội dung chính:
-1. **Service Manager** - Quản lý dịch vụ y tế
-2. **Service Image Upload** - Upload và quản lý ảnh dịch vụ
-3. **User Role Management** - Quản lý vai trò người dùng
-4. **Authentication & Session** - Xác thực và phiên đăng nhập
-5. **Error Pages** - Trang lỗi chuyên nghiệp
-6. **Testing Guide** - Hướng dẫn test
+## 🎯 Tính năng chính
 
-## 🎯 Features
+### ✅ Đã hoàn thiện
 
-### ✅ Đã hoàn thành
-- ✅ Service Manager với VND price format (5.000.000)
-- ✅ Image upload (URL + preview)
-- ✅ User role management (single selection)
-- ✅ Smart session handling (CMS không logout tự động)
-- ✅ Professional error pages (404, 403, 500, Maintenance)
-- ✅ Search & filter với debounce
-- ✅ Pagination
-- ✅ Responsive design
+- ✅ Hiển thị danh sách bác sĩ theo chuyên khoa, rating, lượt khám, link Chi tiết/Đặt lịch.
+- ✅ Booking gói dịch vụ/bác sĩ với form chuyển hướng nhanh.
+- ✅ Component `DoctorRelated` tự điều chỉnh và thông báo khi không có bác sĩ cùng chuyên khoa.
+- ✅ Service Manager trong CMS: CRUD dịch vụ, upload ảnh, định dạng giá theo chuẩn VND (5.000.000).
+- ✅ Quản lý vai trò người dùng (ADMIN/DOCTOR/EMPLOYEE) với phân quyền rõ ràng.
+- ✅ Chuẩn hóa session JWT, CMS giữ trạng thái đăng nhập, public auto logout.
+- ✅ Pages lỗi 404/403/500 chuyên nghiệp, responsive toàn bộ app.
+- ✅ Các modal xác nhận, toast thông báo và skeleton loading cho UX mượt mà.
 
 ### ⏳ Đang phát triển
-- ⏳ Backend upload endpoint cho images
-- ⏳ Image compression
-- ⏳ Drag & drop upload
-- ⏳ Multiple images per service
 
-## 🔧 Tech Stack
+- ⏳ Upload endpoint backend cho hình ảnh dịch vụ.
+- ⏳ Nén ảnh phía client trước khi gửi.
+- ⏳ Kéo thả (drag & drop) nhiều ảnh.
+- ⏳ Hỗ trợ nhiều ảnh trên cùng một dịch vụ.
 
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: TailwindCSS
-- **UI Components**: Headless UI
-- **Icons**: Lucide React
-- **HTTP Client**: Axios
-- **Routing**: React Router v6
-- **Notifications**: React Hot Toast
+## 🛠️ Công nghệ & thư viện
 
-## 📁 Project Structure
+| Thành phần   | Công cụ               |
+| ------------ | --------------------- |
+| Framework    | React 18 + TypeScript |
+| Build        | Vite                  |
+| Kiểu dáng    | TailwindCSS           |
+| UI/Modal     | Headless UI           |
+| Icons        | Lucide React          |
+| HTTP         | Axios + Interceptors  |
+| Router       | React Router v6       |
+| Notification | React Hot Toast       |
+
+## 📁 Cấu trúc thư mục chính
 
 ```
 src/
-├── component/
-│   ├── Admin/              # CMS components
-│   │   ├── ServiceManager/
-│   │   ├── User/
-│   │   ├── DrugManager/
-│   │   └── ...
-│   ├── Booking/            # Booking flow
-│   ├── Home/               # Public pages
-│   └── ui/                 # Reusable UI components
-├── services/               # API calls
-├── types/                  # TypeScript types
-├── auth/                   # Authentication
-├── pages/                  # Route pages
-└── Utils/                  # Utilities
+├── component/              # Component UI theo domain (Auth, Booking, Admin, Doctor...)
+├── services/               # Axios + API helper (auth, doctor, booking...)
+├── pages/                  # Các route chính (Home, Doctor, CMS...)
+├── contexts/               # Context provider nội bộ (UserContext)
+├── hooks/                  # Custom hooks (useUser, useUserProfile...)
+├── layouts/                # Layout cho CMS, người dùng, doctor
+└── Utils/                  # Utilities (formatVND, avatar, mask phone...)
 ```
 
-## 🌐 Environment Variables
+## 🌐 Biến môi trường cần thiết
 
-```env
-# .env
-VITE_API_BASE_URL=https://your-api-url.com
-```
+Tạo file `.env` ở gốc:
 
-## 🔐 Roles & Permissions
-
-| Role | Access |
-|------|--------|
-| `ADMIN` | Full CMS access |
-| `DOCTOR` | CMS limited (patient list, workspace) |
-| `EMPLOYEE` | CMS limited (appointments, read-only) |
-| `PATIENT` | Public pages only |
-
-## 📊 Key Features Detail
-
-### 1. Service Manager (`/cms/service-manager`)
-- CRUD operations
-- VND price formatting (5.000.000)
-- Image upload & preview
-- Search & filter
-- Pagination
-
-### 2. User Management (`/cms/users-manager`)
-- View users
-- Edit roles (single selection)
-- Activate/Deactivate accounts
-- Search & filter
-
-### 3. Authentication
-- JWT token-based
-- Smart 401 handling
-- CMS session persistence
-- Auto logout for public users
-
-### 4. Error Handling
-- Professional error pages
-- Graceful degradation
-- User-friendly messages
-
-## 🧪 Testing
-
-Xem chi tiết tại: [`PROJECT_DOCUMENTATION.md#6-testing-guide`](./PROJECT_DOCUMENTATION.md#6-testing-guide)
-
-### Quick Test
 ```bash
-1. Start dev server: npm run dev
-2. Login as ADMIN
-3. Navigate to /cms/service-manager
-4. Create new service with image
-5. Verify VND format: 5.000.000
-6. Verify image displays
+VITE_API_BASE_URL=https://api.fomed.local
 ```
 
-## 🐛 Known Issues
+## 🔐 Vai trò & quyền truy cập
 
-1. **File Upload**: Chỉ local preview, cần backend endpoint
-2. **Image Validation**: Chưa validate format/size
-3. **Bulk Actions**: Chưa có bulk delete/toggle
+| Vai trò    | Quyền                                                         |
+| ---------- | ------------------------------------------------------------- |
+| `ADMIN`    | Toàn quyền CMS (dịch vụ, user, hóa đơn, đơn thuốc, dashboard) |
+| `DOCTOR`   | Xem lịch khám, workspace, đơn thuốc, bệnh nhân tự quản        |
+| `EMPLOYEE` | Xử lý lịch hẹn, xem hóa đơn, read-only CMS nào được cấp       |
+| `PATIENT`  | Truy cập trang người dùng công khai, đặt lịch, xem lịch sử    |
 
-## 🚀 Deployment
+## 📊 Chi tiết tính năng
 
-### Vercel
+1. **Service Manager (`/cms/service-manager`)**
+
+   - CRUD dịch vụ y tế (tên, chuyên khoa, giá, mô tả).
+   - Upload ảnh (kéo thả, preview) và hiển thị preview khi chọn.
+   - Định dạng giá theo chuẩn VND (5.000.000) trực tiếp khi nhập.
+   - Search, filter và phân trang giúp tìm nhanh dịch vụ.
+
+2. **Booking & Home**
+
+   - Giao diện hiển thị gói dịch vụ, bác sĩ nổi bật, tính năng tìm chuyên khoa.
+   - Component `DoctorRelated` tự động lấy dữ liệu liên quan và xuất thông báo khi trống.
+   - Form đặt lịch chuyển hướng sang `/booking` với tham số `doctorId` hoặc `packageId`.
+
+3. **Authentication**
+
+   - JWT + refresh token (CMS lưu trữ trong session, public auto logout).
+   - Login/Signup xử lý validation và thông báo lỗi cụ thể.
+   - CMS có modal xác nhận khi thao tác (delete, approve, cancel).
+
+4. **Error Handling & UX**
+   - Clear 404/403/500 pages.
+   - Skeleton loading trong các component nhỏ với animation.
+   - Toast hoặc modal hiển thị kết quả thao tác.
+
+## 🧭 Hướng dẫn sử dụng nền tảng (UI)
+
+1. Tại trang chính, search theo tên bác sĩ/chuyên khoa và chọn bộ lọc (chuyên khoa, rating).
+2. Xem card bác sĩ để kiểm tra rating, lượt khám, kinh nghiệm; dùng nút `Chi tiết` hoặc `Đặt lịch`.
+3. Khi đăng nhập `CMS`, vào `/cms` để quản lý dịch vụ, hóa đơn và lịch khám theo vai trò.
+4. Kiểm tra modal xác nhận khi thao tác xóa/cập nhật, toast hiển thị thông báo thành công/lỗi.
+5. Trong trường hợp không tìm được bác sĩ cùng chuyên khoa, phần `Bác sĩ cùng chuyên khoa` vẫn hiện và báo "Không có bác sĩ nào cùng chuyên khoa".
+
+## 🧪 Kiểm thử nhanh
+
 ```bash
-1. Set environment variable: VITE_API_BASE_URL
-2. Deploy: vercel --prod
-3. Verify CORS on backend
+1. npm run dev -> mở localhost
+2. Đăng nhập ADMIN (thông qua form auth)
+3. Truy cập /cms/service-manager, thêm dịch vụ kèm ảnh
+4. Quay ra trang public, tìm bác sĩ, đặt lịch thử
+5. Kiểm tra tab console/network nếu xảy ra lỗi
 ```
 
-### Other Platforms
+## 🐛 Những vấn đề đang chú ý
+
+1. File upload chỉ preview local, cần backend endpoint thật.
+2. Chưa validate kích thước/file type trước khi upload.
+3. Chưa có chức năng bulk action (xóa hàng loạt).
+
+## 🚀 Đưa lên môi trường sản xuất
+
+### Trên Vercel
+
 ```bash
-1. Build: npm run build
-2. Upload dist/ folder
-3. Set VITE_API_BASE_URL
-4. Configure CORS
+1. Đặt VITE_API_BASE_URL
+2. vercel --prod
+3. Kiểm tra CORS và env trên backend
 ```
 
-## 📝 Changelog
+### Trên các nền tảng khác
+
+```bash
+1. npm run build
+2. Upload thư mục dist
+3. Cấu hình env và CORS
+```
+
+## 📝 Lịch sử thay đổi (Changelog)
 
 ### v2.0.0 (2025-01-25)
-- ✅ VND price formatting
-- ✅ Image upload UI
-- ✅ User role management
-- ✅ Smart session handling
-- ✅ Error pages
-- ✅ Consolidated documentation
 
-### v1.0.0 (Initial)
-- ✅ Basic CRUD
-- ✅ Authentication
-- ✅ CMS layout
-- ✅ Public pages
+- ✅ Hoàn thành Service Manager
+- ✅ Thêm booking flow
+- ✅ Hệ thống phân quyền
+- ✅ Thông báo & modal UX mới
+- ✅ Ghi chú responsive và lỗi
 
-## 📞 Support
+### v1.0.0 (Khởi tạo)
 
-**Documentation**: [`PROJECT_DOCUMENTATION.md`](./PROJECT_DOCUMENTATION.md)
+- ✅ Layout giới thiệu
+- ✅ Layout CMS cơ bản
+- ✅ Đăng nhập & routing
 
-**Issues?** Check:
-1. Console logs
-2. Network tab
-3. localStorage
-4. Documentation
+## 📞 Hỗ trợ
+
+- **Tài liệu chi tiết**: [`PROJECT_DOCUMENTATION.md`](./PROJECT_DOCUMENTATION.md)
+- **Phát hiện lỗi**: xem console, network, localStorage rồi mở issue
 
 ---
 
