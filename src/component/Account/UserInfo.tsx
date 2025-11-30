@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff, Pencil } from "lucide-react";
-import { Link } from "react-router-dom";
 import EditProfileModal from "./EditProfile";
 
 /* ==== Lấy từ services/auth ==== */
@@ -13,6 +12,7 @@ import {
 import type { AppUser } from "../../types/auth/login";
 import toast from "react-hot-toast";
 import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../Utils/avatarHelper";
+import { showComingSoon } from "../../common/showComingSoon";
 
 /* ==== Kiểu dữ liệu UI hiện tại ==== */
 export interface User {
@@ -100,11 +100,12 @@ export default function UserInfo({
     try {
       const url = await uploadAvatar(file);
       toast.success("Tải ảnh thành công!");
-      
+
       // Cập nhật state user với avatar mới ngay lập tức
       setUser((prev) => (prev ? { ...prev, avatar: url } : null));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Không thể tải ảnh";
+      const errorMessage =
+        err instanceof Error ? err.message : "Không thể tải ảnh";
       toast.error(errorMessage);
     }
   };
@@ -290,11 +291,13 @@ export default function UserInfo({
                 </div>
 
                 <div className="mt-4">
-                  <Link to="/user/details/change-password">
-                    <span className="bg-primary-linear rounded-[var(--rounded)] text-white py-2 px-4 cursor-pointer">
-                      Đổi mật khẩu
-                    </span>
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={showComingSoon}
+                    className="bg-primary-linear rounded-[var(--rounded)] text-white py-2 px-4 cursor-pointer"
+                  >
+                    Đổi mật khẩu
+                  </button>
                 </div>
               </>
             ) : (

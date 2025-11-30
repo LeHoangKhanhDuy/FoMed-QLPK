@@ -6,16 +6,20 @@ import {
   Transition,
 } from "@headlessui/react";
 import { CalendarHeart, ChevronDownIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import React from "react";
 
 const helpItems = [
-  { to: "/", label: "Đặt lịch khám bệnh" },
-  { to: "/", label: "Đặt lịch xét nghiệm" },
-  { to: "/", label: "Đặt lịch tiêm chủng" },
-  { to: "/", label: "Kê thuốc theo toa" },
+  { label: "Đặt lịch khám bệnh" },
+  { label: "Đặt lịch xét nghiệm" },
+  { label: "Đặt lịch tiêm chủng" },
+  { label: "Kê thuốc theo toa" },
 ];
 
-const MedServiceDropdownMobile = () => {
+type Props = {
+  onBookNow: () => void;
+};
+
+const MedServiceDropdownMobile: React.FC<Props> = ({ onBookNow }) => {
   return (
     <div>
       <Popover className="relative">
@@ -40,15 +44,16 @@ const MedServiceDropdownMobile = () => {
           >
             <DisclosurePanel className="mt-2 space-y-2 origin-top">
               {helpItems.map((item, index) => (
-                <Link
+                <button
                   key={index}
-                  to={item.to}
-                  className="flex items-center gap-x-3 rounded-lg py-2 pr-3 pl-7 text-md font-semibold text-gray-900 hover:bg-gray-50"
+                  type="button"
+                  onClick={() => onBookNow()}
+                  className="flex w-full items-center gap-x-3 rounded-lg py-2 pr-3 pl-7 text-md font-semibold text-gray-900 hover:bg-gray-50"
                 >
                   <span className="flex ml-7 text-md font-bold">
                     {item.label}
                   </span>
-                </Link>
+                </button>
               ))}
             </DisclosurePanel>
           </Transition>

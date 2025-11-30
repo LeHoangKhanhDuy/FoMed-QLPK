@@ -34,6 +34,7 @@ import {
   logout as logoutApi,
 } from "../../services/auth";
 import toast from "react-hot-toast";
+import { showComingSoon } from "../../common/showComingSoon";
 
 const USER_INFO_KEY = "userInfo";
 
@@ -125,22 +126,30 @@ export default function Navbar() {
     }
   };
 
-  const handleBookingClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const promptBookingLogin = () => {
+    toast.error("Vui lòng đăng nhập để đặt lịch khám!");
+    localStorage.setItem("redirectAfterLogin", "/booking-package");
+    setLoginOpen(true);
+  };
 
-    // Kiểm tra đăng nhập
+  const ensureBookingAccess = () => {
     const user = localStorage.getItem("userInfo");
     const token = localStorage.getItem("userToken");
-
     if (!user || !token) {
-      toast.error("Vui lòng đăng nhập để đặt lịch khám!");
-      // Lưu URL hiện tại để redirect sau khi đăng nhập
-      localStorage.setItem("redirectAfterLogin", "/booking-package");
-      setLoginOpen(true); // Hiển thị modal đăng nhập
-      return;
+      promptBookingLogin();
+      return false;
     }
+    return true;
+  };
 
-    // Nếu đã đăng nhập, cho phép vào trang đặt lịch
+  const handleBookingClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!ensureBookingAccess()) return;
+    navigate("/booking-package");
+  };
+
+  const handleBookingNavigation = () => {
+    if (!ensureBookingAccess()) return;
     navigate("/booking-package");
   };
 
@@ -279,7 +288,9 @@ export default function Navbar() {
                   {/* Menu items mobile */}
                   <div className="mb-3">
                     <div className="flex flex-col gap-2 text-sm font-semibold">
-                      <MedServiceDropdownMobile />
+                      <MedServiceDropdownMobile
+                        onBookNow={handleBookingNavigation}
+                      />
                       <Link
                         to="/user/specialties"
                         onClick={() => setMobileMenuOpen(false)}
@@ -303,14 +314,17 @@ export default function Navbar() {
                       Đặt lịch
                     </Link>
 
-                    <Link
-                      to="/patient-portal-login"
-                      onClick={() => setMobileMenuOpen(false)}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        showComingSoon();
+                      }}
                       className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
                     >
                       <ScanHeart className="w-8 h-8 rounded-md bg-orange-400 p-1.5 text-white" />
                       Tra cứu kết quả
-                    </Link>
+                    </button>
                   </div>
 
                   <hr className="mt-2 mb-2" />
@@ -511,7 +525,7 @@ export default function Navbar() {
         <nav className="hidden lg:block border-t">
           <div className="flex flex-col lg:flex-row items-center justify-between px-4 md:px-2 xl:px-0 py-4 gap-4 max-w-7xl mx-auto">
             <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold">
-              <MedServiceDropdownMenu />
+              <MedServiceDropdownMenu onBookNow={handleBookingNavigation} />
               <Link
                 to="/specialties"
                 className="hover:text-[var(--hover)] flex justify-center items-center gap-1 cursor-pointer"
@@ -542,12 +556,16 @@ export default function Navbar() {
               >
                 <ClipboardClock className="size-5" /> Đặt lịch
               </button>
-              <Link
-                to="/patient-portal-login"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  showComingSoon();
+                }}
                 className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition duration-200 active:scale-95 cursor-pointer"
               >
                 <ScanHeart className="size-5" /> Tra cứu kết quả
-              </Link>
+              </button>
             </div>
           </div>
         </nav>

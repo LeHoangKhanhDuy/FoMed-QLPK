@@ -85,12 +85,12 @@ function Card({ s }: { s: SpecialtyCard }) {
         >
           Tìm hiểu thêm
         </Link>
-        <button
+        {/* <button
           type="button"
           className="flex-1 inline-flex items-center justify-center gap-2 rounded-[var(--rounded)] bg-primary-linear px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-600 transition cursor-pointer"
         >
           Đặt lịch
-        </button>
+        </button> */}
       </div>
     </motion.article>
   );

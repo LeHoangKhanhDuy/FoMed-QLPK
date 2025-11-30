@@ -18,6 +18,7 @@ import { Toolbar } from "./Toolbar";
 import { WeekGrid } from "./WeekGrid";
 import { ShiftModal } from "./ShiftModal";
 import toast from "react-hot-toast";
+import { showComingSoon } from "../../../common/showComingSoon";
 
 export default function DoctorScheduleAdmin() {
   const { hasRole } = useAuth();
@@ -40,6 +41,7 @@ export default function DoctorScheduleAdmin() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Shift | null>(null);
+  const canModifySchedule = hasRole(["ADMIN", "EMPLOYEE"]);
 
   const load = async () => {
     // TODO: Replace with real doctors and rooms APIs if available in your project
@@ -59,9 +61,9 @@ export default function DoctorScheduleAdmin() {
         setDoctors(mappedDoctors);
         const roomList = Array.from(
           new Set(
-            (items
+            items
               .map((d) => (d.roomName || "").trim())
-              .filter((x) => x && x.length > 0)) as string[]
+              .filter((x) => x && x.length > 0) as string[]
           )
         ).sort((a, b) => a.localeCompare(b, "vi"));
         setRooms(roomList);
@@ -69,24 +71,38 @@ export default function DoctorScheduleAdmin() {
         console.warn("Không tải được danh sách bác sĩ", e);
       }
 
-      const calRes = await apiGetCalendar({ from: weekFrom, to: weekTo, doctorId: doctorId === "all" ? undefined : Number(doctorId) });
-      const items: Array<{ slotId: number; doctorId: number; doctorName: string; date: string | Date; startTime?: string; endTime?: string; roomName?: string | null }> = calRes.data || [];
+      const calRes = await apiGetCalendar({
+        from: weekFrom,
+        to: weekTo,
+        doctorId: doctorId === "all" ? undefined : Number(doctorId),
+      });
+      const items: Array<{
+        slotId: number;
+        doctorId: number;
+        doctorName: string;
+        date: string | Date;
+        startTime?: string;
+        endTime?: string;
+        roomName?: string | null;
+      }> = calRes.data || [];
       // Map về Shift[] UI hiện tại
       const mapped: Shift[] = items.map((b) => ({
         id: b.slotId,
         doctorId: b.doctorId,
         doctorName: b.doctorName,
-        date: typeof b.date === "string" ? b.date : new Date(b.date).toISOString().slice(0,10),
-        start: (b.startTime || "").slice(0,5),
-        end: (b.endTime || "").slice(0,5),
+        date:
+          typeof b.date === "string"
+            ? b.date
+            : new Date(b.date).toISOString().slice(0, 10),
+        start: (b.startTime || "").slice(0, 5),
+        end: (b.endTime || "").slice(0, 5),
         location: b.roomName || undefined,
         status: "scheduled",
       }));
       setShifts(mapped);
     } catch (e) {
       console.error("Failed to load calendar", e);
-    }
-    finally {
+    } finally {
       setLoadingCalendar(false);
     }
   };
@@ -113,10 +129,18 @@ export default function DoctorScheduleAdmin() {
   }, [shifts, doctorId, query]);
 
   const openCreate = () => {
+    if (!canModifySchedule) {
+      showComingSoon();
+      return;
+    }
     setEditing(null);
     setModalOpen(true);
   };
   const openEdit = (s: Shift) => {
+    if (!canModifySchedule) {
+      toast.error("Chỉ Admin và Nhân viên mới được sửa lịch");
+      return;
+    }
     setEditing(s);
     setModalOpen(true);
   };
@@ -124,14 +148,19 @@ export default function DoctorScheduleAdmin() {
   const handleSubmit = async (payload: ShiftPayload) => {
     // Map ShiftPayload -> CreateWeeklySlotRequest
     const weekday = new Date(payload.date).getDay();
-    const weekdayMap = [7,1,2,3,4,5,6]; // Sun->7, Mon->1 ...
+    const weekdayMap = [7, 1, 2, 3, 4, 5, 6]; // Sun->7, Mon->1 ...
     const req = {
       weekday: weekdayMap[weekday],
-      startTime: payload.start.length === 5 ? `${payload.start}:00` : payload.start,
+      startTime:
+        payload.start.length === 5 ? `${payload.start}:00` : payload.start,
       endTime: payload.end.length === 5 ? `${payload.end}:00` : payload.end,
       note: payload.location,
     };
     try {
+      if (!canModifySchedule) {
+        toast.error("Chỉ Admin và Nhân viên mới được tạo/sửa lịch");
+        return;
+      }
       if (editing?.id) {
         await apiUpdateWeeklySlot(editing.id, { ...req, isActive: true });
         toast.success("Cập nhật lịch làm việc thành công");
@@ -145,13 +174,22 @@ export default function DoctorScheduleAdmin() {
       }, 0);
     } catch (e) {
       console.error(e);
-      const errorWithResponse = e as { response?: { data?: { message?: string } } };
-      toast.error(errorWithResponse?.response?.data?.message || "Thao tác không thành công");
+      const errorWithResponse = e as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(
+        errorWithResponse?.response?.data?.message ||
+          "Thao tác không thành công"
+      );
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
+      if (!canModifySchedule) {
+        toast.error("Chỉ Admin và Nhân viên mới được xoá lịch");
+        return;
+      }
       await apiDeleteWeeklySlot(id);
       toast.success("Đã xoá lịch làm việc");
       await load();
@@ -181,7 +219,7 @@ export default function DoctorScheduleAdmin() {
           query={query}
           setQuery={setQuery}
           openCreate={openCreate}
-          canCreate={hasRole(["ADMIN", "EMPLOYEE", "DOCTOR"])}
+          canCreate={canModifySchedule}
         />
 
         <WeekGrid

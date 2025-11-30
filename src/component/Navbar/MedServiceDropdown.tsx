@@ -1,15 +1,19 @@
 import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
 import { CalendarHeart, ChevronDownIcon } from "lucide-react";
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 
 const helpItems = [
-  { to: "/", label: "Đặt lịch khám bệnh" },
-  { to: "/", label: "Đặt lịch xét nghiệm" },
-  { to: "/", label: "Đặt lịch tiêm chủng" },
-  { to: "/", label: "Kê thuốc theo toa" },
+  { label: "Đặt lịch khám bệnh" },
+  { label: "Đặt lịch xét nghiệm" },
+  { label: "Đặt lịch tiêm chủng" },
+  { label: "Kê thuốc theo toa" },
 ];
 
-const MedServiceDropdownMenu = () => {
+type Props = {
+  onBookNow: () => void;
+};
+
+const MedServiceDropdownMenu: React.FC<Props> = ({ onBookNow }) => {
   const [isHovered, setIsHovered] = useState(false);
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -50,14 +54,17 @@ const MedServiceDropdownMenu = () => {
       >
         <div className="py-2">
           {helpItems.map((item, index) => (
-            <a
-              target="_blank"
+            <button
               key={index}
-              href={item.to}
-              className="group flex w-full items-center gap-2 font-semibold px-4 py-3 hover:bg-gray-100 hover:text-[var(--hover)] transition-colors duration-300"
+              type="button"
+              onClick={() => {
+                onBookNow();
+                setIsHovered(false);
+              }}
+              className="group flex w-full items-center gap-2 font-semibold px-4 py-3 text-left hover:bg-gray-100 hover:text-[var(--hover)] transition-colors duration-300 cursor-pointer"
             >
               {item.label}
-            </a>
+            </button>
           ))}
         </div>
       </PopoverPanel>
