@@ -56,7 +56,7 @@ export default function DoctorClinic() {
             : "+10 năm kinh nghiệm",
           specialty: doc.primarySpecialtyName || "Chuyên khoa tổng quát",
           rating: doc.ratingAvg || 4.5,
-          visitCount: Math.floor(Math.random() * 200) + 50, // visitCount không có trong DoctorListItem
+          visitCount: doc.visitCount ?? 0,
           logo: doc.avatarUrl ? getFullAvatarUrl(doc.avatarUrl) : defaultDoctorImg,
           verified: true, // isActive không có trong DoctorListItem, mặc định true
         }));

@@ -13,6 +13,7 @@ export type BEDoctor = {
   primarySpecialtyName?: string | null;
   roomName?: string | null;
   experienceYears?: number | null;
+  visitCount?: number | null;
 };
 
 export async function apiListDoctors(params?: {

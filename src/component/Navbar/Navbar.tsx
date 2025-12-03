@@ -292,12 +292,29 @@ export default function Navbar() {
                         onBookNow={handleBookingNavigation}
                       />
                       <Link
-                        to="/user/specialties"
+                        to="/specialties"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
                       >
                         <Hospital className="w-8 h-8 rounded-md bg-primary-linear p-1.5 text-white" />
                         Chuyên khoa
+                      </Link>
+                      <HelpMedDropdownMobile />
+                      <Link
+                        to="/new-code"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
+                      >
+                        <BadgeInfo className="w-8 h-8 rounded-md bg-cyan-500 p-1.5 text-white" />
+                        Về FoMed
+                      </Link>
+                      <Link
+                        to="/free-code"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
+                      >
+                        <PhoneIcon className="w-8 h-8 rounded-md bg-teal-400 p-1.5 text-white" />
+                        Liên hệ
                       </Link>
                     </div>
                   </div>
@@ -305,14 +322,17 @@ export default function Navbar() {
                   <hr className="mt-2 mb-2" />
 
                   <div className="flex flex-col gap-2">
-                    <Link
-                      to="/booking-package"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        handleBookingNavigation();
+                      }}
+                      className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer text-left"
                     >
                       <ClipboardClock className="w-8 h-8 rounded-md bg-primary-linear p-1.5 text-white" />
                       Đặt lịch
-                    </Link>
+                    </button>
 
                     <button
                       type="button"
@@ -320,35 +340,11 @@ export default function Navbar() {
                         setMobileMenuOpen(false);
                         showComingSoon();
                       }}
-                      className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
+                      className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer text-left"
                     >
                       <ScanHeart className="w-8 h-8 rounded-md bg-orange-400 p-1.5 text-white" />
                       Tra cứu kết quả
                     </button>
-                  </div>
-
-                  <hr className="mt-2 mb-2" />
-
-                  <div className="flex flex-col space-y-2 mt-2 text-sm font-semibold">
-                    <Link
-                      to="/help"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
-                    >
-                      <BadgeInfo className="w-8 h-8 rounded-md bg-cyan-500 p-1.5 text-white" />
-                      Về FoMed
-                    </Link>
-
-                    <Link
-                      to="/contact"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer"
-                    >
-                      <PhoneIcon className="w-8 h-8 rounded-md bg-teal-400 p-1.5 text-white" />
-                      Liên hệ
-                    </Link>
-
-                    <HelpMedDropdownMobile />
                   </div>
 
                   <hr className="my-2" />
@@ -359,19 +355,36 @@ export default function Navbar() {
                       <div className="px-3 py-2 font-bold text-gray-900">
                         Xin chào, {displayName}
                       </div>
+                      {canAccessAdmin && (
+                        <Link
+                          to="/cms/dashboard"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
+                        >
+                          <UserStar className="w-7 h-7 text-primary" /> Trang quản lý
+                        </Link>
+                      )}
                       <Link
                         to="/user/profile"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
                       >
-                        <User className="w-7 h-7 text-primary" /> Hồ sơ của tôi
+                        <CircleUserRound className="w-7 h-7 text-primary" /> Cài đặt tài khoản
                       </Link>
+                      <Link
+                        to="/user/details/change-password"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <Settings className="w-7 h-7 text-primary" /> Đổi mật khẩu
+                      </Link>
+                      <hr className="my-2" />
                       <button
                         onClick={() => {
                           handleLogout();
                           setMobileMenuOpen(false);
                         }}
-                        className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer w-full text-left"
+                        className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-red-500 hover:bg-red-50 cursor-pointer w-full text-left"
                       >
                         <LogOut className="w-7 h-7 text-red-500" /> Đăng xuất
                       </button>
