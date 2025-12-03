@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { appointmentsList } from "../../../services/appointmentsApi";
+import { apiCompletedVisitsPendingBilling } from "../../../services/billingApi";
 import toast from "react-hot-toast";
 
 type Item = {
@@ -30,6 +31,7 @@ type Item = {
 export default function CMSSidebar() {
   const { pathname } = useLocation();
   const [todayCount, setTodayCount] = useState<number>(0);
+  const [pendingBillingCount, setPendingBillingCount] = useState<number>(0);
   
   // Lấy thông tin user từ localStorage
   const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
@@ -48,6 +50,17 @@ export default function CMSSidebar() {
       })
       .catch(() => toast.error("Không tải được số lượng lịch hôm nay"));
   }, []);
+
+  // Gọi API khi sidebar mount để đếm số hóa đơn chờ thanh toán (chỉ ADMIN)
+  useEffect(() => {
+    if (userRoles.includes("ADMIN")) {
+      apiCompletedVisitsPendingBilling()
+        .then((res) => {
+          setPendingBillingCount(res.length ?? 0);
+        })
+        .catch(() => toast.error("Không tải được số lượng hóa đơn chờ thanh toán"));
+    }
+  }, [userRoles]);
 
   const items: Item[] = [
     // === THỐNG KÊ - TẤT CẢ ĐỀU THẤY ===
@@ -88,9 +101,10 @@ export default function CMSSidebar() {
     
     // === QUẢN LÝ - CHỈ ADMIN ===
     { 
-      name: "Thanh toán", 
+      name: "Hóa đơn", 
       href: "/cms/billing", 
       icon: Wallet2,
+      badge: pendingBillingCount > 0 ? pendingBillingCount : undefined,
       category: "Quản lý hệ thống",
       roles: ["ADMIN"],
     },

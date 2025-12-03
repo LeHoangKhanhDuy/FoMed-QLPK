@@ -16,18 +16,19 @@ const PREFIX = "/api/doctor-workspace";
 
 // Response từ BE: GET /lab-tests
 interface LabTestResponse {
-  labTestId: number | string;
-  code?: string | null;
-  name?: string | null;
+  labTestId: number;
+  code: string | null;
+  name: string;
 }
 
 // Response từ BE: GET /medicines
+// Backend trả về: medicineId, name, unit, isActive, stock (decimal/number)
 interface MedicineResponse {
   medicineId: number;
   name: string;
   unit: string | null;
   isActive: boolean;
-  stock: number | string | null;
+  stock: number; // BE trả về number (decimal)
 }
 
 // Response từ BE: POST /encounters/start
@@ -48,21 +49,6 @@ interface CompleteEncounterResponse {
 
 /** Lấy danh mục xét nghiệm */
 export async function apiGetLabTests(): Promise<LabItem[]> {
-  const toNumber = (value: unknown): number => {
-    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-    if (typeof value === "string") {
-      const parsed = Number(value.trim());
-      return Number.isFinite(parsed) ? parsed : 0;
-    }
-    return 0;
-  };
-
-  const toString = (value: unknown): string => {
-    if (typeof value === "string") return value.trim();
-    if (value === null || value === undefined) return "";
-    return String(value).trim();
-  };
-
   try {
     const { data } = await authHttp.get<{
       success: boolean;
@@ -70,24 +56,21 @@ export async function apiGetLabTests(): Promise<LabItem[]> {
       data: LabTestResponse[];
     }>(`${PREFIX}/lab-tests`);
 
-    const items = Array.isArray(data.data) ? data.data : [];
+    const items = data.data || [];
 
-    return items
-      .map((item) => {
-        const id = toNumber(item.labTestId);
-        return {
-          id,
-          code: toString(item.code),
-          name: toString(item.name) || `Xét nghiệm #${id || "?"}`,
-        } satisfies LabItem;
-      })
-      .filter((item) => item.id > 0 && item.name.length > 0);
+    // Map từ backend (labTestId) sang frontend (id)
+    return items.map((item) => ({
+      id: item.labTestId,
+      code: item.code || "",
+      name: item.name,
+      price: 0, // Backend chưa trả về giá ở API này, set mặc định hoặc update BE nếu cần
+    }));
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không tải được danh mục xét nghiệm"));
   }
 }
 
-/** Lấy danh mục thuốc */
+/** Lấy danh mục thuốc (Đã cập nhật logic parse Stock) */
 export async function apiGetMedicines(): Promise<
   Array<{
     id: number;
@@ -104,23 +87,13 @@ export async function apiGetMedicines(): Promise<
       data: MedicineResponse[];
     }>(`${PREFIX}/medicines`);
 
-    const toNumber = (value: unknown): number => {
-      if (value === null || value === undefined) return 0;
-      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-      if (typeof value === "string") {
-        const cleaned = value.replace(/\./g, "").replace(/[^0-9-]/g, "");
-        const parsed = Number(cleaned);
-        return Number.isFinite(parsed) ? parsed : 0;
-      }
-      return 0;
-    };
-
     return (data.data || []).map((med) => ({
       id: med.medicineId,
       name: med.name,
       unit: med.unit ?? "",
       isActive: med.isActive,
-      stock: toNumber(med.stock),
+      // Đảm bảo stock là số dương (đề phòng BE trả null hoặc âm)
+      stock: med.stock > 0 ? med.stock : 0,
     }));
   } catch (e) {
     throw new Error(getErrorMessage(e, "Không tải được danh mục thuốc"));

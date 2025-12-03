@@ -34,6 +34,7 @@ export interface DoctorListItem {
   ratingCount: number;
   avatarUrl: string | null;
   intro?: string | null;
+  visitCount?: number;
   educations: DoctorEducation[];
   expertises: DoctorExpertise[];
   achievements: DoctorAchievement[];

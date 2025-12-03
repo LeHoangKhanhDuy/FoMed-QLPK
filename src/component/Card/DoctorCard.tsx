@@ -1,27 +1,23 @@
-// src/components/doctor/ClinicCard.tsx
-import { Hospital, Stethoscope } from "lucide-react";
+// src/components/doctor/DoctorCard.tsx
+import { Hospital, Stethoscope, Star, Users } from "lucide-react"; // Dùng Users icon cho đúng ngữ cảnh
 import React from "react";
 import check from "../../assets/images/checklist.png";
-import star from "../../assets/images/star.png";
-import visit from "../../assets/images/user.png";
 import { Link } from "react-router-dom";
 
 export interface DoctorCardProps {
-  id?: number; // ID bác sĩ để tạo link
+  id?: number;
   name: string;
   specialty: string;
   experience: string;
   rating: number;
-  visitCount: number;
+  visitCount: number; // Số lượt khám
   logo: string;
   verified?: boolean;
   className?: string;
-
-  // NEW (tùy chọn)
-  detailHref?: string; // link trang chi tiết
-  bookHref?: string; // link trang đặt lịch
-  onView?: () => void; // handler khi bấm Chi tiết
-  onBook?: () => void; // handler khi bấm Đặt lịch
+  detailHref?: string;
+  bookHref?: string;
+  onView?: () => void;
+  onBook?: () => void;
 }
 
 const DoctorCard: React.FC<DoctorCardProps> = ({
@@ -34,7 +30,6 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   logo,
   verified,
   className = "",
-  // default fallback - nếu có id thì tự tạo link
   detailHref = id ? `/user/doctor/${id}` : "/user/doctor-list",
   bookHref = id ? `/booking/select-service?doctorId=${id}` : "/booking/select-service",
   onView,
@@ -43,71 +38,73 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   return (
     <section
       className={[
-        "w-full bg-white rounded-xl shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300",
-        "border border-gray-100 flex flex-col cursor-pointer",
+        "group w-full bg-white rounded-xl shadow-sm hover:shadow-md hover:border-sky-400 transition-all duration-300",
+        "border border-gray-100 flex flex-col cursor-pointer overflow-hidden",
         className,
       ].join(" ")}
     >
-      <div className="p-4 flex flex-col gap-4">
-        <div className="overflow-hidden flex items-center justify-center">
-          <img
-            src={logo}
-            alt={name}
-            className="max-h-30 max-w-[100%] rounded-full object-contain"
-          />
+      <div className="p-4 flex flex-col gap-3 h-full">
+        {/* Avatar */}
+        <div className="flex justify-center">
+          <div className="relative w-24 h-24">
+            <img
+              src={logo}
+              alt={name}
+              className="w-full h-full rounded-full object-cover border-2 border-gray-50 shadow-sm group-hover:border-sky-100 transition-colors"
+            />
+            {verified && (
+              <img
+                src={check}
+                alt="Verified"
+                className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full p-0.5"
+              />
+            )}
+          </div>
         </div>
 
-        <div>
-          <h3 className="text-base font-semibold leading-6">
-            <span className="block min-h-[48px]">
-              <span className="line-clamp-2">
-                <span className="flex items-center uppercase">
-                  {name}
-                  {verified && (
-                    <img
-                      src={check}
-                      alt="checkLogo"
-                      className="inline-block w-5 h-5 ml-1"
-                    />
-                  )}
-                </span>
-              </span>
-            </span>
+        {/* Name */}
+        <div className="text-center min-h-[48px]">
+          <h3 className="text-base font-bold text-slate-800 uppercase line-clamp-2 group-hover:text-sky-600 transition-colors">
+            {name}
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 text-gray-500">
-          <Hospital size={20} className="text-blue-500" />
-          <span className="text-sm font-semibold">{experience}</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-gray-500">
-          <Stethoscope size={20} className="text-blue-500" />
-          <span className="text-sm font-semibold leading-5 line-clamp-2">
-            {specialty}
-          </span>
-        </div>
-
-        <div className="flex justify-between items-center mt-2 font-bold text-md">
-          <div className="flex items-center gap-2 text-yellow-400">
-            <img src={star} alt="logo star" className="w-5 h-5" />
-            <span>{rating}</span>
+        {/* Info Lines */}
+        <div className="space-y-2 text-sm text-slate-600 mt-1">
+          <div className="flex items-center gap-2">
+            <Hospital className="w-4 h-4 text-sky-500 shrink-0" />
+            <span className="font-medium truncate">{experience}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-sky-500">
-            <img src={visit} alt="logo visit" className="w-5 h-5" />
-            <span>{visitCount}</span>
+          <div className="flex items-center gap-2">
+            <Stethoscope className="w-4 h-4 text-sky-500 shrink-0" />
+            <span className="font-medium truncate">{specialty}</span>
+          </div>
+        </div>
+
+        {/* Rating & Visit Count Footer */}
+        <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-50">
+          {/* Rating */}
+          <div className="flex items-center gap-1.5 text-amber-400 font-bold text-sm">
+            <Star className="w-4 h-4 fill-current" />
+            <span>{rating.toFixed(1)}</span>
+          </div>
+
+          {/* Lượt khám (FIXED UI) */}
+          <div className="flex items-center gap-1.5 text-sky-600 font-semibold text-sm bg-sky-50 px-2 py-1 rounded-md">
+            <Users className="w-4 h-4" />
+            <span>{visitCount.toLocaleString("vi-VN")}</span>
           </div>
         </div>
       </div>
 
-      {/* Nút hành động: Chi tiết + Đặt lịch */}
-      <div className="grid grid-cols-2 gap-3 p-4 pt-0 mt-auto">
+      {/* Action Buttons */}
+      <div className="grid grid-cols-2 gap-3 p-4 pt-0">
         <Link to={detailHref} className="w-full">
           <button
             type="button"
             onClick={onView}
-            className="w-full cursor-pointer rounded-xl border border-sky-500 text-sky-600 hover:bg-sky-50 font-semibold py-2 active:scale-[0.98] transition"
+            className="w-full py-2 rounded-[var(--rounded)] border border-sky-500 text-sky-600 hover:bg-sky-50 font-semibold text-sm transition-colors cursor-pointer"
           >
             Chi tiết
           </button>
@@ -117,7 +114,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
           <button
             type="button"
             onClick={onBook}
-            className="w-full cursor-pointer rounded-xl bg-primary-linear text-white font-semibold py-2 active:scale-[0.98] transition"
+            className="w-full py-2 rounded-[var(--rounded)] bg-primary-linear text-white hover:bg-sky-600 font-semibold text-sm transition-colors shadow-sm shadow-sky-200 cursor-pointer"
           >
             Đặt lịch
           </button>
@@ -125,7 +122,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
           <Link to={bookHref} className="w-full">
             <button
               type="button"
-              className="w-full cursor-pointer rounded-xl bg-primary-linear text-white font-semibold py-2 active:scale-[0.98] transition"
+              className="w-full py-2 rounded-[var(--rounded)] bg-primary-linear text-white hover:bg-sky-600 font-semibold text-sm transition-colors shadow-sm shadow-sky-200 cursor-pointer"
             >
               Đặt lịch
             </button>

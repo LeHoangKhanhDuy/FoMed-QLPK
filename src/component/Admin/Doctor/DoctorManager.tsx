@@ -130,6 +130,7 @@ export default function DoctorManager() {
       setLoading(true);
       if (editing) {
         // Build partial payload comparing changed primitive fields
+        // Chuẩn hóa avatarUrl: null → "" để so sánh đúng với payload từ modal
         const partial = buildDoctorUpdatePayload(
           payload as UpdateDoctorPayload,
           {
@@ -141,7 +142,7 @@ export default function DoctorManager() {
             experienceNote: null,
             intro: null,
             isActive: editing.isActive,
-            avatarUrl: editing.avatarUrl ?? undefined,
+            avatarUrl: editing.avatarUrl ?? "", // Chuẩn hóa null → "" để so sánh đúng
             // For arrays we don't have full initial here (list item), so use empty defaults
             educations: [],
             expertises: [],
@@ -155,6 +156,12 @@ export default function DoctorManager() {
         if (up.expertises !== undefined) partial.expertises = up.expertises;
         if (up.achievements !== undefined)
           partial.achievements = up.achievements;
+
+        // Force include avatarUrl nếu modal đã gửi (modal đã so sánh với giá trị ban đầu)
+        // Điều này đảm bảo avatarUrl được gửi đúng khi có thay đổi
+        if (up.avatarUrl !== undefined) {
+          partial.avatarUrl = up.avatarUrl;
+        }
 
         await apiUpdateDoctor(editing.doctorId, partial);
         toast.success("Đã cập nhật hồ sơ bác sĩ");
@@ -261,7 +268,7 @@ export default function DoctorManager() {
               <th className="px-3 py-2 text-center">Chuyên khoa</th>
               <th className="px-3 py-2 text-center">Phòng khám</th>
               <th className="px-3 py-2 text-center">Kinh nghiệm</th>
-              <th className="px-3 py-2 text-center">Đánh giá</th>
+              <th className="px-3 py-2 text-center">Lượt khám</th>
               <th className="px-3 py-2 text-center">Trạng thái</th>
               <th className="px-3 py-2">Thao tác</th>
             </tr>
@@ -323,11 +330,8 @@ export default function DoctorManager() {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col items-center">
-                      <span className="font-semibold text-yellow-600">
-                        {doc.ratingAvg.toFixed(1)} ⭐
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        ({doc.ratingCount} đánh giá)
+                      <span className="font-semibold text-slate-900">
+                        {doc.visitCount.toLocaleString()}
                       </span>
                     </div>
                   </td>

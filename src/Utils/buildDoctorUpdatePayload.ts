@@ -24,9 +24,19 @@ export function buildDoctorUpdatePayload(
   if (form.intro !== initial.intro) p.intro = trimOrNull(form.intro);
   if (form.isActive !== initial.isActive) p.isActive = form.isActive;
 
-  if (form.avatarUrl && form.avatarUrl !== initial.avatarUrl) {
-    const url = form.avatarUrl.trim();
-    if (isHttpUrl(url)) p.avatarUrl = url;
+  // Xử lý avatarUrl: nếu modal đã gửi avatarUrl (có trong payload), luôn gửi
+  // Modal đã so sánh với giá trị ban đầu từ detail, nên không cần so sánh lại ở đây
+  // Backend: null = không đổi, "" = xóa, "url" = cập nhật
+  if (form.avatarUrl !== undefined) {
+    const formAvatar = form.avatarUrl?.trim() || "";
+    // Nếu formAvatar là empty string, gửi "" để backend xóa
+    // Nếu formAvatar là URL hợp lệ, gửi URL
+    if (formAvatar === "") {
+      p.avatarUrl = ""; // Gửi empty string để xóa
+    } else if (isHttpUrl(formAvatar)) {
+      p.avatarUrl = formAvatar; // Gửi URL để cập nhật
+    }
+    // Nếu không phải empty string và không phải URL hợp lệ, không gửi (có thể là giá trị không hợp lệ)
   }
 
   const changed = (a?: unknown[], b?: unknown[]) =>
