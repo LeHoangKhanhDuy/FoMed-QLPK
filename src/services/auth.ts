@@ -45,7 +45,12 @@ export function readUserFromStorage(): AppUser | null {
   }
 }
 
-export function saveAuth(token: string, user: AppUser, refreshToken?: string) {
+export function saveAuth(
+  token: string,
+  user: AppUser,
+  refreshToken?: string,
+  options?: { emitEvent?: boolean }
+) {
   localStorage.setItem(USER_TOKEN_KEY, token);
   if (refreshToken) localStorage.setItem(USER_REFRESH_TOKEN_KEY, refreshToken);
 
@@ -62,7 +67,9 @@ export function saveAuth(token: string, user: AppUser, refreshToken?: string) {
 
   localStorage.setItem(USER_INFO_KEY, JSON.stringify(merged));
   setAuthToken(token);
-  window.dispatchEvent(new Event("auth:updated"));
+  if (options?.emitEvent ?? true) {
+    window.dispatchEvent(new Event("auth:updated"));
+  }
 }
 
 export function clearAuth() {
@@ -201,9 +208,9 @@ function normalizeLogin(response: BeLoginResponse): LoginNormalized {
 /* ============ API CALLS ============ */
 export async function register(email: string, password: string, name: string) {
   const payload = {
-    fullName: name.trim(), 
-    email: email.trim(), 
-    password: password, 
+    fullName: name.trim(),
+    email: email.trim(),
+    password: password,
   };
 
   try {
@@ -311,7 +318,7 @@ export async function getProfile(token: string): Promise<AppUser> {
 
     // Lưu lại cache để lần sau có createdAt
     const tokenStr = localStorage.getItem(USER_TOKEN_KEY) || token;
-    saveAuth(tokenStr, user);
+    saveAuth(tokenStr, user, undefined, { emitEvent: false });
 
     return user;
   } catch (error: unknown) {
@@ -478,7 +485,7 @@ export async function uploadAvatar(file: File): Promise<string> {
 
   // tạo form data
   const formData = new FormData();
-  formData.append("File", file); 
+  formData.append("File", file);
   setAuthToken(token);
 
   try {
@@ -489,7 +496,7 @@ export async function uploadAvatar(file: File): Promise<string> {
     });
 
     console.log("Upload avatar response:", data);
-    
+
     const avatarUrl =
       data?.data?.avatarUrl ||
       data?.data?.AvatarUrl ||
