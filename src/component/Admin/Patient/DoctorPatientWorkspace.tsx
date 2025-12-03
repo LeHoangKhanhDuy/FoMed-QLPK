@@ -290,10 +290,10 @@ export default function DoctorPatientWorkspace() {
       return;
     }
 
-    // KIỂM TRA THUỐC HẾT HÀNG
+    // 2. Validate Tồn kho ở FE (Chặn sớm nếu stock = 0) - Giữ nguyên
     const outOfStockMeds = rxLines
       .map((line) => medicines.find((m) => m.id === line.drugId))
-      .filter((med) => med && med.stock === 0);
+      .filter((med) => med && med.stock <= 0);
 
     if (outOfStockMeds.length > 0) {
       toast.error(
@@ -313,15 +313,33 @@ export default function DoctorPatientWorkspace() {
         advice: rxAdvice || undefined,
       };
 
+      // Bước 1: Lưu toa thuốc
       await apiSubmitPrescription(payload);
+      // Bước 2: Hoàn tất & Trừ kho
       await apiCompleteEncounter({ appointmentId });
       openSuccess(
         "Đã lưu toa thuốc",
         "Toa thuốc đã được lưu. Phiên khám đã hoàn tất."
       );
-      setTimeout(() => nav(-1), 1500);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Không thể lưu toa thuốc");
+      setTimeout(() => nav(-1), 2000);
+    } catch (error) {
+      console.error(error);
+      let msg = "Không thể lưu toa thuốc";
+
+      if (typeof error === "object" && error !== null) {
+        const maybeError = error as {
+          response?: { data?: { message?: string } };
+          message?: string;
+        };
+
+        if (maybeError.response?.data?.message) {
+          msg = maybeError.response.data.message;
+        } else if (maybeError.message) {
+          msg = maybeError.message;
+        }
+      }
+
+      toast.error(msg, { duration: 5000 });
     } finally {
       setSubmitting(false);
     }
@@ -593,10 +611,10 @@ export default function DoctorPatientWorkspace() {
                               .map((m) => ({
                                 value: m.id,
                                 label:
-                                  m.stock === 0
+                                  m.stock <= 0
                                     ? `${m.name} (${m.unit}) — Hết hàng`
                                     : `${m.name} (${m.unit}) — Tồn kho: ${m.stock}`,
-                                disabled: m.stock === 0,
+                                disabled: m.stock <= 0,
                                 statusColor:
                                   m.stock === 0
                                     ? "text-red-600"
