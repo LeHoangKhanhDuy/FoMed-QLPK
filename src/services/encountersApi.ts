@@ -9,6 +9,7 @@ export interface EncounterListItem {
   doctorName: string;
   serviceName: string;
   status: string;
+  totalCost?: number;
 }
 
 export interface EncountersListResponse {
@@ -27,6 +28,7 @@ export interface Encounter {
   doctorName: string;
   serviceName: string;
   status: string;
+  totalCost?: number;
 }
 
 export interface EncounterDetailDrug {
@@ -54,10 +56,13 @@ export interface EncounterDetail {
   patientCode?: string | null;
   patientDob?: string | null; // DateOnly as string "YYYY-MM-DD"
   patientGender?: string | null; // "Nam" or "Nữ"
+  patientPhone?: string | null;
+  patientEmail?: string | null;
   diagnosis?: string | null;
   allergy?: string | null;
   advice?: string | null;
   warning?: string | null;
+  totalCost?: number;
   items: EncounterDetailDrug[];
 }
 
@@ -92,6 +97,7 @@ export async function apiGetEncounters(params?: {
       doctorName: item.doctorName,
       serviceName: item.serviceName ?? "",
       status: item.status,
+      totalCost: item.totalCost,
     })),
     total: backendData.totalItems,
     page: backendData.page,

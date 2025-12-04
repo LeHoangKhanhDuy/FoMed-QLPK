@@ -7,6 +7,7 @@ import type {
 import ConfirmModal from "../../../common/ConfirmModal";
 import toast from "react-hot-toast";
 import type { BEAppointment } from "../../../services/appointmentsApi";
+import { updateAppointmentStatus } from "../../../services/appointmentsApi";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/auth";
 
@@ -163,6 +164,7 @@ export default function AppointmentList({
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
   const rows = useMemo<Row[]>(() => items.map(normalizeAppointment), [items]);
   const { hasRole } = useAuth();
+  const isDoctor = hasRole("DOCTOR");
 
   // Kiểm tra quyền truy cập workspace trước khi navigate
   const gotoWorkspace = useCallback(
@@ -203,6 +205,7 @@ export default function AppointmentList({
     id: number;
     next: AppointmentStatus;
   }>(null);
+  const [markingWaiting, setMarkingWaiting] = useState<number | null>(null);
 
   const getStatus = useCallback(
     (id: number, fallback: AppointmentStatus) => tempStatus[id] ?? fallback,
@@ -215,6 +218,23 @@ export default function AppointmentList({
       else setTempStatus((prev) => ({ ...prev, [id]: status }));
     },
     [onSetStatus]
+  );
+
+  const handleMarkWaiting = useCallback(
+    async (appointmentId: number) => {
+      try {
+        setMarkingWaiting(appointmentId);
+        await updateAppointmentStatus(appointmentId, "waiting");
+        setStatus(appointmentId, "waiting");
+        toast.success("Đã ghi nhận bệnh nhân đã đến");
+      } catch (error) {
+        console.error("Lỗi cập nhật trạng thái:", error);
+        toast.error("Không thể cập nhật trạng thái. Vui lòng thử lại.");
+      } finally {
+        setMarkingWaiting(null);
+      }
+    },
+    [setStatus]
   );
 
   const doConfirm = async () => {
@@ -240,9 +260,10 @@ export default function AppointmentList({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
+    const allowed = isDoctor ? ["waiting"] : ["booked", "waiting"];
     const base = rows.filter((p) => {
       const s = getStatus(p.id, p.status);
-      return s === "waiting" || s === "booked";
+      return allowed.includes(s);
     });
 
     if (!q) return base;
@@ -257,7 +278,7 @@ export default function AppointmentList({
         p.code.toLowerCase().includes(q)
       );
     });
-  }, [rows, query, getStatus]);
+  }, [rows, query, getStatus, isDoctor]);
 
   const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
 
@@ -370,11 +391,21 @@ export default function AppointmentList({
                         </button>
                       ) : (
                         <button
-                          disabled
-                          className="px-2 py-2 rounded-[var(--rounded)] bg-gray-300 text-gray-600 text-sm cursor-not-allowed"
-                          title="Chỉ bác sĩ mới được phép"
+                          className={`px-2 py-2 rounded-[var(--rounded)] text-sm text-white transition ${
+                            st === "waiting"
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : markingWaiting === a.id
+                              ? "bg-slate-500"
+                              : "bg-sky-500 hover:bg-sky-600"
+                          }`}
+                          disabled={markingWaiting === a.id || st === "waiting"}
+                          onClick={() => handleMarkWaiting(a.id)}
                         >
-                          Khám bệnh
+                          {st === "waiting"
+                            ? "Đã đến"
+                            : markingWaiting === a.id
+                            ? "Đang xử lý"
+                            : "Đánh dấu đã đến"}
                         </button>
                       )}
                     </div>
