@@ -53,37 +53,40 @@ interface PrescriptionDetail {
     sex?: "M" | "F" | "O";
     diagnosis: string;
     allergies?: string[];
+    phone?: string;
+    email?: string;
   };
   items: PrescribedDrug[];
   notes?: string;
   warnings?: string[];
   eRxCode?: string;
+  totalCost?: number;
 }
 
 /* ====== Helpers ====== */
-function normalizeGender(gender?: string | null) {
-  if (!gender) return undefined;
-  const normalized = gender.trim().toUpperCase();
-  if (["M", "MALE", "NAM"].includes(normalized)) return "Nam";
-  if (["F", "FEMALE", "NU", "NỮ"].includes(normalized)) return "Nữ";
-  if (["O", "OTHER", "KHAC", "KHÁC"].includes(normalized)) return "Khác";
-  return gender;
-}
+// function normalizeGender(gender?: string | null) {
+//   if (!gender) return undefined;
+//   const normalized = gender.trim().toUpperCase();
+//   if (["M", "MALE", "NAM"].includes(normalized)) return "Nam";
+//   if (["F", "FEMALE", "NU", "NỮ"].includes(normalized)) return "Nữ";
+//   if (["O", "OTHER", "KHAC", "KHÁC"].includes(normalized)) return "Khác";
+//   return gender;
+// }
 
-function formatProfileDateOnly(dateString?: string | null) {
-  if (!dateString) return undefined;
-  const isoDateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/;
-  if (isoDateOnlyMatch.test(dateString)) {
-    return formatVietnameseDateOnly(dateString);
-  }
-  const parsed = new Date(dateString);
-  if (Number.isNaN(parsed.getTime())) return undefined;
-  return parsed.toLocaleDateString("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
+// function formatProfileDateOnly(dateString?: string | null) {
+//   if (!dateString) return undefined;
+//   const isoDateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/;
+//   if (isoDateOnlyMatch.test(dateString)) {
+//     return formatVietnameseDateOnly(dateString);
+//   }
+//   const parsed = new Date(dateString);
+//   if (Number.isNaN(parsed.getTime())) return undefined;
+//   return parsed.toLocaleDateString("vi-VN", {
+//     year: "numeric",
+//     month: "2-digit",
+//     day: "2-digit",
+//   });
+// }
 
 const StatusBadge = ({ status }: { status: PrescriptionStatus }) => {
   let style = "";
@@ -91,7 +94,7 @@ const StatusBadge = ({ status }: { status: PrescriptionStatus }) => {
   switch (status) {
     case "issued":
       style = "bg-sky-100 text-sky-600";
-      text = "Đã kê";
+      text = "Đã kê thuốc";
       break;
     case "dispensed":
       style = "bg-green-100 text-green-600";
@@ -131,6 +134,15 @@ const Field = ({
   </div>
 );
 
+const formatCurrency = (value?: number) => {
+  if (value == null) return undefined;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
 /* ====== Transform Backend -> Frontend ====== */
 const transformEncounter = (enc: EncounterDetail): PrescriptionDetail => {
   return {
@@ -153,6 +165,8 @@ const transformEncounter = (enc: EncounterDetail): PrescriptionDetail => {
       sex: parseGenderToSex(enc.patientGender),
       diagnosis: enc.diagnosis ?? "",
       allergies: enc.allergy ? [enc.allergy] : undefined,
+      phone: enc.patientPhone ?? undefined,
+      email: enc.patientEmail ?? undefined,
     },
     items: (enc.items ?? []).map((it: EncounterDetailDrug, idx: number) => ({
       id: idx + 1,
@@ -167,6 +181,7 @@ const transformEncounter = (enc: EncounterDetail): PrescriptionDetail => {
     notes: enc.advice ?? undefined,
     warnings: enc.warning ? [enc.warning] : undefined,
     eRxCode: enc.erxCode ?? undefined,
+    totalCost: enc.totalCost,
   };
 };
 
@@ -229,9 +244,10 @@ export default function MedicalHistoryDetails() {
     }
 
     const token = localStorage.getItem(USER_TOKEN_KEY) || "";
-    if (!token) return () => {
-      cancelled = true;
-    };
+    if (!token)
+      return () => {
+        cancelled = true;
+      };
 
     getProfile(token)
       .then((profile) => {
@@ -253,8 +269,8 @@ export default function MedicalHistoryDetails() {
     return null;
   }, [fetched]);
 
-  const printPage = () => window.print();
-  const downloadPdf = () => toast.success("Chức năng đang phát triển");
+  // const printPage = () => window.print();
+  // const downloadPdf = () => toast.success("Chức năng đang phát triển");
 
   if (loading) {
     return (
@@ -285,22 +301,24 @@ export default function MedicalHistoryDetails() {
     );
   }
 
-  const patientDob =
-    rx.patient.dob ||
-    formatProfileDateOnly(patientProfile?.dateOfBirth) ||
-    undefined;
-  const patientGender =
-    (rx.patient.sex && normalizeGender(rx.patient.sex)) ||
-    normalizeGender(patientProfile?.gender) ||
-    undefined;
+  // const patientDob =
+  //   rx.patient.dob ||
+  //   formatProfileDateOnly(patientProfile?.dateOfBirth) ||
+  //   undefined;
+  // const patientGender =
+  //   (rx.patient.sex && normalizeGender(rx.patient.sex)) ||
+  //   normalizeGender(patientProfile?.gender) ||
+  //   undefined;
   const patientPhone =
-    patientProfile?.phone && patientProfile.phone.trim().length > 0
+    rx.patient.phone ||
+    (patientProfile?.phone && patientProfile.phone.trim().length > 0
       ? patientProfile.phone
-      : undefined;
+      : undefined);
   const patientEmail =
-    patientProfile?.email && patientProfile.email.trim().length > 0
+    rx.patient.email ||
+    (patientProfile?.email && patientProfile.email.trim().length > 0
       ? patientProfile.email
-      : undefined;
+      : undefined);
   const patientAddress =
     patientProfile?.address && patientProfile.address.trim().length > 0
       ? patientProfile.address
@@ -312,10 +330,10 @@ export default function MedicalHistoryDetails() {
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <h2 className="flex items-baseline gap-2 text-xl sm:text-2xl font-bold m-0">
           <span>Hồ sơ khám bệnh</span>
-          <span className="text-sky-500">#{rx.rx_code}</span>
+          <span className="text-sky-500">#{rx.record_code}</span>
         </h2>
 
-        <div className="flex flex-wrap gap-2">
+        {/* <div className="flex flex-wrap gap-2">
           <button
             onClick={printPage}
             className="h-9 rounded-lg border border-slate-300 px-4 text-sm bg-white hover:border-sky-400 transition-colors"
@@ -328,7 +346,7 @@ export default function MedicalHistoryDetails() {
           >
             Tải PDF
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Overview Card */}
@@ -341,20 +359,20 @@ export default function MedicalHistoryDetails() {
             </div>
             <div>
               Mã hồ sơ:{" "}
-              <Link
-                to="/user/medical-history"
-                className="font-semibold text-sky-500 hover:underline"
-              >
+              <span className="text-sky-500 font-semibold">
                 {rx.record_code}
-              </Link>
+              </span>
             </div>
             <div>
-              Ngày kê: <span className="font-semibold">{rx.issued_at}</span>
+              Ngày kê thuốc:{" "}
+              <span className="font-semibold">{rx.issued_at}</span>
             </div>
-            {rx.valid_until && (
+            {rx.totalCost != null && (
               <div>
-                Hạn hiệu lực:{" "}
-                <span className="font-semibold">{rx.valid_until}</span>
+                Chi phí khám:{" "}
+                <span className="font-semibold text-red-500">
+                  {formatCurrency(rx.totalCost)}
+                </span>
               </div>
             )}
           </div>
@@ -382,7 +400,7 @@ export default function MedicalHistoryDetails() {
             )}
             <Field label="Dịch vụ" value={rx.service_name} />
             {rx.department && (
-              <Field label="Chuyên khoa" value={rx.department} />
+              <Field label="Chuyên khoa chính" value={rx.department} />
             )}
           </div>
         </div>
@@ -396,12 +414,12 @@ export default function MedicalHistoryDetails() {
               value={rx.patient.full_name || patientProfile?.name || undefined}
             />
             <Field label="Mã bệnh nhân" value={rx.patient.code} />
-            <Field label="Ngày sinh" value={patientDob} />
-            <Field label="Giới tính" value={patientGender} />
+            {/* <Field label="Ngày sinh" value={patientDob} />
+            <Field label="Giới tính" value={patientGender} /> */}
             <Field label="Số điện thoại" value={patientPhone} />
             <Field label="Email" value={patientEmail} />
             <Field label="Địa chỉ" value={patientAddress} />
-            <Field label="Chẩn đoán" value={rx.patient.diagnosis} />
+            {/* <Field label="Chẩn đoán" value={rx.patient.diagnosis} /> */}
             {rx.patient.allergies && rx.patient.allergies.length > 0 && (
               <div className="flex justify-between gap-3">
                 <span className="text-slate-600">Dị ứng</span>
@@ -425,7 +443,6 @@ export default function MedicalHistoryDetails() {
                 <th className="px-6 py-3 font-semibold">Ngày</th>
                 <th className="px-6 py-3 font-semibold">Số lượng</th>
                 <th className="px-6 py-3 font-semibold">Liều dùng</th>
-                <th className="px-6 py-3 font-semibold">Hướng dẫn</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -439,8 +456,20 @@ export default function MedicalHistoryDetails() {
                       {drug.drugName}
                     </td>
                     <td className="px-6 py-4 text-gray-700">
-                      {[drug.strength, drug.form].filter(Boolean).join(" · ") ||
-                        "-"}
+                      {drug.strength || drug.form ? (
+                        <div className="space-y-1 text-sm">
+                          {drug.strength && (
+                            <div className="font-medium text-gray-900">
+                              {drug.strength}
+                            </div>
+                          )}
+                          {drug.form && (
+                            <div className="text-slate-500">{drug.form}</div>
+                          )}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className="px-6 py-4 text-gray-700">
                       {drug.duration ? drug.duration.replace(/\D+/g, "") : "-"}
@@ -459,9 +488,6 @@ export default function MedicalHistoryDetails() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-gray-700">
-                        {drug.instructions || "-"}
-                      </div>
                       {drug.instructions &&
                         drug.instructions.includes("4g") && (
                           <div className="text-xs text-red-600 mt-1">
@@ -474,7 +500,7 @@ export default function MedicalHistoryDetails() {
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-6 py-8 text-center text-slate-500"
                   >
                     Chưa có đơn thuốc

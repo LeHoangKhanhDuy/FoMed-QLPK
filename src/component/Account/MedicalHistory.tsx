@@ -233,6 +233,16 @@ export const MedicalHistory = () => {
   };
 
   // Format date helpers - return date-only and time-only parts
+  const formatCurrency = useCallback((value?: number) => {
+    if (value == null) return "-";
+
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(value);
+  }, []);
+
   const formatDateOnly = useCallback((dateString?: string) => {
     if (!dateString) return "";
     try {
@@ -288,6 +298,7 @@ export const MedicalHistory = () => {
               <th className="px-4 py-3 font-semibold">Ngày khám</th>
               <th className="px-4 py-3 font-semibold">Bác sĩ</th>
               <th className="px-4 py-3 font-semibold">Dịch vụ</th>
+              <th className="px-4 py-3 font-semibold">Chi phí</th>
               <th className="px-4 py-3 font-semibold">Trạng thái</th>
               <th className="px-4 py-3 font-semibold text-center">Chức năng</th>
             </tr>
@@ -296,7 +307,7 @@ export const MedicalHistory = () => {
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <SkeletonRow key={i} columns={6} />
+                  <SkeletonRow key={i} columns={7} />
                 ))}
               </>
             ) : filteredHistory.length > 0 ? (
@@ -320,6 +331,9 @@ export const MedicalHistory = () => {
                   <td className="px-4 py-4 text-gray-600">
                     {encounter.serviceName || "-"}
                   </td>
+                  <td className="px-4 py-4 text-right text-gray-600">
+                    {formatCurrency(encounter.totalCost)}
+                  </td>
                   <td className="px-4 py-4">
                     <StatusBadge status={encounter.status} />
                   </td>
@@ -335,7 +349,7 @@ export const MedicalHistory = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-gray-600">
+                <td colSpan={7} className="px-5 py-8 text-center text-gray-600">
                   {searchTerm
                     ? "Không tìm thấy hồ sơ nào phù hợp"
                     : "Chưa có lịch sử khám bệnh"}

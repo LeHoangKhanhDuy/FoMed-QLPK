@@ -20,6 +20,7 @@ export type BEAppointment = {
   visitTime: string; // "HH:mm:ss"
 
   patientId: number;
+  patientCode?: string | null;
   patientName?: string;
   patientPhone?: string;
 
@@ -94,7 +95,10 @@ export async function createAppointment(body: CreateReq): Promise<CreateData> {
 
     return res.data.data;
   } catch (error) {
-    const errorWithResponse = error as { response?: { status?: number; statusText?: string; data?: unknown }; message?: string };
+    const errorWithResponse = error as {
+      response?: { status?: number; statusText?: string; data?: unknown };
+      message?: string;
+    };
     console.error("❌ Lỗi khi gọi API tạo appointment:", {
       status: errorWithResponse?.response?.status,
       statusText: errorWithResponse?.response?.statusText,
@@ -109,8 +113,8 @@ export async function updateAppointmentStatus(
   appointmentId: number,
   status: AppointmentStatus
 ) {
-  await authHttp.patch(`/api/v1/admin/appointments/${appointmentId}/status`, {
-    status,
+  await authHttp.patch(`/api/v1/appointments/${appointmentId}/status`, {
+    Status: status,
   });
 }
 
