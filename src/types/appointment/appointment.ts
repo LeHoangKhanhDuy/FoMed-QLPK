@@ -35,6 +35,9 @@ export type Appointment = {
   patientPhone: string;
 
   doctorName: string;
+  doctorId?: number;
+  roomName?: string;
+  clinicName?: string;
   serviceName?: string; // giữ để hiển thị mock
 
   date: string; // YYYY-MM-DD
