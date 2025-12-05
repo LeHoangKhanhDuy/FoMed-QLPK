@@ -26,6 +26,8 @@ export type BEAppointment = {
 
   doctorId: number;
   doctorName?: string;
+  clinicName?: string | null;
+  roomName?: string | null;
 
   serviceId?: number | null;
   serviceName?: string | null;

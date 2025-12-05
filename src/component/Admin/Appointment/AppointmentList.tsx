@@ -8,6 +8,7 @@ import ConfirmModal from "../../../common/ConfirmModal";
 import toast from "react-hot-toast";
 import type { BEAppointment } from "../../../services/appointmentsApi";
 import { updateAppointmentStatus } from "../../../services/appointmentsApi";
+import { apiGetDoctorDetail } from "../../../services/doctorMApi";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/auth";
 
@@ -44,7 +45,9 @@ type Row = {
   patientId?: number;
   patientName: string;
   patientPhone: string;
+  doctorId: number;
   doctorName: string;
+  clinicName?: string;
   serviceName?: string;
   date: string;
   time: string;
@@ -80,6 +83,8 @@ type BEFlat = Pick<
   | "serviceName"
   | "createdAt"
   | "queueNo"
+  | "clinicName"
+  | "roomName"
 >;
 
 function isBEFlat(x: unknown): x is BEFlat {
@@ -111,7 +116,9 @@ function normalizeAppointment(a: Appointment | BEFlat): Row {
       patientId: a.patientId,
       patientName: a.patientName,
       patientPhone: a.patientPhone,
+      doctorId: a.doctorId ?? 0,
       doctorName: a.doctorName,
+      clinicName: a.clinicName ?? a.roomName ?? undefined,
       serviceName: a.serviceName,
       date: a.date,
       time: a.time.length > 5 ? a.time.slice(0, 5) : a.time,
@@ -128,6 +135,7 @@ function normalizeAppointment(a: Appointment | BEFlat): Row {
       patientId: a.patientId,
       patientName: a.patientName || "Không rõ tên",
       patientPhone: a.patientPhone || "-",
+      doctorId: a.doctorId,
       doctorName:
         a.doctorName || (a.doctorId ? `Bác sĩ #${a.doctorId}` : "Bác sĩ"),
       serviceName: a.serviceName || undefined,
@@ -135,6 +143,7 @@ function normalizeAppointment(a: Appointment | BEFlat): Row {
       time: hhmm,
       createdAt: a.createdAt || new Date().toISOString(),
       queueNo: a.queueNo ?? undefined,
+      clinicName: a.clinicName ?? a.roomName ?? undefined,
     };
   }
 
@@ -145,6 +154,7 @@ function normalizeAppointment(a: Appointment | BEFlat): Row {
     patientName: "",
     patientPhone: "",
     doctorName: "",
+    doctorId: 0,
     serviceName: undefined,
     date: "",
     time: "",
@@ -166,6 +176,18 @@ export default function AppointmentList({
   >({});
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
   const rows = useMemo<Row[]>(() => items.map(normalizeAppointment), [items]);
+  const [doctorRooms, setDoctorRooms] = useState<
+    Record<number, string | undefined>
+  >({});
+  const missingDoctorIds = useMemo(() => {
+    const set = new Set<number>();
+    rows.forEach((row) => {
+      if (row.doctorId > 0 && !(row.doctorId in doctorRooms)) {
+        set.add(row.doctorId);
+      }
+    });
+    return Array.from(set);
+  }, [rows, doctorRooms]);
   const { hasRole } = useAuth();
   const isDoctor = hasRole("DOCTOR");
 
@@ -209,6 +231,40 @@ export default function AppointmentList({
     next: AppointmentStatus;
   }>(null);
   const [markingWaiting, setMarkingWaiting] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!missingDoctorIds.length) return;
+
+    let mounted = true;
+
+    (async () => {
+      const results = await Promise.all(
+        missingDoctorIds.map(async (doctorId) => {
+          try {
+            const detail = await apiGetDoctorDetail(doctorId);
+            return [doctorId, detail.roomName ?? undefined] as const;
+          } catch (error) {
+            console.error("Failed to load doctor detail", { doctorId, error });
+            return [doctorId, undefined] as const;
+          }
+        })
+      );
+
+      if (!mounted) return;
+
+      setDoctorRooms((prev) => {
+        const next = { ...prev };
+        results.forEach(([id, room]) => {
+          next[id] = room;
+        });
+        return next;
+      });
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [missingDoctorIds]);
 
   const getStatus = useCallback(
     (id: number, fallback: AppointmentStatus) => tempStatus[id] ?? fallback,
@@ -333,6 +389,7 @@ export default function AppointmentList({
               <th className="py-2 px-3">Bệnh nhân</th>
               <th className="py-2 px-3">Số điện thoại</th>
               <th className="py-2 px-3">Bác sĩ</th>
+              <th className="py-2 px-3">Phòng khám</th>
               <th className="py-2 px-3">Dịch vụ</th>
               <th className="py-2 px-3">Thứ tự khám</th>
               <th className="py-2 px-3">Lịch hẹn</th>
@@ -344,7 +401,7 @@ export default function AppointmentList({
           <tbody>
             {paged.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-6 text-center text-slate-500">
+                <td colSpan={11} className="py-6 text-center text-slate-500">
                   Không có lịch chờ khám.
                 </td>
               </tr>
@@ -374,6 +431,9 @@ export default function AppointmentList({
                   <td className="py-2 px-3 font-semibold">{a.patientName}</td>
                   <td className="py-2 px-3">{a.patientPhone}</td>
                   <td className="py-2 px-3">{a.doctorName}</td>
+                  <td className="py-2 px-3">
+                    {doctorRooms[a.doctorId] ?? a.clinicName ?? "-"}
+                  </td>
                   <td className="py-2 px-3">{a.serviceName ?? "-"}</td>
                   <td className="py-2 px-3 font-medium">{a.queueNo ?? "-"}</td>
                   <td className="py-2 px-3">
