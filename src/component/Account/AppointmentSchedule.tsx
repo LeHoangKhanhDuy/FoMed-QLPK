@@ -160,8 +160,9 @@ export default function AppointmentSchedule() {
         <table className="min-w-[900px] w-full text-left text-sm text-gray-700">
           <thead className="bg-sky-500 text-white">
             <tr>
-              <th className="px-6 py-3">STT</th>
+              <th className="px-6 py-3">#</th>
               <th className="px-6 py-3 text-center">Ngày khám</th>
+              <th className="px-6 py-3">Thứ tự khám</th>
               <th className="px-6 py-3 text-center">Bác sĩ</th>
               <th className="px-6 py-3 text-center">Dịch vụ</th>
               <th className="px-6 py-3 text-center">Trạng thái</th>
@@ -181,6 +182,9 @@ export default function AppointmentSchedule() {
                   <td className="px-6 py-4 text-center">
                     <div>{formatDateString(a.visitDate) || "-"}</div>
                     <div className="text-xs text-slate-500">{a.visitTime}</div>
+                  </td>
+                  <td className="px-6 py-4 font-medium text-center text-gray-800">
+                    {a.queueNo ?? "-"}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {a.doctorName ?? `BS #${a.doctorId}`}

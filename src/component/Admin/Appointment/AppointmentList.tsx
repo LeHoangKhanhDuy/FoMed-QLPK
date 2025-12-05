@@ -49,6 +49,7 @@ type Row = {
   date: string;
   time: string;
   createdAt: string;
+  queueNo?: number;
 };
 
 /** ==== Utils ==== */
@@ -78,6 +79,7 @@ type BEFlat = Pick<
   | "doctorName"
   | "serviceName"
   | "createdAt"
+  | "queueNo"
 >;
 
 function isBEFlat(x: unknown): x is BEFlat {
@@ -132,6 +134,7 @@ function normalizeAppointment(a: Appointment | BEFlat): Row {
       date: a.visitDate,
       time: hhmm,
       createdAt: a.createdAt || new Date().toISOString(),
+      queueNo: a.queueNo ?? undefined,
     };
   }
 
@@ -325,12 +328,13 @@ export default function AppointmentList({
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-sky-400 text-center text-white">
-              <th className="py-2 px-3">STT</th>
+              <th className="py-2 px-3">#</th>
               <th className="py-2 px-3">Mã hồ sơ</th>
               <th className="py-2 px-3">Bệnh nhân</th>
               <th className="py-2 px-3">Số điện thoại</th>
               <th className="py-2 px-3">Bác sĩ</th>
               <th className="py-2 px-3">Dịch vụ</th>
+              <th className="py-2 px-3">Thứ tự khám</th>
               <th className="py-2 px-3">Lịch hẹn</th>
               <th className="py-2 px-3">Trạng thái</th>
               <th className="py-2 px-3">Thao tác</th>
@@ -340,7 +344,7 @@ export default function AppointmentList({
           <tbody>
             {paged.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-slate-500">
+                <td colSpan={10} className="py-6 text-center text-slate-500">
                   Không có lịch chờ khám.
                 </td>
               </tr>
@@ -356,6 +360,7 @@ export default function AppointmentList({
                   className="text-center border-b last:border-none hover:bg-slate-50"
                 >
                   <td className="py-2 px-3 font-medium">{displayNo}</td>
+
                   <td className="py-2 px-3">
                     <button
                       onClick={() => gotoWorkspace(a)}
@@ -370,6 +375,7 @@ export default function AppointmentList({
                   <td className="py-2 px-3">{a.patientPhone}</td>
                   <td className="py-2 px-3">{a.doctorName}</td>
                   <td className="py-2 px-3">{a.serviceName ?? "-"}</td>
+                  <td className="py-2 px-3 font-medium">{a.queueNo ?? "-"}</td>
                   <td className="py-2 px-3">
                     <div className="flex flex-col items-center">
                       <span className="font-medium">{a.time}</span>
