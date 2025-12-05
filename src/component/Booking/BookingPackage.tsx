@@ -68,7 +68,7 @@ export default function BookingPackages() {
 
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           {loading &&
-            Array.from({ length: 8 }).map((_, i) => (
+            Array.from({ length: 9 }).map((_, i) => (
               <div
                 key={i}
                 className="w-full bg-white rounded-xl p-3 md:p-5 shadow-md ring-1 ring-slate-100 animate-pulse"

@@ -110,7 +110,7 @@ export const BookingDatePage = () => {
       <div>
         <MainLayout>
           <Navbar />
-          <div className="max-w-7xl mx-auto px-4 py-20">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 xl:px-0 py-4 sm:py-6 min-h-[70vh] lg:min-h-[60vh]">
             <div className="grid md:grid-cols-3 gap-4">
               <div className="md:col-span-1">
                 <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden animate-pulse">
@@ -163,8 +163,8 @@ export const BookingDatePage = () => {
           doctorId={doctorId!}
           onSelectTime={handleSelectDateTime}
           minDate={new Date()}
-          startHour={6}
-          endHour={23}
+          startHour={8}
+          endHour={18}
           stepMinutes={60}
         />
         <Footer />
