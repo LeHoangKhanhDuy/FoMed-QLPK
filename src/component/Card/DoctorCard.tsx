@@ -1,8 +1,10 @@
-// src/components/doctor/DoctorCard.tsx
-import { Hospital, Stethoscope, Star, Users } from "lucide-react"; // Dùng Users icon cho đúng ngữ cảnh
-import React from "react";
+import { Hospital, Stethoscope, Star, Users } from "lucide-react";
+import React, { useState } from "react";
 import check from "../../assets/images/checklist.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import AuthModal from "../Auth/AuthModalProps";
+import { useAuth } from "../../auth/auth";
 
 export interface DoctorCardProps {
   id?: number;
@@ -10,7 +12,7 @@ export interface DoctorCardProps {
   specialty: string;
   experience: string;
   rating: number;
-  visitCount: number; // Số lượt khám
+  visitCount: number;
   logo: string;
   verified?: boolean;
   className?: string;
@@ -31,10 +33,65 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
   verified,
   className = "",
   detailHref = id ? `/user/doctor/${id}` : "/user/doctor-list",
-  bookHref = id ? `/booking/select-service?doctorId=${id}` : "/booking/select-service",
+  bookHref = id
+    ? `/booking/select-service?doctorId=${id}`
+    : "/booking/select-service",
   onView,
   onBook,
 }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isLoginOpen, setLoginOpen] = useState(false);
+
+  const handleLoginSuccess = () => {
+    setLoginOpen(false);
+    const redirectUrl = localStorage.getItem("redirectAfterLogin");
+    if (redirectUrl) {
+      navigate(redirectUrl);
+      localStorage.removeItem("redirectAfterLogin");
+    }
+  };
+
+  const promptLogin = () => {
+    toast.error("Vui lòng đăng nhập để đặt lịch khám!");
+    localStorage.setItem(
+      "redirectAfterLogin",
+      bookHref ?? "/booking/select-service"
+    );
+    setLoginOpen(true);
+  };
+
+  // --- SỬA ĐỔI QUAN TRỌNG Ở ĐÂY ---
+  const handleBookClick = (
+    event: React.MouseEvent<HTMLButtonElement>
+  ): void => {
+    // 1. Ưu tiên: Nếu cha truyền onBook, gọi onBook ngay lập tức.
+    // Để cha (DoctorClinic) tự quyết định logic check login/redirect.
+    if (onBook) {
+      onBook();
+      return; // Dừng lại, không chạy logic bên dưới nữa
+    }
+
+    // 2. Fallback: Nếu không có onBook, DoctorCard tự xử lý check login
+    if (!user) {
+      event.preventDefault();
+      promptLogin();
+      return;
+    }
+
+    // Nếu dùng thẻ button mà không có onBook nhưng muốn redirect theo logic nào đó (hiếm gặp)
+  };
+
+  const handleBookLinkClick = (
+    event: React.MouseEvent<HTMLAnchorElement>
+  ): void => {
+    // Chỉ áp dụng khi dùng Link (trường hợp không truyền onBook)
+    if (!user) {
+      event.preventDefault();
+      promptLogin();
+    }
+  };
+
   return (
     <section
       className={[
@@ -84,13 +141,11 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
 
         {/* Rating & Visit Count Footer */}
         <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-50">
-          {/* Rating */}
           <div className="flex items-center gap-1.5 text-amber-400 font-bold text-sm">
             <Star className="w-4 h-4 fill-current" />
             <span>{rating.toFixed(1)}</span>
           </div>
 
-          {/* Lượt khám (FIXED UI) */}
           <div className="flex items-center gap-1.5 text-sky-600 font-semibold text-sm bg-sky-50 px-2 py-1 rounded-md">
             <Users className="w-4 h-4" />
             <span>{visitCount.toLocaleString("vi-VN")}</span>
@@ -110,16 +165,19 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
           </button>
         </Link>
 
+        {/* Logic hiển thị nút Đặt lịch */}
         {onBook ? (
+          // Trường hợp 1: Có hàm onBook (Dùng trong DoctorClinic) -> Dùng Button thường
           <button
             type="button"
-            onClick={onBook}
+            onClick={handleBookClick}
             className="w-full py-2 rounded-[var(--rounded)] bg-primary-linear text-white hover:bg-sky-600 font-semibold text-sm transition-colors shadow-sm shadow-sky-200 cursor-pointer"
           >
             Đặt lịch
           </button>
         ) : (
-          <Link to={bookHref} className="w-full">
+          // Trường hợp 2: Không có onBook -> Dùng Link + Tự check login (Logic cũ)
+          <Link to={bookHref} className="w-full" onClick={handleBookLinkClick}>
             <button
               type="button"
               className="w-full py-2 rounded-[var(--rounded)] bg-primary-linear text-white hover:bg-sky-600 font-semibold text-sm transition-colors shadow-sm shadow-sky-200 cursor-pointer"
@@ -129,6 +187,13 @@ const DoctorCard: React.FC<DoctorCardProps> = ({
           </Link>
         )}
       </div>
+
+      {/* AuthModal này chỉ dùng khi không có onBook (Logic cũ/dự phòng) */}
+      <AuthModal
+        isOpen={isLoginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </section>
   );
 };

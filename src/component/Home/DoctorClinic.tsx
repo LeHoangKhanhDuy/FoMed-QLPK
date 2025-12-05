@@ -1,9 +1,14 @@
 import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // [MỚI] Import điều hướng
+
 import DoctorCard from "../Card/DoctorCard";
 import defaultDoctorImg from "../../assets/images/bacsi1.jpg";
 import { apiGetPublicDoctors } from "../../services/doctorMApi";
 import { getFullAvatarUrl } from "../../Utils/avatarHelper";
+
+// [MỚI] Import AuthModal (Dùng đường dẫn tương tự như trong DoctorCard của bạn)
+import AuthModal from "../Auth/AuthModalProps";
 
 interface DoctorDisplay {
   id: number;
@@ -18,36 +23,42 @@ interface DoctorDisplay {
 
 export default function DoctorClinic() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [doctors, setDoctors] = useState<DoctorDisplay[]>([]); // Changed to DoctorDisplay[]
+  const [doctors, setDoctors] = useState<DoctorDisplay[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // [MỚI] State quản lý Modal Login và Hook điều hướng
+  const navigate = useNavigate();
+  const [isLoginOpen, setLoginOpen] = useState(false);
+  const [pendingDoctorId, setPendingDoctorId] = useState<number | null>(null);
+
+
+  // --- Fetch Data ---
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setLoading(true);
-        
-        // Kiểm tra cache trong sessionStorage (cache 5 phút)
-        const cacheKey = 'home_doctors_cache';
-        const cacheTimeKey = 'home_doctors_cache_time';
+
+        // Cache logic
+        const cacheKey = "home_doctors_cache";
+        const cacheTimeKey = "home_doctors_cache_time";
         const cached = sessionStorage.getItem(cacheKey);
         const cacheTime = sessionStorage.getItem(cacheTimeKey);
-        
+
         const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
         const now = Date.now();
-        
-        if (cached && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
-          // Dùng cache
+
+        if (cached && cacheTime && now - parseInt(cacheTime) < CACHE_DURATION) {
           setDoctors(JSON.parse(cached));
           setLoading(false);
           return;
         }
-        
-        // Fetch từ API - giảm xuống 16 items (đủ cho carousel)
+
+        // Fetch API
         const res = await apiGetPublicDoctors({
           page: 1,
           limit: 16,
         });
-        
+
         const mappedDoctors: DoctorDisplay[] = res.items.map((doc) => ({
           id: doc.doctorId,
           name: doc.fullName || `BS #${doc.doctorId}`,
@@ -57,13 +68,14 @@ export default function DoctorClinic() {
           specialty: doc.primarySpecialtyName || "Chuyên khoa tổng quát",
           rating: doc.ratingAvg || 4.5,
           visitCount: doc.visitCount ?? 0,
-          logo: doc.avatarUrl ? getFullAvatarUrl(doc.avatarUrl) : defaultDoctorImg,
-          verified: true, // isActive không có trong DoctorListItem, mặc định true
+          logo: doc.avatarUrl
+            ? getFullAvatarUrl(doc.avatarUrl)
+            : defaultDoctorImg,
+          verified: true,
         }));
-        
+
         setDoctors(mappedDoctors);
-        
-        // Lưu vào cache
+
         sessionStorage.setItem(cacheKey, JSON.stringify(mappedDoctors));
         sessionStorage.setItem(cacheTimeKey, now.toString());
       } catch (error) {
@@ -77,6 +89,7 @@ export default function DoctorClinic() {
     fetchDoctors();
   }, []);
 
+  // --- Scroll Logic ---
   const scrollByOne = (dir: "left" | "right") => {
     const el = scrollerRef.current;
     if (!el || doctors.length === 0) return;
@@ -134,14 +147,32 @@ export default function DoctorClinic() {
     }
   }, [doctors]);
 
+  // --- [MỚI] Logic Xử lý Đặt lịch ---
+  const handleBooking = (doctor: DoctorDisplay) => {
+    const token = localStorage.getItem("userToken");
+    if (token && token !== "undefined" && token !== "null") {
+      // ĐÃ LOGIN -> Chuyển hướng
+      navigate(`/booking-service?doctorId=${doctor.id}`);
+    } else {
+      // CHƯA LOGIN -> Mở Modal
+      setPendingDoctorId(doctor.id);
+      setLoginOpen(true);
+    }
+  };
+
+  // Callback khi login thành công (truyền vào AuthModal nếu hỗ trợ)
+  const handleLoginSuccess = () => {
+    setLoginOpen(false);
+    if (pendingDoctorId) {
+      navigate(`/booking-service?doctorId=${pendingDoctorId}`);
+      setPendingDoctorId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full">
         <section className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
-          {/* <header className="flex items-center justify-center gap-3 mb-6">
-            <div className="h-8 w-48 bg-gray-200 rounded animate-shimmer" />
-          </header> */}
-
           <div className="relative">
             <div className="hidden md:flex absolute -left-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
             <div className="hidden md:flex absolute -right-12 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-gray-200 animate-shimmer" />
@@ -173,7 +204,6 @@ export default function DoctorClinic() {
               ))}
             </div>
           </div>
-
           <div className="mt-4 flex justify-center">
             <div className="h-6 w-24 bg-gray-200 rounded animate-shimmer" />
           </div>
@@ -226,7 +256,8 @@ export default function DoctorClinic() {
                     visitCount={doc.visitCount}
                     logo={doc.logo}
                     verified={doc.verified}
-                    onBook={() => console.log("Đặt khám với:", doc.name)}
+                    // [QUAN TRỌNG] Truyền hàm handleBooking vào đây
+                    onBook={() => handleBooking(doc)}
                   />
                 </div>
               ))
@@ -237,13 +268,14 @@ export default function DoctorClinic() {
             )}
           </div>
         </div>
-
-        {/* <div className="mt-4 flex justify-center">
-          <button className="rounded-[var(--rounded)] text-sky-400 hover:text-sky-500 text-md px-2 py-1 cursor-pointer">
-            Xem thêm
-          </button>
-        </div> */}
       </section>
+
+      {/* [MỚI] Component Modal Login hiển thị khi isLoginOpen = true */}
+      <AuthModal
+        isOpen={isLoginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }

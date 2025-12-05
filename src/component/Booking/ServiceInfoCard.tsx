@@ -46,7 +46,7 @@ export const ServiceInfoCard = ({ service, selectedDoctor }: Props) => {
 
             {/* Chuyên khoa */}
             <div>
-              <p className="text-xs sm:text-sm text-slate-500">Khoa</p>
+              <p className="text-xs sm:text-sm text-slate-500">Loại dịch vụ</p>
               <p className="text-lg font-semibold">{service.specialty}</p>
             </div>
 
@@ -62,7 +62,7 @@ export const ServiceInfoCard = ({ service, selectedDoctor }: Props) => {
 
             {/* Giá dịch vụ */}
             <div>
-              <p className="text-xs sm:text-sm text-slate-500">Giá dịch vụ</p>
+              <p className="text-xs sm:text-sm text-slate-500">Giá dịch vụ (chưa bao gồm thuốc)</p>
               <div className="flex items-center gap-2">
                 {service.discountPrice ? (
                   <>

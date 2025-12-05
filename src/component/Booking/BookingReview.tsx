@@ -340,14 +340,14 @@ export const BookingReview = () => {
               </h3>
 
               <h3 className="flex items-center gap-2 font-semibold text-slate-900">
-                Chuyên khoa:{" "}
+                Loại dịch vụ:{" "}
                 <p className="font-bold text-sky-500">
                   {bookingInfo.service.specialty}
                 </p>
               </h3>
 
               <h3 className="flex items-center gap-2 font-semibold text-slate-900">
-                Giá tiền:{" "}
+                Giá tiền (chưa bao gồm thuốc):{" "}
                 <p className="font-bold text-sky-500">
                   {bookingInfo.service.discountPrice ? (
                     <>

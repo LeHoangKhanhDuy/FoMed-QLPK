@@ -684,11 +684,11 @@ export default function DoctorPatientWorkspace() {
                                 arr.filter((_, i) => i !== idx)
                               )
                             }
-                            className="cursor-pointer w-full rounded-md text-rose-600 px-3 py-2 border border-rose-300 hover:bg-rose-50 flex items-center justify-center gap-2"
+                            className="inline-flex h-11 w-10 items-center justify-center text-rose-600 transition cursor-pointer"
                             title="Xóa thuốc"
                           >
-                            <Trash2 className="w-4 h-4" />
-                            <span className="text-sm">Xóa</span>
+                            <Trash2 className="w-5 h-5" />
+                            <span className="sr-only">Xóa thuốc</span>
                           </button>
                         </div>
                       </div>

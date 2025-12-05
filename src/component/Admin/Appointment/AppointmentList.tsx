@@ -391,12 +391,12 @@ export default function AppointmentList({
                         </button>
                       ) : (
                         <button
-                          className={`px-2 py-2 rounded-[var(--rounded)] text-sm text-white transition ${
+                          className={`px-2 py-2 rounded-[var(--rounded)] text-sm text-white transition cursor-pointer ${
                             st === "waiting"
                               ? "bg-gray-400 cursor-not-allowed"
                               : markingWaiting === a.id
                               ? "bg-slate-500"
-                              : "bg-sky-500 hover:bg-sky-600"
+                              : "bg-primary-linear"
                           }`}
                           disabled={markingWaiting === a.id || st === "waiting"}
                           onClick={() => handleMarkWaiting(a.id)}
@@ -405,7 +405,7 @@ export default function AppointmentList({
                             ? "Đã đến"
                             : markingWaiting === a.id
                             ? "Đang xử lý"
-                            : "Đánh dấu đã đến"}
+                            : "Đã đến"}
                         </button>
                       )}
                     </div>
