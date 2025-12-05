@@ -32,6 +32,7 @@ type Row = {
     | "Đã hủy"
     | "Vắng mặt"
     | string;
+  queueNo?: number;
 };
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
@@ -125,24 +126,25 @@ function normalizeItem(x: unknown): Row {
     ["phone", "patientPhone", "Phone", "PatientPhone"],
     "-"
   );
+  const queueNo = asNum(getVal(r, ["queueNo", "QueueNo"]));
 
   // Format số điện thoại đúng cách
   const formatPhone = (phoneValue: string | number | null): string => {
     if (!phoneValue || phoneValue === "-") return "-";
-    
+
     const phoneStr = String(phoneValue).replace(/\D/g, ""); // Chỉ giữ số
     if (phoneStr.length === 0) return "-";
-    
+
     // Format số điện thoại Việt Nam
     if (phoneStr.length === 10 && phoneStr.startsWith("0")) {
       return phoneStr.replace(/(\d{4})(\d{3})(\d{3})/, "$1 $2 $3");
     }
-    
+
     // Format số điện thoại quốc tế
     if (phoneStr.length === 11 && phoneStr.startsWith("84")) {
       return phoneStr.replace(/(\d{2})(\d{4})(\d{3})(\d{3})/, "+$1 $2 $3 $4");
     }
-    
+
     // Trả về nguyên gốc nếu không match format nào
     return String(phoneValue);
   };
@@ -184,6 +186,7 @@ function normalizeItem(x: unknown): Row {
     visitDate,
     visitTime,
     statusLabel,
+    queueNo: queueNo || undefined,
   };
 }
 
@@ -246,6 +249,7 @@ export default function PatientListToday({
           <thead>
             <tr className="bg-sky-400 text-white">
               <th className="px-3 py-2 text-left">STT</th>
+              <th className="px-3 py-2 text-left">Số thứ tự</th>
               <th className="px-3 py-2 text-left">Mã hồ sơ</th>
               <th className="px-3 py-2 text-left">Bệnh nhân</th>
               <th className="px-3 py-2 text-left">Số điện thoại</th>
@@ -274,6 +278,9 @@ export default function PatientListToday({
                   className="text-center border-b last:border-none"
                 >
                   <td className="px-3 py-2 text-left font-medium">{stt}</td>
+                  <td className="px-3 py-2 text-left font-medium">
+                    {p.queueNo ?? "-"}
+                  </td>
                   <td className="px-3 py-2 text-left">
                     <Link
                       to={`/cms/patients/${p.code}`}

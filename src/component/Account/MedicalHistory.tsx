@@ -331,7 +331,7 @@ export const MedicalHistory = () => {
                   <td className="px-4 py-4 text-gray-600">
                     {encounter.serviceName || "-"}
                   </td>
-                  <td className="px-4 py-4 text-right text-gray-600">
+                  <td className="px-4 py-4 text-red-600 font-semibold">
                     {formatCurrency(encounter.totalCost)}
                   </td>
                   <td className="px-4 py-4">
