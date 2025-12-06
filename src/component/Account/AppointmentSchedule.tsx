@@ -162,7 +162,7 @@ export default function AppointmentSchedule() {
             <tr>
               <th className="px-6 py-3">#</th>
               <th className="px-6 py-3 text-center">Ngày khám</th>
-              <th className="px-6 py-3">Thứ tự khám</th>
+              <th className="px-6 py-3">Số thứ tự</th>
               <th className="px-6 py-3 text-center">Bác sĩ</th>
               <th className="px-6 py-3 text-center">Dịch vụ</th>
               <th className="px-6 py-3 text-center">Trạng thái</th>
