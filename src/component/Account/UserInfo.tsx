@@ -12,7 +12,6 @@ import {
 import type { AppUser } from "../../types/auth/login";
 import toast from "react-hot-toast";
 import { getFullAvatarUrl, DEFAULT_AVATAR_URL } from "../../Utils/avatarHelper";
-import { showComingSoon } from "../../common/showComingSoon";
 
 /* ==== Kiểu dữ liệu UI hiện tại ==== */
 export interface User {
@@ -293,7 +292,7 @@ export default function UserInfo({
                 <div className="mt-4">
                   <button
                     type="button"
-                    onClick={showComingSoon}
+                    onClick={() => (window.location.href = "/forgot-password")}
                     className="bg-primary-linear rounded-[var(--rounded)] text-white py-2 px-4 cursor-pointer"
                   >
                     Đổi mật khẩu
