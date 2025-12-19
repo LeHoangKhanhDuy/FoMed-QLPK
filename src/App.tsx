@@ -42,6 +42,7 @@ import {
   MaintenancePage,
 } from "./pages/Error";
 import UserAppointmentSchedulePage from "./pages/Account/UserAppointmentShedulePage";
+import { ServiceDetailPage } from "./pages/ServiceDetail/ServiceDetailPage";
 
 function CmsGuard() {
   return (
@@ -86,6 +87,9 @@ function App() {
         {/* DOCTOR */}
         <Route path="/user/doctor/:id" element={<DoctorProfilePage />} />
         <Route path="/user/doctor-list" element={<DoctorListPage />} />
+
+        {/* DOCTOR */}
+        <Route path="/service/detail" element={<ServiceDetailPage />} />
 
         {/* SPECIALTIES */}
         <Route path="specialties" element={<SpecialtyPage />} />
