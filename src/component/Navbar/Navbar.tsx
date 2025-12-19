@@ -372,7 +372,7 @@ export default function Navbar() {
                         <CircleUserRound className="w-7 h-7 text-primary" /> Cài đặt tài khoản
                       </Link>
                       <Link
-                        to="/user/details/change-password"
+                        to="/forgot-password"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
                       >
@@ -497,7 +497,7 @@ export default function Navbar() {
 
                       <MenuItem>
                         <Link
-                          to="/user/details/change-password"
+                          to="/forgot-password"
                           className="group flex w-full items-center gap-3 font-semibold px-4 py-2.5 hover:bg-gray-100 transition-colors duration-200"
                         >
                           <Settings className="size-5 text-gray-500 group-hover:text-[var(--hover)]" />

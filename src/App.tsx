@@ -43,6 +43,8 @@ import {
 } from "./pages/Error";
 import UserAppointmentSchedulePage from "./pages/Account/UserAppointmentShedulePage";
 import { ServiceDetailPage } from "./pages/ServiceDetail/ServiceDetailPage";
+import ForgotPassword from "./component/Account/ForgotPassword";
+
 
 function CmsGuard() {
   return (
@@ -61,6 +63,7 @@ function App() {
         {/* AUTH */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* BOOKING */}
         <Route path="/booking-doctor" element={<BookingDoctorPage />} />
