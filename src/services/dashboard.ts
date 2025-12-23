@@ -1,3 +1,4 @@
+import type { PharmacySummaryResponse } from "../types/dashboard/dashboard";
 import { authHttp } from "./http";
 
 // Vietnamese month names used as fallback when API doesn't provide MonthName
@@ -105,6 +106,74 @@ export interface MonthlyTargetResponse {
   actualRevenue: number;
   progressPercent: number; // 0..100
 }
+
+type RawPharmacySummaryResponse = {
+  success?: boolean;
+  totalActiveMedicines?: number;
+  totalStockValue?: number;
+  lowStockItemsCount?: number;
+  expiringSoonCount?: number;
+  lowStockItems?: Array<{
+    medicineId?: number;
+    name?: string;
+    totalQuantity?: number;
+    unit?: string;
+  }>;
+  expiringLots?: Array<{
+    lotId?: number;
+    medicineName?: string;
+    lotNumber?: string;
+    quantity?: number;
+    expiryDate?: string;
+    daysUntilExpiry?: number;
+  }>;
+};
+
+const parseNumber = (v: unknown): number => {
+  if (v === null || v === undefined) return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const cleaned = v.replace(/[^0-9.-]+/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+};
+
+const parseDateLoose = (s?: string): Date | null => {
+  if (!s) return null;
+
+  // dd/MM/yyyy (API screenshot)
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const day = Number(m[1]);
+    const month = Number(m[2]);
+    const year = Number(m[3]);
+    const d = new Date(year, month - 1, day);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  // ISO or other Date-parsable string
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const daysUntil = (target: Date): number => {
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+  const startOfTarget = new Date(
+    target.getFullYear(),
+    target.getMonth(),
+    target.getDate()
+  );
+  const diffMs = startOfTarget.getTime() - startOfToday.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return Math.max(0, diffDays);
+};
 // =================== API FUNCTIONS ===================
 
 /**
@@ -251,4 +320,60 @@ export async function getMonthlyTarget(params?: {
   }`;
   const res = await authHttp.get<MonthlyTargetResponse>(url);
   return res.data;
+}
+
+/**
+ * Lấy tổng quan về kho thuốc
+ */
+export async function getPharmacySummary(params?: {
+  expiryDays?: number; // Số ngày để coi là "sắp hết hạn" (mặc định 30)
+  lowStockThreshold?: number; // Ngưỡng tồn kho thấp (ví dụ: 20)
+}): Promise<PharmacySummaryResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.expiryDays)
+    searchParams.append("expiryDays", params.expiryDays.toString());
+  if (params?.lowStockThreshold !== undefined)
+    searchParams.append(
+      "lowStockThreshold",
+      params.lowStockThreshold.toString()
+    );
+
+  const url = `/api/v1/dashboard/pharmacy-summary${
+    searchParams.toString() ? `?${searchParams.toString()}` : ""
+  }`;
+  const res = await authHttp.get<RawPharmacySummaryResponse>(url);
+  const raw = res.data ?? {};
+
+  return {
+    success: raw.success ?? true,
+    totalActiveMedicines: parseNumber(raw.totalActiveMedicines),
+    totalStockValue: parseNumber(raw.totalStockValue),
+    lowStockItemsCount: parseNumber(raw.lowStockItemsCount),
+    expiringSoonCount: parseNumber(raw.expiringSoonCount),
+    lowStockItems: (raw.lowStockItems ?? []).map((x) => ({
+      medicineId: Math.floor(parseNumber(x.medicineId)),
+      name: x.name ?? "",
+      totalQuantity: parseNumber(x.totalQuantity),
+      unit: x.unit ?? "",
+    })),
+    expiringLots: (raw.expiringLots ?? []).map((x) => {
+      const expiryDate = x.expiryDate ?? "";
+      const parsed = parseDateLoose(expiryDate);
+      const days =
+        x.daysUntilExpiry !== undefined
+          ? Math.max(0, Math.floor(parseNumber(x.daysUntilExpiry)))
+          : parsed
+          ? daysUntil(parsed)
+          : 0;
+
+      return {
+        lotId: x.lotId,
+        medicineName: x.medicineName ?? "",
+        lotNumber: x.lotNumber ?? "",
+        expiryDate,
+        quantity: parseNumber(x.quantity),
+        daysUntilExpiry: days,
+      };
+    }),
+  };
 }
