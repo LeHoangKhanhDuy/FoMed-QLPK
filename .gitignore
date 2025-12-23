@@ -25,4 +25,5 @@ dist-ssr
 
 # Dependency locks
 yarn.lock
-.env
+.env*
+!.env.example

@@ -73,10 +73,23 @@ src/
 
 ## 🌐 Biến môi trường cần thiết
 
-Tạo file `.env` ở gốc:
+Repo đã có mẫu `.env.example`. Bạn có thể tạo 1 trong các file sau ở root (tuỳ môi trường):
+
+- `.env.development` (khi chạy `npm run dev`)
+- `.env.production` (khi build `npm run build`)
+- `.env.staging` (khi chạy mode staging)
+
+Ví dụ nội dung:
 
 ```bash
 VITE_API_BASE_URL=https://api.fomed.local
+```
+
+Chạy mode staging:
+
+```bash
+npm run dev:staging
+npm run build:staging
 ```
 
 ## 🔐 Vai trò & quyền truy cập
