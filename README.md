@@ -13,6 +13,9 @@ npm install
 # Chạy môi trường phát triển (hot reload)
 npm run dev
 
+# (Tuỳ chọn) chạy dev theo mode staging
+npm run dev:staging
+
 # Tạo bản build tối ưu cho production
 npm run build
 
@@ -49,13 +52,13 @@ npm run preview
 
 | Thành phần   | Công cụ               |
 | ------------ | --------------------- |
-| Framework    | React 18 + TypeScript |
+| Framework    | React 19 + TypeScript |
 | Build        | Vite                  |
 | Kiểu dáng    | TailwindCSS           |
 | UI/Modal     | Headless UI           |
 | Icons        | Lucide React          |
 | HTTP         | Axios + Interceptors  |
-| Router       | React Router v6       |
+| Router       | React Router v7       |
 | Notification | React Hot Toast       |
 
 ## 📁 Cấu trúc thư mục chính
@@ -73,7 +76,9 @@ src/
 
 ## 🌐 Biến môi trường cần thiết
 
-Repo đã có mẫu `.env.example`. Bạn có thể tạo 1 trong các file sau ở root (tuỳ môi trường):
+Repo đã có mẫu `.env.example` (file này có thể commit). Các file `.env*` còn lại đã được ignore để tránh lộ config/secrets.
+
+Bạn có thể tạo 1 trong các file sau ở root (tuỳ môi trường):
 
 - `.env.development` (khi chạy `npm run dev`)
 - `.env.production` (khi build `npm run build`)
