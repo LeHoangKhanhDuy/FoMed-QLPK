@@ -5,6 +5,9 @@ import {
   Stethoscope,
   CalendarPlus,
   Users,
+  Clock,
+  AlertCircle,
+  Pill,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -13,6 +16,7 @@ import {
   getPatientTotals,
   getMonthlySales,
   getMonthlyTarget,
+  getPharmacySummary,
   type VisitTotalResponse,
   type DoctorTotalResponse,
   type PatientTotalResponse,
@@ -20,6 +24,7 @@ import {
   type MonthlyTargetResponse,
 } from "../../../services/dashboard";
 import toast from "react-hot-toast";
+import type { PharmacySummaryResponse } from "../../../types/dashboard/dashboard";
 
 /* ================= CONSTANTS & HELPERS ================= */
 
@@ -120,6 +125,147 @@ const TrendIcon = ({ v }: { v: number }) =>
     <TrendingDown className="w-3 h-3 text-red-500" />
   );
 
+type PharmacySummaryCardProps = {
+  data: PharmacySummaryResponse | null;
+  loading?: boolean;
+};
+
+const PharmacySummaryCard = ({ data, loading }: PharmacySummaryCardProps) => {
+  if (!data) {
+    return <div className="animate-pulse bg-gray-100 rounded-xl h-full" />;
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col shadow-sm h-full min-h-0 overflow-hidden lg:h-[560px]">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-bold text-gray-900">Thống kê kho thuốc</h2>
+      </div>
+
+      {/* Summary (fixed, not scroll) */}
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <Pill className="w-5 h-5 text-green-600" />
+            </div>
+            <span className="text-sm text-gray-600">Thuốc hoạt động</span>
+          </div>
+          <span className="font-bold text-gray-900">
+            {data.totalActiveMedicines}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-50 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            </div>
+            <span className="text-sm text-gray-600">Sắp hết hàng</span>
+          </div>
+          <span className="font-bold text-red-600">
+            {data.lowStockItemsCount}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-50 rounded-lg">
+              <Clock className="w-5 h-5 text-orange-600" />
+            </div>
+            <span className="text-sm text-gray-600">Sắp hết hạn</span>
+          </div>
+          <span className="font-bold text-orange-600">
+            {data.expiringSoonCount}
+          </span>
+        </div>
+      </div>
+
+      <hr className="mb-6 border-gray-100" />
+
+      {/* Scroll starts from here */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-3 overscroll-contain">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+          Thuốc sắp hết hàng
+        </h3>
+        <div className="space-y-2">
+          {data.lowStockItems?.length ? (
+            data.lowStockItems.map((item) => (
+              <div
+                key={item.medicineId}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="font-medium text-gray-800 truncate pr-2">
+                  {item.name}
+                </span>
+                <span className="font-bold text-red-600 whitespace-nowrap">
+                  Còn {item.totalQuantity} {item.unit}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-gray-400">Không có thuốc sắp hết hàng</p>
+          )}
+        </div>
+
+        <hr className="my-6 border-gray-100" />
+
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+          Lô thuốc cần lưu ý
+        </h3>
+        <div className="space-y-4 pb-2">
+          {data.expiringLots?.length ? (
+            data.expiringLots.map((lot, index) => (
+              <div key={lot.lotId ?? index} className="flex flex-col">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium text-gray-800 truncate w-40">
+                    {lot.medicineName}
+                  </span>
+                  <span
+                    className={`font-bold ${
+                      lot.daysUntilExpiry <= 7
+                        ? "text-red-500"
+                        : "text-orange-500"
+                    }`}
+                  >
+                    Còn {lot.daysUntilExpiry} ngày
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-gray-400 mt-1">
+                  <span>Lô: {lot.lotNumber}</span>
+                  <span>SL: {lot.quantity}</span>
+                </div>
+                <div className="w-full h-1 bg-gray-100 rounded-full mt-2">
+                  <div
+                    className={`h-full rounded-full ${
+                      lot.daysUntilExpiry <= 7 ? "bg-red-500" : "bg-orange-400"
+                    }`}
+                    style={{
+                      width: `${Math.max(10, 100 - lot.daysUntilExpiry * 2)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-gray-400">
+              Không có lô thuốc sắp hết hạn
+            </p>
+          )}
+        </div>
+      </div>
+
+      <button
+        className="mt-6 w-full py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+        type="button"
+        disabled={loading}
+        onClick={() => (window.location.href = `/cms/drug-manager`)}
+      >
+        Xem chi tiết kho
+      </button>
+    </div>
+  );
+};
+
 /* ================= MAIN DASHBOARD ================= */
 
 export const Dashboard = () => {
@@ -135,6 +281,8 @@ export const Dashboard = () => {
   const [targetData, setTargetData] = useState<MonthlyTargetResponse | null>(
     null
   );
+  const [pharmacySummary, setPharmacySummary] =
+    useState<PharmacySummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Tooltip State
@@ -152,19 +300,22 @@ export const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [visits, doctors, patients, sales, target] = await Promise.all([
-          getVisitTotals(),
-          getDoctorTotals(),
-          getPatientTotals(),
-          getMonthlySales({ year }),
-          getMonthlyTarget({ year }),
-        ]);
+        const [visits, doctors, patients, sales, target, pharmacy] =
+          await Promise.all([
+            getVisitTotals(),
+            getDoctorTotals(),
+            getPatientTotals(),
+            getMonthlySales({ year }),
+            getMonthlyTarget({ year }),
+            getPharmacySummary({ expiryDays: 30, lowStockThreshold: 20 }),
+          ]);
 
         setVisitData(visits);
         setDoctorData(doctors);
         setPatientData(patients);
         setSalesData(sales);
         setTargetData(target);
+        setPharmacySummary(pharmacy);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         toast.error("Không thể tải dữ liệu dashboard");
@@ -264,7 +415,6 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Thống kê hoạt động</h1>
         <p className="text-sm text-gray-600 mt-1">
@@ -272,7 +422,6 @@ export const Dashboard = () => {
         </p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Lượt khám tháng này"
@@ -284,7 +433,7 @@ export const Dashboard = () => {
         <StatCard
           title="Bác sĩ hoạt động"
           value={`${doctorData?.totalActive ?? 0}/${doctorData?.totalAll ?? 0}`}
-          change={doctorActivePct} // Hiển thị % active thay vì change
+          change={doctorActivePct}
           icon={<Stethoscope className="w-6 h-6 text-green-600" />}
           loading={loading}
         />
@@ -304,20 +453,21 @@ export const Dashboard = () => {
         />
       </div>
 
-      {/* Main Content Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+        <PharmacySummaryCard data={pharmacySummary} loading={loading} />
+
         {/* CHART SECTION */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 flex flex-col lg:h-[560px] min-h-0">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">
               Doanh thu theo tháng {salesData ? `(${salesData.year})` : ""}
             </h2>
           </div>
 
-          <div className="relative" ref={chartRef}>
-            <div className="flex gap-3">
+          <div className="relative flex-1 min-h-0" ref={chartRef}>
+            <div className="flex gap-3 h-full">
               {/* Trục Y */}
-              <div className="flex flex-col justify-between text-xs text-gray-500 pt-2 pb-8 h-64 sm:h-80 md:h-96">
+              <div className="flex flex-col justify-between text-xs text-gray-500 pt-2 pb-8 h-full">
                 {[...yAxisTicks].reverse().map((mark) => (
                   <div
                     key={mark}
@@ -329,7 +479,7 @@ export const Dashboard = () => {
               </div>
 
               {/* Chart Area */}
-              <div className="relative flex-1 h-64 sm:h-80 md:h-96 border-b border-gray-100 flex items-end justify-between gap-1 sm:gap-2">
+              <div className="relative flex-1 h-full border-b border-gray-100 flex items-end justify-between gap-1 sm:gap-2">
                 {/* Đường kẻ Mốc Target 100tr */}
                 <div
                   className="absolute left-0 right-0 border-t border-dashed border-red-300 z-0 pointer-events-none"
@@ -418,7 +568,7 @@ export const Dashboard = () => {
         </div>
 
         {/* TARGET & PROGRESS SECTION */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col lg:h-[560px] min-h-0">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">Mục tiêu tháng</h2>
           </div>
