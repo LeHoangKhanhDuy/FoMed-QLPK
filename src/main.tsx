@@ -5,7 +5,6 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import ScrollToTop from "./common/ScrollToTop.tsx";
 
-import { UserProvider } from "./contexts/UserContext.tsx";
 import { ensureAuthFromStorage } from "./services/auth.ts";
 import { AuthProvider } from "./auth/auth.tsx";
 
@@ -13,13 +12,11 @@ ensureAuthFromStorage();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <UserProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <ScrollToTop />
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
-    </UserProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <ScrollToTop />
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
