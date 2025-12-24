@@ -1,21 +1,44 @@
 // services/specialtyMApi.ts
 
-import type { CreateSpecialtyPayload, SpecialtiesListResponse, SpecialtyItem, UpdateSpecialtyPayload } from "../types/specialty/specialtyType";
+import type {
+  CreateSpecialtyPayload,
+  SpecialtiesListResponse,
+  SpecialtyItem,
+  UpdateSpecialtyPayload,
+} from "../types/specialty/specialtyType";
+import axios from "axios";
+import { authHttp, publicHttp } from "./http";
 import { USER_TOKEN_KEY } from "./auth";
 
-const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "")}/api/v1/specialties`;
+type ApiEnvelope<T> = {
+  success?: boolean;
+  message?: string;
+  Message?: string;
+  data: T;
+};
 
-function getAuthHeaders(): HeadersInit {
+const PREFIX = "/api/v1/specialties";
+
+function requireToken() {
   const token = localStorage.getItem(USER_TOKEN_KEY);
+  if (!token) throw new Error("Vui lòng đăng nhập");
+}
 
-  if (!token) {
-    throw new Error("Vui lòng đăng nhập");
+function pickMessage(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const p = payload as { message?: unknown; Message?: unknown };
+  return (typeof p.message === "string" && p.message) ||
+    (typeof p.Message === "string" && p.Message)
+    ? String(p.message ?? p.Message)
+    : undefined;
+}
+
+function throwAxiosError(e: unknown, fallback: string): never {
+  if (axios.isAxiosError(e)) {
+    const msg = pickMessage(e.response?.data) || e.message;
+    throw new Error(msg || fallback);
   }
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+  throw new Error(fallback);
 }
 
 /**
@@ -27,30 +50,16 @@ export async function apiGetSpecialties(params: {
   isActive?: boolean;
   search?: string;
 }): Promise<SpecialtiesListResponse> {
-  const query = new URLSearchParams({
-    page: String(params.page),
-    limit: String(params.limit),
-  });
-
-  if (params.isActive !== undefined) {
-    query.set("isActive", String(params.isActive));
+  requireToken();
+  try {
+    const { data } = await authHttp.get<ApiEnvelope<SpecialtiesListResponse>>(
+      `${PREFIX}/admin/list`,
+      { params }
+    );
+    return data.data;
+  } catch (e) {
+    throwAxiosError(e, "Không thể tải danh sách chuyên khoa");
   }
-
-  if (params.search) {
-    query.set("search", params.search);
-  }
-
-  const res = await fetch(`${API_BASE}/admin/list?${query}`, {
-    headers: getAuthHeaders(),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách chuyên khoa");
-  }
-
-  const json = await res.json();
-  return json.data;
 }
 
 /**
@@ -58,15 +67,15 @@ export async function apiGetSpecialties(params: {
  * Dùng cho DoctorModal dropdown
  */
 export async function apiGetPublicSpecialties(): Promise<SpecialtyItem[]> {
-  const res = await fetch(`${API_BASE}?isActive=true`);
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải danh sách chuyên khoa");
+  try {
+    const { data } = await publicHttp.get<ApiEnvelope<SpecialtyItem[]>>(
+      `${PREFIX}`,
+      { params: { isActive: true } }
+    );
+    return data.data || [];
+  } catch (e) {
+    throwAxiosError(e, "Không thể tải danh sách chuyên khoa");
   }
-
-  const json = await res.json();
-  return json.data || [];
 }
 
 /**
@@ -75,15 +84,14 @@ export async function apiGetPublicSpecialties(): Promise<SpecialtyItem[]> {
 export async function apiGetSpecialtyDetail(
   specialtyId: number
 ): Promise<SpecialtyItem> {
-  const res = await fetch(`${API_BASE}/${specialtyId}`);
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tải thông tin chuyên khoa");
+  try {
+    const { data } = await publicHttp.get<ApiEnvelope<SpecialtyItem>>(
+      `${PREFIX}/${specialtyId}`
+    );
+    return data.data;
+  } catch (e) {
+    throwAxiosError(e, "Không thể tải thông tin chuyên khoa");
   }
-
-  const json = await res.json();
-  return json.data;
 }
 
 /**
@@ -92,19 +100,16 @@ export async function apiGetSpecialtyDetail(
 export async function apiCreateSpecialty(
   payload: CreateSpecialtyPayload
 ): Promise<{ specialtyId: number }> {
-  const res = await fetch(`${API_BASE}/admin/create`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể tạo chuyên khoa");
+  requireToken();
+  try {
+    const { data } = await authHttp.post<ApiEnvelope<{ specialtyId: number }>>(
+      `${PREFIX}/admin/create`,
+      payload
+    );
+    return data.data;
+  } catch (e) {
+    throwAxiosError(e, "Không thể tạo chuyên khoa");
   }
-
-  const json = await res.json();
-  return json.data;
 }
 
 /**
@@ -114,15 +119,11 @@ export async function apiUpdateSpecialty(
   specialtyId: number,
   payload: UpdateSpecialtyPayload
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/${specialtyId}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể cập nhật chuyên khoa");
+  requireToken();
+  try {
+    await authHttp.put(`${PREFIX}/admin/${specialtyId}`, payload);
+  } catch (e) {
+    throwAxiosError(e, "Không thể cập nhật chuyên khoa");
   }
 }
 
@@ -132,14 +133,11 @@ export async function apiUpdateSpecialty(
 export async function apiDeactivateSpecialty(
   specialtyId: number
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/${specialtyId}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể vô hiệu hóa chuyên khoa");
+  requireToken();
+  try {
+    await authHttp.delete(`${PREFIX}/admin/${specialtyId}`);
+  } catch (e) {
+    throwAxiosError(e, "Không thể vô hiệu hóa chuyên khoa");
   }
 }
 
@@ -147,13 +145,10 @@ export async function apiDeactivateSpecialty(
  * Kích hoạt lại chuyên khoa (Admin)
  */
 export async function apiActivateSpecialty(specialtyId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/${specialtyId}/activate`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Không thể kích hoạt chuyên khoa");
+  requireToken();
+  try {
+    await authHttp.patch(`${PREFIX}/admin/${specialtyId}/activate`);
+  } catch (e) {
+    throwAxiosError(e, "Không thể kích hoạt chuyên khoa");
   }
 }
