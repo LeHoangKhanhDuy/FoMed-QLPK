@@ -3,9 +3,10 @@ import { getErrorMessage } from "../Utils/errorHepler";
 
 // Types cho Encounter/Medical Record từ API lookup
 export type LookupEncounter = {
-  encounterId: number;
+  // List shape (cũ)
+  encounterId?: number;
   encounterCode: string;
-  encounterDate: string;
+  encounterDate?: string;
   chiefComplaint?: string;
   diagnosis?: string;
   doctorName?: string;
@@ -14,6 +15,25 @@ export type LookupEncounter = {
   totalAmount?: number;
   patientName?: string;
   patientPhone?: string;
+
+  // Detail shape (mới)
+  visitAt?: string;
+  serviceName?: string;
+  patient?: {
+    fullName?: string;
+    patientCode?: string;
+  };
+  prescription?: {
+    code?: string;
+    advice?: string;
+    items?: Array<{
+      medicineName?: string;
+      dose?: string | number;
+      frequency?: string | number;
+      duration?: string | number;
+    }>;
+  };
+  labs?: unknown[];
 };
 
 // Response khi tra cứu theo mã hồ sơ
@@ -75,4 +95,3 @@ export async function apiLookupResultByPhone(
     );
   }
 }
-

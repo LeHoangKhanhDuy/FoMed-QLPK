@@ -34,7 +34,6 @@ import {
   logout as logoutApi,
 } from "../../services/auth";
 import toast from "react-hot-toast";
-import { showComingSoon } from "../../common/showComingSoon";
 
 const USER_INFO_KEY = "userInfo";
 
@@ -338,7 +337,7 @@ export default function Navbar() {
                       type="button"
                       onClick={() => {
                         setMobileMenuOpen(false);
-                        showComingSoon();
+                        navigate("/patient-portal-login");
                       }}
                       className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 cursor-pointer text-left"
                     >
@@ -361,7 +360,8 @@ export default function Navbar() {
                           onClick={() => setMobileMenuOpen(false)}
                           className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
                         >
-                          <UserStar className="w-7 h-7 text-primary" /> Trang quản lý
+                          <UserStar className="w-7 h-7 text-primary" /> Trang
+                          quản lý
                         </Link>
                       )}
                       <Link
@@ -369,14 +369,16 @@ export default function Navbar() {
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
                       >
-                        <CircleUserRound className="w-7 h-7 text-primary" /> Cài đặt tài khoản
+                        <CircleUserRound className="w-7 h-7 text-primary" /> Cài
+                        đặt tài khoản
                       </Link>
                       <Link
                         to="/forgot-password"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-x-3 -mx-3 rounded-lg px-3 py-2 text-base/7 font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
                       >
-                        <Settings className="w-7 h-7 text-primary" /> Đổi mật khẩu
+                        <Settings className="w-7 h-7 text-primary" /> Đổi mật
+                        khẩu
                       </Link>
                       <hr className="my-2" />
                       <button
@@ -573,7 +575,7 @@ export default function Navbar() {
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
-                  showComingSoon();
+                  navigate("/patient-portal-login");
                 }}
                 className="bg-orange-400 hover:bg-orange-500 text-white px-4 py-2 rounded-[var(--rounded)] shadow-sm flex items-center gap-2 text-sm font-bold transition duration-200 active:scale-95 cursor-pointer"
               >

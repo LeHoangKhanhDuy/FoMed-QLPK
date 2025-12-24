@@ -19,7 +19,7 @@ export default function PatientPortalLogin({
   onSubmitPhone?: (payload: string) => void;
   onSubmitRecord?: (recordCode: string) => void;
 }) {
-  const [tab, setTab] = useState<"phone" | "record">("phone");
+  const [tab, setTab] = useState<"phone" | "record">("record");
   const [phone, setPhone] = useState("");
   const [recordCode, setRecordCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -64,7 +64,7 @@ export default function PatientPortalLogin({
   if (recordCode.length > 0) {
     if (!recordPattern.test(recordCode)) {
       recordError =
-        "Mã hồ sơ không hợp lệ. Ví dụ: HSFM-12 hoặc HSFM-ABC123 (PREFIX-XXXX)";
+        "Mã hồ sơ không hợp lệ. Ví dụ: HSFM-12";
     }
   }
   const isValidRecord = recordPattern.test(recordCode);
@@ -122,17 +122,6 @@ export default function PatientPortalLogin({
             <button
               type="button"
               className={`flex-1 px-4 py-3 text-sm font-medium cursor-pointer ${
-                tab === "phone"
-                  ? "text-sky-500 border-b-2 border-sky-500"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-              onClick={() => setTab("phone")}
-            >
-              Số điện thoại
-            </button>
-            <button
-              type="button"
-              className={`flex-1 px-4 py-3 text-sm font-medium cursor-pointer ${
                 tab === "record"
                   ? "text-sky-500 border-b-2 border-sky-500"
                   : "text-slate-500 hover:text-slate-700"
@@ -140,6 +129,17 @@ export default function PatientPortalLogin({
               onClick={() => setTab("record")}
             >
               Mã hồ sơ
+            </button>
+            <button
+              type="button"
+              className={`flex-1 px-4 py-3 text-sm font-medium cursor-pointer ${
+                tab === "phone"
+                  ? "text-sky-500 border-b-2 border-sky-500"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+              onClick={() => setTab("phone")}
+            >
+              Số điện thoại
             </button>
           </div>
 
