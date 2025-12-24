@@ -2,23 +2,11 @@
 import axios, { isAxiosError } from "axios";
 import type { AppUser, LoginNormalized } from "../types/auth/login";
 import { getErrorMessage } from "../Utils/errorHepler";
-
-/* ============ CONFIG ============ */
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+import { authHttp, publicHttp } from "./http";
 
 export const USER_TOKEN_KEY = "userToken"; // accessToken
 export const USER_REFRESH_TOKEN_KEY = "userRefreshToken"; // refreshToken
 export const USER_INFO_KEY = "userInfo";
-
-const publicHttp = axios.create({
-  baseURL: API_BASE,
-  headers: { "Content-Type": "application/json" },
-});
-
-const authHttp = axios.create({
-  baseURL: API_BASE,
-  headers: { "Content-Type": "application/json" },
-});
 
 export function setAuthToken(token?: string) {
   if (token) authHttp.defaults.headers.common.Authorization = `Bearer ${token}`;
