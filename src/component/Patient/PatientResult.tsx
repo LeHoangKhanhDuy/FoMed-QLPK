@@ -1,12 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { QRCodeSVG } from "qrcode.react";
 import {
   apiLookupResultByCode,
   apiLookupResultByPhone,
   type LookupEncounter,
 } from "../../services/lookupResultApi";
+import Lottie from "lottie-react";
 import { formatVND } from "../../Utils/formatVND";
+import medicalHealthcareAnim from "../../assets/animation/Medical Healthcare.json";
+import defaultAvatar from "../../assets/images/default-avatar.png";
+import { ClipboardList, ListTodo, Pill, TestTubeDiagonal } from "lucide-react";
 
 type LocationState = {
   type: "phone" | "code";
@@ -28,10 +33,16 @@ export const PatientResult = () => {
   const [codeError, setCodeError] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
+  // Guard for React StrictMode (dev) where effects may run twice
+  const didInitLookupRef = useRef(false);
+
   const pageLimit = 10;
 
   // Gọi API khi component mount
   useEffect(() => {
+    if (didInitLookupRef.current) return;
+    didInitLookupRef.current = true;
+
     // Nếu không có state, redirect về trang portal
     if (!state || !state.type) {
       navigate("/patient-portal-login");
@@ -54,11 +65,11 @@ export const PatientResult = () => {
       setCodeError("");
       const result = await apiLookupResultByCode(code);
       setCodeResult(result);
-      toast.success("Tìm thấy thông tin hồ sơ");
+      toast.success("Tìm thấy thông tin hồ sơ", { id: "lookup-code-success" });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Không tìm thấy hồ sơ";
-      toast.error(errorMessage);
+      toast.error(errorMessage, { id: "lookup-code-error" });
       setCodeResult(null);
       setCodeError("Không tìm thấy hồ sơ.");
     } finally {
@@ -78,15 +89,17 @@ export const PatientResult = () => {
       setCurrentPage(page);
 
       if (result.items.length === 0) {
-        toast.error("Không tìm thấy hồ sơ nào");
+        toast.error("Không tìm thấy hồ sơ nào", { id: "lookup-phone-empty" });
         setPhoneError("Không tìm thấy hồ sơ nào cho số điện thoại này.");
       } else {
-        toast.success(`Tìm thấy ${result.total} hồ sơ`);
+        toast.success(`Tìm thấy ${result.total} hồ sơ`, {
+          id: "lookup-phone-success",
+        });
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể tra cứu";
-      toast.error(errorMessage);
+      toast.error(errorMessage, { id: "lookup-phone-error" });
       setPhoneResults([]);
       setTotal(0);
       setTotalPages(0);
@@ -113,24 +126,91 @@ export const PatientResult = () => {
     }
   };
 
-  // Format trạng thái
-  const formatStatus = (status: string) => {
-    const statusMap: Record<string, string> = {
-      completed: "Hoàn thành",
-      pending: "Đang chờ",
-      cancelled: "Đã hủy",
-      in_progress: "Đang điều trị",
-    };
-    return statusMap[status] || status;
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleString("vi-VN");
+    } catch {
+      return dateString;
+    }
+  };
+
+  const StatusBadge = ({ status }: { status?: string }) => {
+    const normalizedStatus = (status || "").trim().toUpperCase();
+    let style = "bg-gray-200 text-gray-600";
+    let text = normalizedStatus || "Không xác định";
+
+    switch (normalizedStatus) {
+      case "DRAFT":
+      case "PENDING":
+        style = "bg-yellow-100 text-yellow-600";
+        text = "Đang chờ";
+        break;
+      case "FINALIZED":
+      case "COMPLETED":
+      case "FINISHED":
+      case "DONE":
+        style = "bg-green-100 text-green-600";
+        text = "Đã khám";
+        break;
+      case "CANCELLED":
+      case "CANCELED":
+        style = "bg-red-100 text-red-600";
+        text = "Đã hủy";
+        break;
+      case "IN_PROGRESS":
+      case "PROCESSING":
+        style = "bg-blue-100 text-blue-600";
+        text = "Đang khám";
+        break;
+      case "CONFIRMED":
+        style = "bg-indigo-100 text-indigo-600";
+        text = "Đã xác nhận";
+        break;
+      default:
+        break;
+    }
+
+    return (
+      <span
+        className={`inline-block rounded-full px-3 py-1 text-sm font-semibold whitespace-nowrap ${style}`}
+      >
+        {text}
+      </span>
+    );
+  };
+
+  const getEncounterDateTime = (e?: LookupEncounter | null) =>
+    e?.visitAt ?? e?.encounterDate;
+
+  const getPatientName = (e?: LookupEncounter | null) =>
+    e?.patient?.fullName ?? e?.patientName;
+
+  const getPatientCode = (e?: LookupEncounter | null) =>
+    e?.patient?.patientCode;
+
+  const getQrValue = (e?: LookupEncounter | null) =>
+    getPatientCode(e) || e?.encounterCode || "";
+
+  const getLabField = (obj: unknown, keys: string[]) => {
+    if (!obj || typeof obj !== "object") return undefined;
+    const rec = obj as Record<string, unknown>;
+    for (const k of keys) {
+      const v = rec[k];
+      if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+    }
+    return undefined;
   };
 
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mb-4"></div>
+      <div className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm p-12 text-center">
+            <div className="mx-auto max-w-lg">
+              <Lottie animationData={medicalHealthcareAnim} loop />
+            </div>
             <h2 className="text-2xl font-bold text-gray-900">
               Đang tra cứu thông tin...
             </h2>
@@ -142,103 +222,317 @@ export const PatientResult = () => {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="mx-auto max-w-7xl px-4 xl:px-0 py-10 md:py-14">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-sky-500 mb-4">
-            Kết quả tra cứu
-          </h1>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              Kết quả tra cứu
+            </h1>
+            {state?.type === "code" && codeResult?.encounterCode && (
+              <p className="text-md text-slate-600 mt-1">
+                Mã hồ sơ:{" "}
+                <span className="font-semibold text-sky-500">
+                  {codeResult.encounterCode}
+                </span>
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-[var(--rounded)] bg-primary-linear px-4 py-2 text-white font-semibold cursor-pointer hover:opacity-90 transition"
+          >
+            Tải PDF
+          </button>
         </div>
 
         {/* Kết quả tra cứu theo mã */}
         {state?.type === "code" && codeResult && (
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Mã hồ sơ</p>
-                <p className="font-bold text-lg text-blue-600">
-                  {codeResult.encounterCode}
-                </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* LEFT */}
+            <div className="lg:col-span-8 space-y-4">
+              {/* Kết quả khám */}
+              <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm">
+                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-sky-500">
+                    <ClipboardList className="w-5 h-5" />
+                    <div>Kết quả khám</div>
+                  </div>
+                  <StatusBadge status={codeResult.status} />
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-slate-500">Dịch vụ</div>
+                      <div className="font-semibold text-slate-900">
+                        {codeResult.serviceName || "N/A"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-slate-500">Thời gian khám</div>
+                      <div className="font-semibold text-slate-900">
+                        {formatDateTime(getEncounterDateTime(codeResult))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-slate-500">Bác sĩ</div>
+                      <div className="font-semibold text-slate-900">
+                        {codeResult.doctorName || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900 mb-1">
+                        Chẩn đoán
+                      </div>
+                      <div className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-[var(--rounded)] p-3">
+                        {codeResult.diagnosis || "Chưa có chẩn đoán"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Ngày khám</p>
-                <p className="font-bold text-lg text-gray-900">
-                  {formatDate(codeResult.encounterDate)}
-                </p>
+
+              {/* Kết quả xét nghiệm */}
+              <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm">
+                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-sky-500">
+                    <TestTubeDiagonal className="w-5 h-5" />
+                    <div>Kết quả xét nghiệm</div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="overflow-x-auto border border-slate-200 rounded-[var(--rounded)]">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Tên xét nghiệm
+                          </th>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Kết quả
+                          </th>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Đơn vị
+                          </th>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Giá trị tham chiếu
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.isArray(codeResult.labs) &&
+                        codeResult.labs.length > 0 ? (
+                          codeResult.labs.map((lab, idx) => {
+                            const testName =
+                              getLabField(lab, [
+                                "testName",
+                                "name",
+                                "medicineName",
+                                "title",
+                              ]) ?? `XN #${idx + 1}`;
+                            const result =
+                              getLabField(lab, ["result", "value", "ketQua"]) ??
+                              "N/A";
+                            const unit =
+                              getLabField(lab, ["unit", "donVi"]) ?? "";
+                            const ref =
+                              getLabField(lab, [
+                                "referenceRange",
+                                "ref",
+                                "normalRange",
+                                "giaTriThamChieu",
+                              ]) ?? "";
+
+                            return (
+                              <tr
+                                key={idx}
+                                className="border-t border-slate-200"
+                              >
+                                <td className="px-4 py-2 font-semibold text-slate-900">
+                                  {String(testName)}
+                                </td>
+                                <td className="px-4 py-2 text-slate-700">
+                                  {String(result)}
+                                </td>
+                                <td className="px-4 py-2 text-slate-700">
+                                  {String(unit)}
+                                </td>
+                                <td className="px-4 py-2 text-slate-700">
+                                  {String(ref)}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="px-4 py-6 text-center text-slate-600"
+                            >
+                              Chưa có kết quả xét nghiệm.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Bệnh nhân</p>
-                <p className="font-semibold text-gray-900">
-                  {codeResult.patientName || "N/A"}
-                </p>
+
+              {/* Đơn thuốc */}
+              <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm">
+                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-sky-500">
+                    <Pill className="w-5 h-5" />
+                    <div>Đơn thuốc</div>
+                  </div>
+                    {codeResult.prescription?.code ? (
+                      <div className="text-sm text-slate-600">
+                        Mã đơn thuốc:{" "}
+                        <span className="font-semibold text-sky-500">
+                          {codeResult.prescription.code}
+                        </span>
+                      </div>
+                    ) : null}
+                </div>
+                <div className="p-4">
+                  {codeResult.prescription?.advice && (
+                    <div className="mb-3 text-sm">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        Lời dặn của bác sĩ:{" "}
+                        <p className="text-black font-semibold">
+                          {codeResult.prescription.advice}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="overflow-x-auto border border-slate-200 rounded-[var(--rounded)]">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Thuốc
+                          </th>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Liều
+                          </th>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Lần/ngày
+                          </th>
+                          <th className="text-left px-4 py-2 font-semibold text-slate-700">
+                            Số ngày
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.isArray(codeResult.prescription?.items) &&
+                        codeResult.prescription!.items!.length > 0 ? (
+                          codeResult.prescription!.items!.map((it, idx) => (
+                            <tr key={idx} className="border-t border-slate-200">
+                              <td className="px-4 py-2 font-semibold text-slate-900">
+                                {it.medicineName || "N/A"}
+                              </td>
+                              <td className="px-4 py-2 text-slate-700">
+                                {it.dose ?? "N/A"}
+                              </td>
+                              <td className="px-4 py-2 text-slate-700">
+                                {it.frequency ?? "N/A"}
+                              </td>
+                              <td className="px-4 py-2 text-slate-700">
+                                {it.duration ?? "N/A"}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="px-4 py-6 text-center text-slate-600"
+                            >
+                              Chưa có thông tin đơn thuốc.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Số điện thoại</p>
-                <p className="font-semibold text-gray-900">
-                  {codeResult.patientPhone || "N/A"}
-                </p>
+            </div>
+
+            {/* RIGHT */}
+            <div className="lg:col-span-4 space-y-4">
+              {/* Patient card */}
+              <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm p-4">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={defaultAvatar}
+                    alt="Avatar"
+                    className="h-14 w-14 rounded-full border border-slate-200 object-cover bg-slate-100"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = defaultAvatar;
+                    }}
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm text-slate-500">Họ tên</div>
+                    <div className="font-bold text-slate-900">
+                      {getPatientName(codeResult) || "N/A"}
+                    </div>
+                    <div className="mt-1 text-sm text-slate-600">
+                      Mã BN:{" "}
+                      <span className="font-semibold">
+                        {getPatientCode(codeResult) || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-16 h-16 flex items-center justify-center overflow-hidden">
+                    {getQrValue(codeResult) ? (
+                      <QRCodeSVG value={getQrValue(codeResult)} size={56} />
+                    ) : (
+                      <span className="text-xs text-slate-500">QR</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Bác sĩ</p>
-                <p className="font-semibold text-gray-900">
-                  {codeResult.doctorName || "N/A"}
-                </p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Chuyên khoa</p>
-                <p className="font-semibold text-gray-900">
-                  {codeResult.specialtyName || "N/A"}
-                </p>
-              </div>
-              <div className="md:col-span-2 bg-yellow-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Triệu chứng</p>
-                <p className="font-semibold text-gray-900">
-                  {codeResult.chiefComplaint || "N/A"}
-                </p>
-              </div>
-              <div className="md:col-span-2 bg-green-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Chẩn đoán</p>
-                <p className="font-semibold text-gray-900">
-                  {codeResult.diagnosis || "N/A"}
-                </p>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Trạng thái</p>
-                <p className="font-bold text-blue-600">
-                  {formatStatus(codeResult.status)}
-                </p>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Tổng chi phí</p>
-                <p className="font-bold text-lg text-green-600">
-                  {codeResult.totalAmount
-                    ? formatVND(codeResult.totalAmount)
-                    : "N/A"}
-                </p>
+
+              {/* Danh sách dịch vụ */}
+              <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm">
+                <div className="px-4 py-3 border-b border-slate-200 font-bold text-sky-500">
+                  <div className="flex items-center gap-2 font-bold text-sky-500">
+                    <ListTodo className="w-5 h-5" />
+                    <div>Danh sách dịch vụ</div>
+                  </div>
+                </div>
+                <div className="p-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-slate-900">
+                      {codeResult.serviceName || "N/A"}
+                    </div>
+                    <div className="text-slate-600">
+                      {formatDate(getEncounterDateTime(codeResult))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {state?.type === "code" && !codeResult && codeError && (
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <p className="text-xl font-semibold text-slate-700">
-              {codeError}
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate("/patient-portal-login")}
-              className="mt-4 inline-flex items-center justify-center rounded-[var(--rounded)] bg-primary-linear px-4 py-2 text-white font-semibold cursor-pointer hover:bg-sky-600 transition"
-            >
-              Quay lại tra cứu
-            </button>
+          <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm p-8 text-center">
+            <p className="text-xl font-semibold text-slate-700">{codeError}</p>
           </div>
         )}
 
         {/* Kết quả tra cứu theo SĐT */}
         {state?.type === "phone" && phoneResults.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm p-8">
             <div className="mb-6">
               <h3 className="text-2xl font-bold text-gray-900">
                 Danh Sách Hồ Sơ Khám Bệnh ({total} kết quả)
@@ -248,8 +542,8 @@ export const PatientResult = () => {
             <div className="space-y-4">
               {phoneResults.map((record) => (
                 <div
-                  key={record.encounterId}
-                  className="bg-gradient-to-r from-white to-blue-50 border-l-4 border-blue-500 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                  key={record.encounterId ?? record.encounterCode}
+                  className="bg-gradient-to-r from-white to-blue-50 border-l-4 border-blue-500 rounded-[var(--rounded)] p-6 hover:shadow-sm transition-shadow"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -270,20 +564,10 @@ export const PatientResult = () => {
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        {formatDate(record.encounterDate)}
+                        {formatDate(record.visitAt ?? record.encounterDate)}
                       </p>
                     </div>
-                    <span
-                      className={`px-4 py-2 rounded-full text-sm font-bold ${
-                        record.status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : record.status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {formatStatus(record.status)}
-                    </span>
+                    <StatusBadge status={record.status} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2">
@@ -402,17 +686,8 @@ export const PatientResult = () => {
         )}
 
         {state?.type === "phone" && phoneResults.length === 0 && phoneError && (
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <p className="text-xl font-semibold text-slate-700">
-              {phoneError}
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate("/patient-portal-login")}
-              className="mt-4 inline-flex items-center justify-center rounded-xl bg-sky-500 px-4 py-2 text-white font-semibold cursor-pointer hover:bg-sky-600 transition"
-            >
-              Quay lại tra cứu
-            </button>
+          <div className="bg-white rounded-[var(--rounded)] border border-slate-200 shadow-sm p-8 text-center">
+            <p className="text-xl font-semibold text-slate-700">{phoneError}</p>
           </div>
         )}
       </div>
