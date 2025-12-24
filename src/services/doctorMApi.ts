@@ -1,17 +1,6 @@
-// import type {
-//   AvailableUser,
-//   CreateDoctorPayload,
-//   DoctorDetail,
-//   DoctorsListResponse,
-//   DoctorsPublicListResponse,
-//   DoctorRatingsResponse,
-//   RelatedDoctorDto,
-//   RelatedDoctorsResponse,
-//   Specialty,
-//   UpdateDoctorPayload,
-// } from "../types/doctor/doctor";
-
-import type {RelatedDoctorsResponse } from "../types/doctor/doctor";
+import axios from "axios";
+import { authHttp, publicHttp } from "./http";
+import type { RelatedDoctorsResponse } from "../types/doctor/doctor";
 
 export interface RelatedDoctorDto {
   doctorId: number;
@@ -191,115 +180,154 @@ export interface UploadAvatarResponse {
   message?: string;
 }
 
-const API_BASE = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(
-  /\/+$/,
-  ""
-)}/api/v1/doctors`;
+type ApiEnvelope<T> = {
+  success?: boolean;
+  message?: string;
+  Message?: string;
+  data: T;
+};
 
-function getAuthHeaders(): HeadersInit {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-  };
+const PREFIX = "/api/v1/doctors";
+
+function pickMessage(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const p = payload as { message?: unknown; Message?: unknown };
+  return (typeof p.message === "string" && p.message) ||
+    (typeof p.Message === "string" && p.Message)
+    ? String(p.message ?? p.Message)
+    : undefined;
 }
 
-export async function apiGetDoctors(params: { page: number; limit: number; isActive?: boolean; search?: string }): Promise<DoctorsListResponse> {
-  const query = new URLSearchParams({ page: String(params.page), limit: String(params.limit) });
-  if (params.isActive !== undefined) query.set("isActive", String(params.isActive));
-  if (params.search) query.set("search", params.search);
-  const res = await fetch(`${API_BASE}/admin/list?${query}`, { headers: getAuthHeaders() });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Lỗi tải danh sách bác sĩ");
-  return (await res.json()).data;
+function throwAxiosError(e: unknown, fallback: string): never {
+  if (axios.isAxiosError(e)) {
+    const msg = pickMessage(e.response?.data) || e.message;
+    throw new Error(msg || fallback);
+  }
+  throw new Error(fallback);
+}
+
+export async function apiGetDoctors(params: {
+  page: number;
+  limit: number;
+  isActive?: boolean;
+  search?: string;
+}): Promise<DoctorsListResponse> {
+  try {
+    const { data } = await authHttp.get<ApiEnvelope<DoctorsListResponse>>(
+      `${PREFIX}/admin/list`,
+      { params }
+    );
+    return data.data;
+  } catch (e) {
+    throwAxiosError(e, "Lỗi tải danh sách bác sĩ");
+  }
 }
 
 export async function apiGetAvailableUsers(): Promise<AvailableUser[]> {
-  const res = await fetch(`${API_BASE}/admin/available-users`, { headers: getAuthHeaders() });
-  if (!res.ok) throw new Error("Lỗi tải users");
-  return (await res.json()).data;
+  try {
+    const { data } = await authHttp.get<ApiEnvelope<AvailableUser[]>>(
+      `${PREFIX}/admin/available-users`
+    );
+    return data.data;
+  } catch (e) {
+    throwAxiosError(e, "Lỗi tải users");
+  }
 }
 
-export async function apiCreateDoctor(payload: CreateDoctorPayload): Promise<{ doctorId: number }> {
-  const res = await fetch(`${API_BASE}/admin/create`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Lỗi tạo bác sĩ");
-  return (await res.json()).data;
+export async function apiCreateDoctor(
+  payload: CreateDoctorPayload
+): Promise<{ doctorId: number }> {
+  try {
+    const { data } = await authHttp.post<ApiEnvelope<{ doctorId: number }>>(
+      `${PREFIX}/admin/create`,
+      payload
+    );
+    return data.data;
+  } catch (e) {
+    throwAxiosError(e, "Lỗi tạo bác sĩ");
+  }
 }
 
-export async function apiUpdateDoctor(doctorId: number, payload: Partial<UpdateDoctorPayload>): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/${doctorId}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Lỗi cập nhật bác sĩ");
+export async function apiUpdateDoctor(
+  doctorId: number,
+  payload: Partial<UpdateDoctorPayload>
+): Promise<void> {
+  try {
+    await authHttp.put(`${PREFIX}/admin/${doctorId}`, payload);
+  } catch (e) {
+    throwAxiosError(e, "Lỗi cập nhật bác sĩ");
+  }
 }
 
 export async function apiDeactivateDoctor(doctorId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/${doctorId}`, { method: "DELETE", headers: getAuthHeaders() });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Lỗi vô hiệu hóa");
+  try {
+    await authHttp.delete(`${PREFIX}/admin/${doctorId}`);
+  } catch (e) {
+    throwAxiosError(e, "Lỗi vô hiệu hóa");
+  }
 }
 
 export async function apiActivateDoctor(doctorId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/${doctorId}/activate`, { method: "PATCH", headers: getAuthHeaders() });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Lỗi kích hoạt");
+  try {
+    await authHttp.patch(`${PREFIX}/admin/${doctorId}/activate`);
+  } catch (e) {
+    throwAxiosError(e, "Lỗi kích hoạt");
+  }
 }
 
 export async function apiGetSpecialties(): Promise<Specialty[]> {
-  const res = await fetch("/api/v1/specialties", { headers: getAuthHeaders() }); // Đảm bảo đường dẫn đúng
-  if (!res.ok) throw new Error("Lỗi tải chuyên khoa");
-  return (await res.json()).data || [];
+  try {
+    const { data } = await authHttp.get<ApiEnvelope<Specialty[]>>(
+      "/api/v1/specialties"
+    );
+    return data.data || [];
+  } catch (e) {
+    throwAxiosError(e, "Lỗi tải chuyên khoa");
+  }
 }
 
 export async function apiGetDoctorDetail(
   doctorId: number
 ): Promise<DoctorDetail> {
-  const res = await fetch(`${API_BASE}/details/${doctorId}`);
-  if (!res.ok)
-    throw new Error(
-      (await res.json().catch(() => ({}))).message ||
-        "Không thể tải thông tin bác sĩ"
+  try {
+    const { data } = await publicHttp.get<ApiEnvelope<DoctorDetail>>(
+      `${PREFIX}/details/${doctorId}`
     );
-  const json = await res.json();
-  return json.data as DoctorDetail;
+    return data.data as DoctorDetail;
+  } catch (e) {
+    throwAxiosError(e, "Không thể tải thông tin bác sĩ");
+  }
 }
 
 export async function apiGetPublicDoctors(params: {
   page?: number;
   limit?: number;
 }): Promise<DoctorsPublicListResponse> {
-  const query = new URLSearchParams({
-    page: String(params.page || 1),
-    limit: String(params.limit || 20),
-  });
-  const res = await fetch(`${API_BASE}?${query}`);
-  if (!res.ok)
-    throw new Error(
-      (await res.json().catch(() => ({}))).message ||
-        "Không thể tải danh sách bác sĩ"
-    );
-  const json = await res.json();
-  return json.data as DoctorsPublicListResponse;
+  try {
+    const { data } = await publicHttp.get<
+      ApiEnvelope<DoctorsPublicListResponse>
+    >(`${PREFIX}`, {
+      params: { page: params.page ?? 1, limit: params.limit ?? 20 },
+    });
+    return data.data as DoctorsPublicListResponse;
+  } catch (e) {
+    throwAxiosError(e, "Không thể tải danh sách bác sĩ");
+  }
 }
 
 export async function apiGetDoctorRatings(
   doctorId: number,
   params: { page?: number; limit?: number }
 ): Promise<DoctorRatingsResponse> {
-  const query = new URLSearchParams({
-    page: String(params.page || 1),
-    limit: String(params.limit || 20),
-  });
-  const res = await fetch(`${API_BASE}/ratings/${doctorId}?${query}`);
-  if (!res.ok)
-    throw new Error(
-      (await res.json().catch(() => ({}))).message ||
-        "Không thể tải danh sách đánh giá"
+  try {
+    const { data } = await publicHttp.get<ApiEnvelope<DoctorRatingsResponse>>(
+      `${PREFIX}/ratings/${doctorId}`,
+      { params: { page: params.page ?? 1, limit: params.limit ?? 20 } }
     );
-  const json = await res.json();
-  return json.data as DoctorRatingsResponse;
+    return data.data as DoctorRatingsResponse;
+  } catch (e) {
+    throwAxiosError(e, "Không thể tải danh sách đánh giá");
+  }
 }
 
 // Upload avatar qua BE (nếu vẫn dùng). Nếu chuyển URL-only hoàn toàn, có thể bỏ.
@@ -309,53 +337,44 @@ export async function apiUploadDoctorAvatar(
 ): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(`${API_BASE}/admin/${doctorId}/upload-avatar`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` },
-    body: formData,
-  });
-  if (!res.ok)
-    throw new Error(
-      (await res.json().catch(() => ({}))).message ||
-        "Không thể upload ảnh đại diện"
+  try {
+    const { data } = await authHttp.post<ApiEnvelope<{ avatarUrl?: string }>>(
+      `${PREFIX}/admin/${doctorId}/upload-avatar`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
     );
-  const json = await res.json();
-  if (!json.success) throw new Error(json.message || "Upload thất bại");
-  return json.data?.avatarUrl || "";
+    return data.data?.avatarUrl || "";
+  } catch (e) {
+    throwAxiosError(e, "Không thể upload ảnh đại diện");
+  }
 }
 
 export async function apiDeleteDoctorAvatar(doctorId: number): Promise<string> {
-  const res = await fetch(`${API_BASE}/admin/${doctorId}/delete-avatar`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Lỗi xóa ảnh");
-  const json = await res.json();
-  return json.data?.avatarUrl || ""; // Trả về ảnh fallback từ BE
+  try {
+    const { data } = await authHttp.delete<ApiEnvelope<{ avatarUrl?: string }>>(
+      `${PREFIX}/admin/${doctorId}/delete-avatar`
+    );
+    return data.data?.avatarUrl || "";
+  } catch (e) {
+    throwAxiosError(e, "Lỗi xóa ảnh");
+  }
 }
-
-const uploadUrl = `${(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "")}/api/v1/upload/image`;
 
 export async function apiUploadCommonFile(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file); // Key này phải khớp với tham số 'IFormFile file' ở Backend
-
-  const res = await fetch(uploadUrl, {
-    method: "POST",
-    headers: { 
-        Authorization: `Bearer ${localStorage.getItem("userToken")}` 
-    },
-    body: formData,
-  });
-
-  if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || "Upload ảnh thất bại");
+  try {
+    const { data } = await authHttp.post<ApiEnvelope<{ url?: string }>>(
+      "/api/v1/upload/image",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return data.data?.url || "";
+  } catch (e) {
+    throwAxiosError(e, "Upload ảnh thất bại");
   }
-  
-  const json = await res.json();
-  // Backend trả về: { success: true, data: { url: "..." } }
-  return json.data?.url || ""; 
 }
 
 // Related
@@ -363,14 +382,15 @@ export async function apiGetRelatedDoctors(
   doctorId: number,
   limit: number = 10
 ): Promise<RelatedDoctorDto[]> {
-  const res = await fetch(`${API_BASE}/related/${doctorId}?limit=${limit}`);
-  if (!res.ok)
-    throw new Error(
-      (await res.json().catch(() => ({}))).message ||
-        "Không thể tải danh sách bác sĩ liên quan"
+  try {
+    const { data } = await publicHttp.get<RelatedDoctorsResponse>(
+      `${PREFIX}/related/${doctorId}`,
+      { params: { limit } }
     );
-  const json: RelatedDoctorsResponse = await res.json();
-  if (!json.success)
-    throw new Error("Không thể tải danh sách bác sĩ liên quan");
-  return json.data || [];
+    if (!data.success)
+      throw new Error("Không thể tải danh sách bác sĩ liên quan");
+    return data.data || [];
+  } catch (e) {
+    throwAxiosError(e, "Không thể tải danh sách bác sĩ liên quan");
+  }
 }
