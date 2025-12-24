@@ -78,14 +78,14 @@ const StatCard = ({ title, value, change, icon, loading }: StatCardProps) => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-2">
-            <div className="h-4 w-20 bg-gray-200 rounded" />
-            <div className="h-8 w-24 bg-gray-200 rounded" />
-            <div className="h-4 w-16 bg-gray-200 rounded" />
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
           </div>
-          <div className="bg-gray-100 rounded-lg p-3 w-12 h-12" />
+          <div className="bg-gray-100 rounded-lg p-3 w-12 h-12 animate-pulse" />
         </div>
       </div>
     );
@@ -125,14 +125,124 @@ const TrendIcon = ({ v }: { v: number }) =>
     <TrendingDown className="w-3 h-3 text-red-500" />
   );
 
+const LoadingLetters = ({
+  text,
+  className,
+}: {
+  text: string;
+  className?: string;
+}) => (
+  <span className={className} aria-label={text} role="status">
+    {Array.from(text).map((ch, i) => (
+      <span
+        key={`${ch}-${i}`}
+        className="inline-block animate-pulse"
+        style={{ animationDelay: `${i * 60}ms` }}
+      >
+        {ch === " " ? "\u00A0" : ch}
+      </span>
+    ))}
+  </span>
+);
+
 type PharmacySummaryCardProps = {
   data: PharmacySummaryResponse | null;
   loading?: boolean;
 };
 
 const PharmacySummaryCard = ({ data, loading }: PharmacySummaryCardProps) => {
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col shadow-sm h-full min-h-0 overflow-hidden lg:h-[560px]">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-gray-900">
+            Thống kê kho thuốc
+          </h2>
+        </div>
+
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <Pill className="w-5 h-5 text-green-600" />
+              </div>
+              <span className="text-sm text-gray-600">Thuốc hoạt động</span>
+            </div>
+            <LoadingLetters
+              text="Đang tải"
+              className="text-sm font-bold text-gray-400"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-50 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <span className="text-sm text-gray-600">Sắp hết hàng</span>
+            </div>
+            <LoadingLetters
+              text="Đang tải"
+              className="text-sm font-bold text-gray-400"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <Clock className="w-5 h-5 text-orange-600" />
+              </div>
+              <span className="text-sm text-gray-600">Sắp hết hạn</span>
+            </div>
+            <LoadingLetters
+              text="Đang tải"
+              className="text-sm font-bold text-gray-400"
+            />
+          </div>
+        </div>
+
+        <hr className="mb-6 border-gray-100" />
+
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-3 overscroll-contain">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">
+            Thuốc sắp hết hàng
+          </h3>
+          <p className="text-xs text-gray-400">
+            <LoadingLetters text="Đang tải danh sách..." />
+          </p>
+
+          <hr className="my-6 border-gray-100" />
+
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">
+            Lô thuốc cần lưu ý
+          </h3>
+          <p className="text-xs text-gray-400">
+            <LoadingLetters text="Đang tải danh sách..." />
+          </p>
+        </div>
+
+        <button
+          className="mt-6 w-full py-2 text-sm font-semibold text-white bg-primary-linear rounded-[var(--rounded)] transition-colors cursor-pointer"
+          type="button"
+          disabled
+        >
+          Xem chi tiết kho
+        </button>
+      </div>
+    );
+  }
+
   if (!data) {
-    return <div className="animate-pulse bg-gray-100 rounded-xl h-full" />;
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col shadow-sm h-full min-h-0 overflow-hidden lg:h-[560px]">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-gray-900">
+            Thống kê kho thuốc
+          </h2>
+        </div>
+        <p className="text-sm text-gray-500">Không có dữ liệu kho thuốc</p>
+      </div>
+    );
   }
 
   return (
@@ -255,7 +365,7 @@ const PharmacySummaryCard = ({ data, loading }: PharmacySummaryCardProps) => {
       </div>
 
       <button
-        className="mt-6 w-full py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+        className="mt-6 w-full py-2 text-sm font-semibold text-white bg-primary-linear rounded-[var(--rounded)] transition-colors cursor-pointer"
         type="button"
         disabled={loading}
         onClick={() => (window.location.href = `/cms/drug-manager`)}
@@ -307,7 +417,7 @@ export const Dashboard = () => {
             getPatientTotals(),
             getMonthlySales({ year }),
             getMonthlyTarget({ year }),
-            getPharmacySummary({ expiryDays: 30, lowStockThreshold: 20 }),
+            getPharmacySummary(),
           ]);
 
         setVisitData(visits);
